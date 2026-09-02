@@ -452,6 +452,40 @@ Non-negotiable, because replay-based functional testing (§8.2) depends on them:
 - **No static mutable state.** It breaks determinism and parallel test runs at once
 - Iteration that affects state must be over ordered collections — never raw `Dictionary`
 - Fixed `Dt` in the Tick phase; never frame-time
+- **No coroutines and no `async`/`await` inside `Sim`** — see §7.2
+
+### 7.2 No coroutines in the sim
+
+> **All sim state lives in `World`.**
+
+C# coroutines (`IEnumerator` + `yield`) and `async`/`await` both park state in a
+compiler-generated state machine on the heap — *outside* `World`. Three consequences,
+the last being decisive:
+
+1. Unity coroutines require a `MonoBehaviour` (violates C5)
+2. `WaitForSeconds` is frame-driven and `async` brings thread-pool scheduling, breaking
+   determinism (§7.1) and explicit ordering (C6)
+3. **A suspended state machine cannot be snapshotted.** Replay from the seed would
+   reconstruct it, so the command log alone survives — but snapshots (§6.1) do not, and
+   snapshots are what make loads fast and fork points instant (§6.3). Hidden state is
+   only acceptable in a design that never snapshots. This one does.
+
+**Model processes as data instead.** The pattern is needed constantly — voyages,
+construction, the revolution ladder — so express it explicitly:
+
+```csharp
+public readonly record struct Voyage(EntityId Route, VoyagePhase Phase, int DaysRemaining);
+```
+
+…advanced by a system at the day boundary. Serializable, inspectable, orderable in
+`pipeline.csv`, and visible to the causal DAG. The implicit state machine becomes an
+explicit one, which is the whole point.
+
+The same rule governs campaign scripting: *"wait 3 days, then act"* is a data-driven
+sequence with explicit state, never a coroutine.
+
+**Permitted freely in `Presentation` and I/O** — animation, camera moves, UI transitions,
+async loading of `Balance/`, save writes. None of it is authoritative or snapshotted.
 
 ---
 
