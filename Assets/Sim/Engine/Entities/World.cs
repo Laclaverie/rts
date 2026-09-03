@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace RTS.Sim.Engine
+namespace RTS.Sim.Engine.Entities
 {
     /// <summary>
     /// Owns entity identity and the component stores. Entities are ids; behaviour lives in

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace RTS.Sim.Engine
+namespace RTS.Sim.Engine.Entities
 {
     /// <summary>
     /// Non-generic handle so <see cref="World"/> can hold stores of mixed component types

@@ -1,5 +1,5 @@
 using System;
-using RTS.Sim.Engine;
+using RTS.Sim.Engine.Entities;
 
 namespace RTS.Sim.Tests
 {

@@ -59,10 +59,14 @@ genuinely reusable — `ComponentStore<T>`, `Pipeline`, `EventQueue`, `CommandDi
 `ConfigRegistry`, `Rng`. If a type under `Engine/` mentions a port, a crew member or a
 good, it is in the wrong folder.
 
-**Folders subdivide; namespaces do not.** Everything under `Engine/` is namespace
-`RTS.Sim.Engine`, flat, because §2.1 names that namespace. The folders exist to keep the
-directory navigable, not to deepen the namespace. Your IDE may offer to "fix" the
-namespace to match the folder — decline.
+**Namespaces mirror folders.** `Assets/Sim/Engine/Entities/` is `RTS.Sim.Engine.Entities`.
+A namespace that disagrees with its path is misleading — it makes a type harder to find
+and quietly breaks the IDE's assumption that the two match. ARCHITECTURE §2.1 asks for
+"an `Engine/` namespace", which is a prefix and not a leaf, so the nesting satisfies it.
+
+The one exception is `Engine/Compat/`, which holds shims the compiler requires by exact
+name — `IsExternalInit` must be in `System.Runtime.CompilerServices` or it does nothing.
+Compiler-mandated namespaces win; nothing else gets an exception.
 
 Balance data is not code and does not live here: it goes in `Content/Balance/` as CSV
 (ARCHITECTURE §5.2).
