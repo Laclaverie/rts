@@ -81,7 +81,10 @@ Entities are IDs. Data lives in typed component stores. **No entity base class, 
 inheritance hierarchy, no `Building : Entity`.**
 
 ```csharp
-public readonly record struct EntityId(int Value);
+public readonly struct EntityId : IEquatable<EntityId>   // see note below
+{
+    public readonly int Value;
+}
 
 // Dense storage, insertion-ordered iteration (determinism — §7).
 public sealed class ComponentStore<T> where T : struct
@@ -103,6 +106,13 @@ public sealed class World
     // …
 }
 ```
+
+> **Language version: C# 9.** Unity 6.3 compiles with `-langversion:9.0` — its own
+> generated `Sim.csproj` says so. `record struct` is C# 10 and fails with `CS8773`, so
+> value types here spell out `IEquatable<T>` and the equality operators by hand. Record
+> *classes* are C# 9 and remain available where an allocation is acceptable. The shadow
+> projects under `dotnet/` pin the same language version, so the constraint is enforced
+> by the compiler in both places rather than remembered.
 
 A crew member is whatever components it has. A building is whatever components it has.
 Behaviour lives in systems, never on the data.
@@ -244,9 +254,12 @@ Player input, AI, and campaign scripts all enter the sim identically.
 
 ```csharp
 // Commands are DATA, so they serialise → save, replay, and functional tests are free.
-public readonly record struct SetStance(EntityId Port, Stance Stance);
-public readonly record struct AssignCrew(EntityId Crew, JobId Job);
-public readonly record struct SuppressRiot(EntityId District, Harshness Harshness);
+// Record *classes* (C# 9) rather than record structs (C# 10) — see the language
+// note in section 3. Commands are input-rate, so the allocation is irrelevant and
+// the free value equality and ToString() are worth having in the command log.
+public sealed record SetStance(EntityId Port, Stance Stance);
+public sealed record AssignCrew(EntityId Crew, JobId Job);
+public sealed record SuppressRiot(EntityId District, Harshness Harshness);
 ```
 
 Rules:
