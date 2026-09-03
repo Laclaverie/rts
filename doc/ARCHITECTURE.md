@@ -185,6 +185,14 @@ DayBoundary,80,RevolutionLadder,true
 DayBoundary,90,EventRoll,true
 ```
 
+**Phases are a closed set, and deliberately not extensible by data.** A mod (§5.5) is data,
+so it can insert a system into an existing phase — one row, pick an order — but it cannot
+add a phase. Nothing is iterating a list of phases: `Tick` and `DayBoundary` are called from
+two different places on two different cadences, so a third phase would need code deciding
+*when* to call it. Making the column free-form would let a file name a phase nothing ever
+runs, which is the silent-omission failure this section exists to prevent. A new cadence is
+a scheduler feature, not a config edit.
+
 **Order is load-bearing design, not an implementation detail.** `Wages` must run before
 `Unrest` so that an unpaid wage feeds grievance on the same day rather than the next
 (`GDD` §5.2.3). Ordering decisions of that kind belong in this file with a comment,
@@ -224,6 +232,13 @@ Content/
     ports.json
     event_scripts/
 ```
+
+> **Where `Balance/` physically lives: `Assets/StreamingAssets/Balance/`.** `Content` has no
+> `UnityEngine` reference (C5, §2), so it cannot read a `TextAsset` and cannot ask Unity for
+> a path. StreamingAssets is the one Unity location that survives into a build as ordinary
+> files on disk, readable with `System.IO`. The composition root — which is Unity-side and
+> may use `Application.streamingAssetsPath` — passes the directory in; loaders take a path
+> or a stream and stay ignorant of Unity. Tests read the same shipped files directly.
 
 **Tables are CSV because balancing is spreadsheet work.** They open in Excel/LibreOffice,
 sort and chart naturally, and diff cleanly in git — three things JSON does badly and
