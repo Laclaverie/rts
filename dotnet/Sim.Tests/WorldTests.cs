@@ -40,8 +40,8 @@ namespace RTS.Sim.Tests
         {
             var world = new World();
             EntityId e = world.CreateEntity();
-            world.Set(e, new Hp { Value = 3 });
-            world.Set(e, new Tag { Kind = 1 });
+            world.Add(e, new Hp { Value = 3 });
+            world.Add(e, new Tag { Kind = 1 });
 
             Assert.That(world.DestroyEntity(e), Is.True);
 
@@ -91,7 +91,17 @@ namespace RTS.Sim.Tests
             EntityId e = world.CreateEntity();
             world.DestroyEntity(e);
 
-            Assert.Throws<ArgumentException>(() => world.Set(e, new Hp()));
+            Assert.Throws<ArgumentException>(() => world.Add(e, new Hp()));
+        }
+
+        [Test]
+        public void Adding_the_same_component_twice_throws_through_the_world()
+        {
+            var world = new World();
+            EntityId e = world.CreateEntity();
+            world.Add(e, new Hp { Value = 1 });
+
+            Assert.Throws<InvalidOperationException>(() => world.Add(e, new Hp { Value = 2 }));
         }
 
         [Test]
@@ -99,7 +109,7 @@ namespace RTS.Sim.Tests
         {
             var world = new World();
             EntityId e = world.CreateEntity();
-            world.Set(e, new Hp { Value = 11 });
+            world.Add(e, new Hp { Value = 11 });
 
             Assert.That(world.TryGet(e, out Hp hp), Is.True);
             Assert.That(hp.Value, Is.EqualTo(11));

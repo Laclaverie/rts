@@ -69,18 +69,23 @@ namespace RTS.Sim.Engine.Entities
         }
 
         /// <summary>
-        /// Adds the component, or overwrites it in place if the entity already has one.
-        /// An overwrite keeps the entity's original position in iteration order.
+        /// Attaches the component. Throws if the entity already has one.
         /// </summary>
-        public void Set(EntityId id, in T value)
+        /// <remarks>
+        /// Deliberately strict: attaching twice usually means two systems each believe they
+        /// own this component, and that is a bug worth hearing about. Updating an existing
+        /// component is <see cref="GetRef"/>, which is a different operation with different
+        /// risks. An upsert ("ensure this component equals this value") is the natural shape
+        /// for idempotent command handlers, but nothing needs one yet — it can be added
+        /// alongside the first handler that does, since loosening this later breaks nothing
+        /// while tightening it would.
+        /// </remarks>
+        public void Add(EntityId id, in T value)
         {
             if (id.IsNone) throw new ArgumentException("EntityId.None cannot own a component.", nameof(id));
 
-            if (_indexOf.TryGetValue(id, out int index))
-            {
-                _values[index] = value;
-                return;
-            }
+            if (_indexOf.ContainsKey(id))
+                throw new InvalidOperationException($"{id} already has a {typeof(T).Name}. Use GetRef to update it.");
 
             if (_count == _ids.Length) Grow();
 

@@ -13,10 +13,10 @@ namespace RTS.Sim.Tests
         private static EntityId Id(int v) => new EntityId(v);
 
         [Test]
-        public void Set_then_TryGet_round_trips()
+        public void Add_then_TryGet_round_trips()
         {
             var store = new ComponentStore<Hp>();
-            store.Set(Id(1), new Hp { Value = 42 });
+            store.Add(Id(1), new Hp { Value = 42 });
 
             Assert.That(store.TryGet(Id(1), out Hp hp), Is.True);
             Assert.That(hp.Value, Is.EqualTo(42));
@@ -33,16 +33,38 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void Set_twice_overwrites_in_place_and_keeps_position()
+        public void Adding_the_same_component_twice_throws()
         {
             var store = new ComponentStore<Hp>();
-            store.Set(Id(1), new Hp { Value = 1 });
-            store.Set(Id(2), new Hp { Value = 2 });
-            store.Set(Id(1), new Hp { Value = 99 });
+            store.Add(Id(1), new Hp { Value = 1 });
+
+            Assert.Throws<InvalidOperationException>(() => store.Add(Id(1), new Hp { Value = 99 }));
+        }
+
+        [Test]
+        public void A_rejected_second_Add_leaves_the_store_untouched()
+        {
+            var store = new ComponentStore<Hp>();
+            store.Add(Id(1), new Hp { Value = 1 });
+            store.Add(Id(2), new Hp { Value = 2 });
+
+            Assert.Throws<InvalidOperationException>(() => store.Add(Id(1), new Hp { Value = 99 }));
 
             Assert.That(store.Count, Is.EqualTo(2));
             Assert.That(store.Ids.ToArray(), Is.EqualTo(new[] { Id(1), Id(2) }));
-            Assert.That(store.Values[0].Value, Is.EqualTo(99));
+            Assert.That(store.Values[0].Value, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Remove_then_Add_reattaches_at_the_end()
+        {
+            var store = new ComponentStore<Hp>();
+            for (int i = 1; i <= 3; i++) store.Add(Id(i), new Hp { Value = i });
+
+            store.Remove(Id(1));
+            store.Add(Id(1), new Hp { Value = 100 });
+
+            Assert.That(store.Ids.ToArray(), Is.EqualTo(new[] { Id(2), Id(3), Id(1) }));
         }
 
         [Test]
@@ -50,7 +72,7 @@ namespace RTS.Sim.Tests
         {
             var store = new ComponentStore<Hp>();
             foreach (int v in new[] { 30, 10, 20 })
-                store.Set(Id(v), new Hp { Value = v });
+                store.Add(Id(v), new Hp { Value = v });
 
             Assert.That(store.Ids.ToArray(), Is.EqualTo(new[] { Id(30), Id(10), Id(20) }));
         }
@@ -59,7 +81,7 @@ namespace RTS.Sim.Tests
         public void Remove_from_the_middle_preserves_order_of_the_rest()
         {
             var store = new ComponentStore<Hp>();
-            for (int i = 1; i <= 5; i++) store.Set(Id(i), new Hp { Value = i });
+            for (int i = 1; i <= 5; i++) store.Add(Id(i), new Hp { Value = i });
 
             Assert.That(store.Remove(Id(3)), Is.True);
 
@@ -72,7 +94,7 @@ namespace RTS.Sim.Tests
         public void Remove_reindexes_so_later_lookups_stay_correct()
         {
             var store = new ComponentStore<Hp>();
-            for (int i = 1; i <= 4; i++) store.Set(Id(i), new Hp { Value = i * 10 });
+            for (int i = 1; i <= 4; i++) store.Add(Id(i), new Hp { Value = i * 10 });
 
             store.Remove(Id(1));
 
@@ -85,7 +107,7 @@ namespace RTS.Sim.Tests
         public void Remove_of_absent_entity_is_false()
         {
             var store = new ComponentStore<Hp>();
-            store.Set(Id(1), new Hp());
+            store.Add(Id(1), new Hp());
 
             Assert.That(store.Remove(Id(2)), Is.False);
             Assert.That(store.Count, Is.EqualTo(1));
@@ -95,7 +117,7 @@ namespace RTS.Sim.Tests
         public void GetRef_mutates_in_place()
         {
             var store = new ComponentStore<Hp>();
-            store.Set(Id(1), new Hp { Value = 5 });
+            store.Add(Id(1), new Hp { Value = 5 });
 
             store.GetRef(Id(1)).Value = 7;
 
@@ -115,7 +137,7 @@ namespace RTS.Sim.Tests
         public void Growing_past_capacity_keeps_every_component_and_its_order()
         {
             var store = new ComponentStore<Hp>(capacity: 2);
-            for (int i = 1; i <= 100; i++) store.Set(Id(i), new Hp { Value = i });
+            for (int i = 1; i <= 100; i++) store.Add(Id(i), new Hp { Value = i });
 
             Assert.That(store.Count, Is.EqualTo(100));
             Assert.That(store.Ids[0], Is.EqualTo(Id(1)));
@@ -128,14 +150,14 @@ namespace RTS.Sim.Tests
         public void None_cannot_own_a_component()
         {
             var store = new ComponentStore<Hp>();
-            Assert.Throws<ArgumentException>(() => store.Set(EntityId.None, new Hp()));
+            Assert.Throws<ArgumentException>(() => store.Add(EntityId.None, new Hp()));
         }
 
         [Test]
         public void Clear_empties_the_store()
         {
             var store = new ComponentStore<Hp>();
-            store.Set(Id(1), new Hp());
+            store.Add(Id(1), new Hp());
             store.Clear();
 
             Assert.That(store.Count, Is.EqualTo(0));

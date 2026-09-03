@@ -85,13 +85,15 @@ namespace RTS.Sim.Engine.Entities
         public bool TryGet<T>(EntityId id, out T value) where T : struct =>
             Store<T>().TryGet(id, out value);
 
-        public void Set<T>(EntityId id, in T value) where T : struct
+        public void Add<T>(EntityId id, in T value) where T : struct
         {
             if (!IsAlive(id))
                 throw new ArgumentException($"{id} is not alive.", nameof(id));
 
-            Store<T>().Set(id, value);
+            Store<T>().Add(id, value);
         }
+
+        public ref T GetRef<T>(EntityId id) where T : struct => ref Store<T>().GetRef(id);
 
         public bool Remove<T>(EntityId id) where T : struct => Store<T>().Remove(id);
 
