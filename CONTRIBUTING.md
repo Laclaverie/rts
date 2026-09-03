@@ -51,7 +51,9 @@ Assets/
     Loading/                  CSV and JSON readers
     Registries/               typed registries the sim reads
     Validation/               schema checks (§5.3)
-  Game/                       Unity side        (Phase 3+)
+  Game/                       Game.asmdef       — the Unity side; may use UnityEngine
+    Boot/                     composition root, path resolution
+    Tests/EditMode/           Unity-side tests: what dotnet test cannot reach
 ```
 
 **The `Engine/` boundary is the one that matters.** ARCHITECTURE §2.1 lists what is
@@ -67,6 +69,12 @@ and quietly breaks the IDE's assumption that the two match. ARCHITECTURE §2.1 a
 The one exception is `Engine/Compat/`, which holds shims the compiler requires by exact
 name — `IsExternalInit` must be in `System.Runtime.CompilerServices` or it does nothing.
 Compiler-mandated namespaces win; nothing else gets an exception.
+
+**Two test suites, and they answer different questions.** `dotnet/Sim.Tests` runs outside
+Unity in ~100ms and covers everything in `Sim` and `Content` — that is the loop to work in.
+`Assets/Game/Tests/EditMode` exists only for what it structurally cannot reach: Unity APIs,
+asset paths, anything where being inside the editor is the point. Do not duplicate a headless
+test there; run them with `unity cmd run_tests --mode EditMode`.
 
 Balance data is not code and does not live here: it goes in `Content/Balance/` as CSV
 (ARCHITECTURE §5.2).
