@@ -7,8 +7,11 @@ namespace RTS.Sim.Tests
         [Test]
         public void Ids_with_the_same_value_are_equal()
         {
-            Assert.That(new EntityId(7), Is.EqualTo(new EntityId(7)));
-            Assert.That(new EntityId(7), Is.Not.EqualTo(new EntityId(8)));
+            var seven = new EntityId(7);
+            var alsoSeven = new EntityId(7);
+
+            Assert.That(seven, Is.EqualTo(alsoSeven));
+            Assert.That(seven, Is.Not.EqualTo(new EntityId(8)));
         }
 
         [Test]
