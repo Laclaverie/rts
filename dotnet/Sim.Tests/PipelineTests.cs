@@ -192,6 +192,33 @@ namespace RTS.Sim.Tests
             Assert.That(e.Message, Does.Contain("unknown phase 'tick'"));
         }
 
+        [TestCase("Tick,DayBoundary", TestName = "a comma-separated list")]
+        [TestCase("1", TestName = "the numeric value of a phase")]
+        [TestCase("0", TestName = "zero")]
+        [TestCase("TICK", TestName = "the wrong case")]
+        [TestCase("Tick DayBoundary", TestName = "two names run together")]
+        public void Phase_must_be_an_exact_name(string phaseText)
+        {
+            var log = new List<string>();
+            var table = Table("\"" + phaseText + "\",10,Movement,true\n");
+
+            var e = Assert.Throws<PipelineConfigurationException>(
+                () => Pipeline.Build(table, new ISystem[] { new Spy("Movement", log) }));
+
+            Assert.That(e.Message, Does.Contain("unknown phase"));
+        }
+
+        [Test]
+        public void Padding_around_a_phase_name_is_tolerated()
+        {
+            // A stray space in a hand-edited balance file should not be a launch failure.
+            // Fields are trimmed, so this is the one liberty taken with the phase column.
+            var log = new List<string>();
+            var table = Table("  Tick  ,10,Movement,true\n");
+
+            Assert.DoesNotThrow(() => Pipeline.Build(table, new ISystem[] { new Spy("Movement", log) }));
+        }
+
         [Test]
         public void Running_a_phase_twice_runs_each_system_twice()
         {

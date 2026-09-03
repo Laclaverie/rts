@@ -185,6 +185,14 @@ DayBoundary,80,RevolutionLadder,true
 DayBoundary,90,EventRoll,true
 ```
 
+**Phases are a closed set, and deliberately not extensible by data.** A mod (§5.5) is data,
+so it can insert a system into an existing phase — one row, pick an order — but it cannot
+add a phase. Nothing is iterating a list of phases: `Tick` and `DayBoundary` are called from
+two different places on two different cadences, so a third phase would need code deciding
+*when* to call it. Making the column free-form would let a file name a phase nothing ever
+runs, which is the silent-omission failure this section exists to prevent. A new cadence is
+a scheduler feature, not a config edit.
+
 **Order is load-bearing design, not an implementation detail.** `Wages` must run before
 `Unrest` so that an unpaid wage feeds grievance on the same day rather than the next
 (`GDD` §5.2.3). Ordering decisions of that kind belong in this file with a comment,

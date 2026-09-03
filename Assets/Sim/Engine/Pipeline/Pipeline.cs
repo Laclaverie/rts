@@ -115,8 +115,7 @@ namespace RTS.Sim.Engine.Pipeline
                     enabled = row.GetBool(EnabledColumn);
 
                     string phaseText = row[PhaseColumn];
-                    if (!Enum.TryParse(phaseText, false, out phase) ||
-                        !Enum.IsDefined(typeof(Phase), phase))
+                    if (!TryParsePhaseName(phaseText, out phase))
                     {
                         problems.Add(Where(table, row) + "unknown phase '" + phaseText + "'. Expected one of " +
                                      string.Join(", ", Enum.GetNames(typeof(Phase))) + ".");
@@ -158,6 +157,27 @@ namespace RTS.Sim.Engine.Pipeline
 
             return entries;
         }
+
+        private static readonly Dictionary<string, Phase> PhasesByName = BuildPhaseNames();
+
+        private static Dictionary<string, Phase> BuildPhaseNames()
+        {
+            var names = new Dictionary<string, Phase>(StringComparer.Ordinal);
+            foreach (Phase phase in (Phase[])Enum.GetValues(typeof(Phase)))
+                names.Add(phase.ToString(), phase);
+
+            return names;
+        }
+
+        /// <summary>
+        /// Exact-name lookup rather than Enum.TryParse, which is far too permissive for a
+        /// hand-edited config file: it accepts a numeric string ("1" becomes DayBoundary,
+        /// so reordering the enum would silently repoint every such row) and it accepts a
+        /// comma-separated list even for a non-flags enum ("Tick,DayBoundary" quietly
+        /// resolves to one of them). Both would place systems in a phase nobody chose.
+        /// </summary>
+        private static bool TryParsePhaseName(string text, out Phase phase) =>
+            PhasesByName.TryGetValue(text ?? string.Empty, out phase);
 
         private static string Where(CsvTable table, CsvRow row) =>
             table.SourceName + "(" + row.Line + "): ";
