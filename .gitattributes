@@ -172,3 +172,8 @@ LightingData.asset     binary
 
 # Project docs
 *.odt                   binary
+
+# Batch files must be CRLF; cmd.exe misparses LF-only .cmd/.bat.
+*.cmd                   text eol=crlf
+*.bat                   text eol=crlf
+*.ps1                   text
