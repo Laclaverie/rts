@@ -132,3 +132,4 @@ dotnet/**/[Oo]bj/
 # ...but the shadow projects under dotnet/ are hand-written source, not Unity output.
 !/dotnet/**/*.csproj
 !/dotnet/**/*.sln
+!/dotnet/**/*.slnx
