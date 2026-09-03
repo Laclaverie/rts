@@ -543,6 +543,50 @@ on the end state. Uses:
 
 ---
 
+### 8.4 World inspector — the component graph (parked)
+
+A dynamically built graph of stores, components and the entities that carry them, for
+runtime debugging and for documentation. Parked; no gate, because nothing depends on it.
+Recorded here because **one half of it is free and the other half gets more expensive with
+every system written.**
+
+**The instance graph — free, build whenever.** What exists right now: which entities carry
+which components. `World` already holds its stores in registration order and each store
+exposes `Ids`/`Values` in insertion order, so a snapshot needs no new bookkeeping, no hook,
+and no change to `Sim`. Most useful grouped by *component set* rather than per entity —
+*"three entities have `{Position, Upkeep}` and no `Inventory`"* finds a missing-component
+bug far faster than a thousand-line entity dump.
+
+**The schema graph — needs a decision, not code.** Which systems *read* and which *write*
+each component. This is the half with teeth: it documents the sim, and it can check
+`pipeline.csv`, because two systems writing the same component in the same phase is exactly
+the ordering hazard §4.2 exists to prevent, and a schema graph finds it mechanically rather
+than by playtest.
+
+It needs systems to declare their reads and writes. That is the §6.2 shape — cheap per
+system, tedious to retrofit across forty — but unlike `CauseId` it is **not undeferrable**:
+declarations can be added system by system. The decision wants making before the system
+count gets high, not before the first one.
+
+The failure mode to avoid: **declarations that drift from the code, which lie**, and a lie
+in documentation is worse than a blank page. Replay determinism offers a cheap check —
+run the corpus, observe which stores each system actually touched, diff against what it
+declared, fail CI on a mismatch (§8.2).
+
+Two constraints on whatever gets built:
+
+- **It lives outside `Sim`.** A debug tool is presentation; `Sim` gains nothing and C5 says
+  so.
+- **No instrumentation in the hot path.** Do not have `ComponentStore` record accesses to
+  feed a graph. Observation belongs in the replay harness, where it costs nothing at
+  runtime and cannot perturb determinism.
+
+> This is a tool, not sim infrastructure. `BUILD_ORDER` §3 lists framework-building as a
+> failure mode with a target of zero, and an entity inspector is precisely the kind of
+> thing that grows into an ECS framework if allowed to.
+
+---
+
 ## 9. Code conventions (C9)
 
 - Systems are functions over state. **No god objects, no manager singletons.**
@@ -565,3 +609,4 @@ on the end state. Uses:
 | 3 | Test runner | Plain NUnit/xUnit project outside Unity, so tests run on a keystroke rather than an editor round-trip. |
 | 4 | Mob agent budget | Start at dozens (`GDD` §8.1). Measure before flow-field optimisation. |
 | 5 | Presentation binding | Content ID → prefab lookup table. The one place ScriptableObjects are acceptable (§1.1). |
+| 6 | System read/write declarations | Defer, but decide before the system count is high. Enables the schema graph and mechanical `pipeline.csv` checking (§8.4); the cost is per-system and the risk is drift. |
