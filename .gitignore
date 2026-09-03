@@ -124,3 +124,11 @@ InitTestScene*.unity*
 # Superseded source document.
 # The 2021 GDD export. Replaced by doc/GDD.md, doc/ARCHITECTURE.md, doc/BUILD_ORDER.md.
 doc/GDD_RTS.odt
+
+# Headless shadow projects (dotnet/) — build output
+dotnet/**/[Bb]in/
+dotnet/**/[Oo]bj/
+
+# ...but the shadow projects under dotnet/ are hand-written source, not Unity output.
+!/dotnet/**/*.csproj
+!/dotnet/**/*.sln

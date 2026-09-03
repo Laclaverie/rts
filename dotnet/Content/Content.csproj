@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Shadow project. Compiles the same files Unity's Content.asmdef compiles, with the
+       same target framework and language version, so a headless `dotnet build` fails on
+       anything the editor would also reject. Sources are globbed, never copied. -->
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AssemblyName>Content</AssemblyName>
+    <RootNamespace>RTS.Content</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../Assets/Content/**/*.cs" />
+  </ItemGroup>
+
+</Project>
