@@ -1,6 +1,6 @@
 using System;
 
-namespace RTS.Sim.Engine
+namespace RTS.Sim.Engine.Entities
 {
     /// <summary>
     /// An entity is nothing but an id (ARCHITECTURE C2, §3). No base class, no inheritance,

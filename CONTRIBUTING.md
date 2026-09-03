@@ -30,7 +30,50 @@ explain the cost. Silence is the failure mode.
 
 ---
 
-## 2. Adding a system
+## 2. Where code goes
+
+Nothing loose in `Assets/`. Every script lives under an assembly folder, and inside it
+under a folder named for its concern.
+
+```
+Assets/
+  Sim/                        Sim.asmdef        — no UnityEngine reference
+    Engine/                   reusable (C4): no ports, no crew, no goods
+      Entities/               EntityId, ComponentStore<T>, World
+      Pipeline/               Pipeline, phases, Context
+      Events/                 EventQueue, CauseId
+      Commands/               CommandDispatcher, command log
+      Randomness/             seeded Rng
+      Compat/                 language/runtime shims
+    Components/               game component structs      (Phase 1+)
+    Systems/                  game systems                (Phase 1+)
+  Content/                    Content.asmdef    — no UnityEngine reference
+    Loading/                  CSV and JSON readers
+    Registries/               typed registries the sim reads
+    Validation/               schema checks (§5.3)
+  Game/                       Unity side        (Phase 3+)
+```
+
+**The `Engine/` boundary is the one that matters.** ARCHITECTURE §2.1 lists what is
+genuinely reusable — `ComponentStore<T>`, `Pipeline`, `EventQueue`, `CommandDispatcher`,
+`ConfigRegistry`, `Rng`. If a type under `Engine/` mentions a port, a crew member or a
+good, it is in the wrong folder.
+
+**Namespaces mirror folders.** `Assets/Sim/Engine/Entities/` is `RTS.Sim.Engine.Entities`.
+A namespace that disagrees with its path is misleading — it makes a type harder to find
+and quietly breaks the IDE's assumption that the two match. ARCHITECTURE §2.1 asks for
+"an `Engine/` namespace", which is a prefix and not a leaf, so the nesting satisfies it.
+
+The one exception is `Engine/Compat/`, which holds shims the compiler requires by exact
+name — `IsExternalInit` must be in `System.Runtime.CompilerServices` or it does nothing.
+Compiler-mandated namespaces win; nothing else gets an exception.
+
+Balance data is not code and does not live here: it goes in `Content/Balance/` as CSV
+(ARCHITECTURE §5.2).
+
+---
+
+## 3. Adding a system
 
 A system is not done until all five exist:
 
@@ -39,7 +82,7 @@ A system is not done until all five exist:
 3. **Registration** — a row in `Balance/pipeline.csv`, with a comment if its position is
    load-bearing (e.g. `Wages` must precede `Unrest` so unpaid wages feed grievance the
    same day)
-4. **Tests** — see §4
+4. **Tests** — see §5
 5. **Validation** — any new data columns covered by the loader's schema checks
 
 The loader hard-fails on a system present in code but absent from `pipeline.csv`, and
@@ -48,7 +91,7 @@ deliberate.
 
 ---
 
-## 3. Branches and pull requests
+## 4. Branches and pull requests
 
 **One branch per unit of work.** Naming:
 
@@ -74,7 +117,7 @@ Merge with a merge commit, not a squash, so the phase structure stays legible in
 
 ---
 
-## 4. Testing — the Definition of Done
+## 5. Testing — the Definition of Done
 
 **Tests ship with the feature.** Not a follow-up ticket. This is affordable precisely
 because `Sim` has no Unity dependency: tests run in plain .NET in milliseconds, outside
@@ -94,7 +137,7 @@ the editor.
 
 ---
 
-## 5. Commits
+## 6. Commits
 
 [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): subject`.
 
@@ -105,7 +148,7 @@ the diff — and for anything touching §1, the why is never obvious, so include
 
 ---
 
-## 6. Scope discipline
+## 7. Scope discipline
 
 `GDD.md` Appendix A parks a long list of tempting features behind explicit gates. That
 list exists because the 2021 version of this project died of scope, not of difficulty.

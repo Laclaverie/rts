@@ -90,8 +90,9 @@ public readonly struct EntityId : IEquatable<EntityId>   // see note below
 public sealed class ComponentStore<T> where T : struct
 {
     public bool TryGet(EntityId id, out T value);
-    public void  Set(EntityId id, in T value);
-    public void  Remove(EntityId id);
+    public void  Add(EntityId id, in T value);   // throws if already present
+    public ref T GetRef(EntityId id);            // update in place
+    public bool  Remove(EntityId id);
     public ReadOnlySpan<T>        Values { get; }
     public ReadOnlySpan<EntityId> Ids    { get; }
 }
@@ -113,6 +114,14 @@ public sealed class World
 > *classes* are C# 9 and remain available where an allocation is acceptable. The shadow
 > projects under `dotnet/` pin the same language version, so the constraint is enforced
 > by the compiler in both places rather than remembered.
+
+> **Attaching and updating are separate operations, and `Add` is strict.** Attaching a
+> component twice almost always means two systems each believe they own it, so it throws
+> rather than overwriting; updating an existing component is `GetRef`. An upsert — *ensure
+> this component equals this value* — is the natural shape for idempotent command handlers
+> and for recomputed derived components, and a `Set` can be added next to the first caller
+> that genuinely needs one. Deliberately in that order: loosening this later breaks no
+> existing code, whereas tightening it later would.
 
 A crew member is whatever components it has. A building is whatever components it has.
 Behaviour lives in systems, never on the data.
