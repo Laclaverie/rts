@@ -1,0 +1,21 @@
+# Pipeline — system run order (ARCHITECTURE §4.2)
+#
+# Order is data. Reordering a system, or disabling one to isolate a bug, is an edit to
+# this file and a relaunch — never a recompile.
+#
+# The loader fails loudly on a system declared here that no code implements, and on any
+# implemented system missing from this file. Silent omission is the failure mode being
+# prevented: a system that quietly never runs is close to undebuggable.
+#
+# Orders must be unique within a phase. Two systems claiming the same slot would leave the
+# run order ambiguous, and ambiguous order is non-determinism (§7.1).
+#
+# Leave gaps of 10 so a system can be inserted without renumbering its neighbours.
+#
+# Where an ordering is load-bearing design rather than arbitrary, say so here. The known
+# one, for when these systems exist: Wages must precede Unrest, so an unpaid wage feeds
+# grievance the same day rather than the next (GDD §5.2.3).
+#
+# No rows yet — Phase 0 implements no systems. Phase 1 adds them as they land.
+
+phase,order,system,enabled

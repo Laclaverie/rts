@@ -225,6 +225,13 @@ Content/
     event_scripts/
 ```
 
+> **Where `Balance/` physically lives: `Assets/StreamingAssets/Balance/`.** `Content` has no
+> `UnityEngine` reference (C5, §2), so it cannot read a `TextAsset` and cannot ask Unity for
+> a path. StreamingAssets is the one Unity location that survives into a build as ordinary
+> files on disk, readable with `System.IO`. The composition root — which is Unity-side and
+> may use `Application.streamingAssetsPath` — passes the directory in; loaders take a path
+> or a stream and stay ignorant of Unity. Tests read the same shipped files directly.
+
 **Tables are CSV because balancing is spreadsheet work.** They open in Excel/LibreOffice,
 sort and chart naturally, and diff cleanly in git — three things JSON does badly and
 which matter more than nesting. The handful of genuinely nested structures (event

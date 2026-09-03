@@ -29,4 +29,12 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <!-- The real balance files, so tests parse what actually ships rather than a copy that
+       can drift from it. -->
+  <ItemGroup>
+    <None Include="../../Assets/StreamingAssets/Balance/**/*.csv"
+          Link="Balance/%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
