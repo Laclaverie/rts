@@ -54,6 +54,8 @@ Assets/
   Game/                       Game.asmdef       — the Unity side; may use UnityEngine
     Boot/                     composition root, path resolution
     Tests/EditMode/           Unity-side tests: what dotnet test cannot reach
+
+tools/                        scripts, not a project: test runner, later CI entry points
 ```
 
 **The `Engine/` boundary is the one that matters.** ARCHITECTURE §2.1 lists what is
@@ -69,6 +71,12 @@ and quietly breaks the IDE's assumption that the two match. ARCHITECTURE §2.1 a
 The one exception is `Engine/Compat/`, which holds shims the compiler requires by exact
 name — `IsExternalInit` must be in `System.Runtime.CompilerServices` or it does nothing.
 Compiler-mandated namespaces win; nothing else gets an exception.
+
+**Running them: `tools	est`** (double-click `tools	est.cmd`, or run it from a terminal).
+Headless only by default, because that is the one worth running constantly. `tools	est -All`
+adds the Unity suite and is what CI calls; `-Unity -Launch` starts the editor first. It exits
+non-zero if anything fails, and a Unity editor that is not running counts as a failure rather
+than a silent skip — skipping would report green on an untested half.
 
 **Two test suites, and they answer different questions.** `dotnet/Sim.Tests` runs outside
 Unity in ~100ms and covers everything in `Sim` and `Content` — that is the loop to work in.
