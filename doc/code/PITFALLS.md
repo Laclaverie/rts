@@ -45,6 +45,20 @@ Writing `1` works, then reordering the enum silently repoints every such row.
 → Config columns match enum names exactly. `RowReader.Enum<T>` does this and reports the valid
 names.
 
+**Prose in the command log is a determinism and localisation bug.** Command rejections were a
+free-form `string reason`, and that string is serialised into saves and folded into the replay
+digest. Three problems: English text a French player's UI would have to display; numbers
+formatted with the machine's locale, so the same command log digests differently on two
+machines; and tests that could only substring-match it. Now a `CommandRejection` code, with the
+human detail moved to the log file. `Command.ToString()` was digested for the same reason and is
+now the type name.
+
+**Casting an int to an enum is unchecked.** C# forbids the *implicit* conversion — except the
+literal `0` — but `(LogChannel)99` always compiles and produces a value no `switch` handles. No
+compiler setting forbids it. `NoIntToEnumCastTests` scans the source instead; a Roslyn analyser
+was rejected because Unity does not run NuGet analysers, so the rule would hold in the shadow
+build and quietly not in the editor.
+
 **Floats must be digested by bit pattern.** Formatting rounds, and rounding hides the one-ulp
 drift the gate exists to catch. `HashStateWriter` folds `SingleToInt32Bits`.
 

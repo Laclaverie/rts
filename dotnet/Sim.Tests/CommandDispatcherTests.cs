@@ -45,19 +45,12 @@ namespace RTS.Sim.Tests
 
             public List<string> Calls { get; } = new List<string>();
 
-            public bool Validate(ICommand command, World world, in Context ctx, out string reason)
+            public CommandRejection Validate(ICommand command, World world, in Context ctx)
             {
                 Calls.Add("validate");
                 var raise = (Raise)command;
 
-                if (raise.By > _max)
-                {
-                    reason = $"{raise.By} exceeds the maximum of {_max}";
-                    return false;
-                }
-
-                reason = null!;   // no reason: the command is legal
-                return true;
+                return raise.By > _max ? CommandRejection.OutOfRange : CommandRejection.None;
             }
 
             public void Apply(ICommand command, World world, in Context ctx)
@@ -79,11 +72,8 @@ namespace RTS.Sim.Tests
         {
             public Type CommandType => typeof(Lower);
 
-            public bool Validate(ICommand command, World world, in Context ctx, out string reason)
-            {
-                reason = null!;   // no reason: the command is legal
-                return true;
-            }
+            public CommandRejection Validate(ICommand command, World world, in Context ctx) =>
+                CommandRejection.None;
 
             public void Apply(ICommand command, World world, in Context ctx)
             {
@@ -104,11 +94,8 @@ namespace RTS.Sim.Tests
 
             public Type CommandType => typeof(Raise);
 
-            public bool Validate(ICommand command, World world, in Context ctx, out string reason)
-            {
-                reason = null!;   // no reason: the command is legal
-                return true;
-            }
+            public CommandRejection Validate(ICommand command, World world, in Context ctx) =>
+                CommandRejection.None;
 
             public void Apply(ICommand command, World world, in Context ctx)
             {
@@ -206,7 +193,8 @@ namespace RTS.Sim.Tests
 
             CommandLogEntry entry = dispatcher.Log[0];
             Assert.That(entry.Applied, Is.False);
-            Assert.That(entry.RejectedBecause, Does.Contain("exceeds the maximum"));
+            Assert.That(entry.Rejection, Is.EqualTo(CommandRejection.OutOfRange),
+                "a code, not a sentence: this entry is serialised into saves and digested");
             Assert.That(entry.Node, Is.EqualTo(EventId.None), "nothing happened, so there is no DAG node");
         }
 

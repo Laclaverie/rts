@@ -40,8 +40,12 @@ namespace RTS.Sim.Engine.State
         /// <summary>
         /// The digest's format version. Bump it when the written shape changes, so an old
         /// digest is recognisably from a different format rather than merely different.
+        /// <para>
+        /// 2: command rejections are digested as a code rather than a message. The message was
+        /// culture-formatted, so the same command log could digest differently on two machines.
+        /// </para>
         /// </summary>
-        public const int SchemaVersion = 1;
+        public const int SchemaVersion = 2;
 
         /// <summary>The in-game day. Starts at 1, as day 0 is "before anything happened".</summary>
         public int Day { get; private set; } = 1;
@@ -152,9 +156,15 @@ namespace RTS.Sim.Engine.State
                 writer.BeginSection(i.ToString());
                 writer.Write("node", entry.Node.Value);
                 writer.Write("day", entry.Day);
-                writer.Write("command", entry.Command?.ToString());
-                writer.Write("applied", entry.Applied);
-                writer.Write("rejected", entry.RejectedBecause);
+                // The type name, not ToString(). A record's ToString formats its numbers with
+                // the current culture, so digesting it would make the same command log hash
+                // differently on a French machine than on CI. The payload is an input, identical
+                // in both runs by construction; what the digest needs from the log is which
+                // commands were applied, in what order, on what day, and how each was answered.
+                // Full command serialisation arrives with saves (§6.1) and is written, not
+                // ToString'd.
+                writer.Write("command", entry.Command?.GetType().Name);
+                writer.Write("rejection", (int)entry.Rejection);
                 writer.EndSection();
             }
 
