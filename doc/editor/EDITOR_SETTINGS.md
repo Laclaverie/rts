@@ -60,6 +60,19 @@ Never reference `Game` from `Sim` or `Content`.
 
 ---
 
+## Logs
+
+Runtime logs go to `%LOCALAPPDATA%\..\LocalLow\<company>\<product>\Logsts_<utc>.log`
+(`Application.persistentDataPath`), newest ten kept. `LogBoot` installs the sinks before the
+first scene loads and applies `StreamingAssets/Config/logging.csv`.
+
+The file is opened `FileShare.ReadWrite` so a reader can tail it while the game runs.
+
+Unity's own `Editor.log` and `Player.log` are separate and still exist; ours is the filtered
+one.
+
+---
+
 ## Player and quality
 
 Unchanged from the URP template defaults. Record changes here, particularly anything affecting
