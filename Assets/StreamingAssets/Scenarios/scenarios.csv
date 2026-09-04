@@ -20,13 +20,13 @@
 # moves the numbers still shows up.
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,a9b0faba76bbb10d
-one-storm,1,150,40,10:Storm:0.30,3304dda03205502c
-one-theft,1,150,40,10:Theft:100,b34b24059c000b86
-one-harvest-failure,1,150,40,10:HarvestFailure:8,9f3294f36c657fbe
-one-desertion,1,150,40,10:Desertion:2,810b24b186165f45
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,5de1d8f3eadc9e6e
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,f45ecf8cb55a5320
-lean-start,1,90,30,,a1a698fbc4b18c05
-long-quiet-run,7,150,120,,4a72d5a8ccee75d3
-late-storm,3,150,60,50:Storm:0.40,8065d094af3fda83
+undisturbed,1,150,40,,806e114ac995fa44
+one-storm,1,150,40,10:Storm:0.30,97d5687233a34f55
+one-theft,1,150,40,10:Theft:100,d557e6b34592c873
+one-harvest-failure,1,150,40,10:HarvestFailure:8,d3eaa309cdd04177
+one-desertion,1,150,40,10:Desertion:2,522bdc4a41373d2d
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c196cc26f6e9c10c
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,3defb7c483867a88
+lean-start,1,90,30,,466488b43f6aa5e6
+long-quiet-run,7,150,120,,33549e514aca9022
+late-storm,3,150,60,50:Storm:0.40,9d545da710872d6e

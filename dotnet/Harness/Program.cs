@@ -67,7 +67,7 @@ internal static class Program
             CsvTable.Parse(File.ReadAllText(scenariosPath), ScenarioFile.FileName), report);
         report.ThrowIfInvalid();
 
-        Console.WriteLine($"{"id",-32} {"digest",-18} {"state",-11} coin");
+        Console.WriteLine($"{"id",-32} {"digest",-18} {"state",-11} {"rung",-11} coin");
         Console.WriteLine(new string('-', 78));
 
         int changed = 0;
@@ -80,7 +80,7 @@ internal static class Program
             if (mark == "CHANGED") changed++;
 
             Console.WriteLine($"{scenario.Id,-32} {result.Digest,-18} {result.Condition,-11} " +
-                              $"{result.Report.Coin,5}  {mark}");
+                              $"{result.Report.Rung,-11} {result.Report.Coin,5}  {mark}");
         }
 
         Console.WriteLine();
@@ -148,7 +148,7 @@ internal static class Program
     private static ISystem[] EconomySystems() => new ISystem[]
     {
         new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
-        new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(),
+        new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
     };
 
     /// <summary>
@@ -171,7 +171,8 @@ internal static class Program
             Read(directory, BalanceTables.BuildingsFile),
             Read(directory, BalanceTables.CrewRolesFile),
             report,
-            Read(directory, BalanceTables.StrataFile));
+            Read(directory, BalanceTables.StrataFile),
+            Read(directory, BalanceTables.LadderFile));
 
         // Loud, and before anything runs. A sim started on invalid content produces numbers
         // that look plausible and mean nothing (§5.3).

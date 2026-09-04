@@ -129,6 +129,17 @@ namespace RTS.Sim.Systems
                 world.Add(stratum, new Grievance { StratumIndex = i, Value = 0f, Baseline = 0f });
             }
 
+            if (balance.Ladder.Count > 0)
+            {
+                EntityId ladder = world.CreateEntity();
+                world.Add(ladder, new RevolutionLadder
+                {
+                    Rung = LadderRung.Calm,
+                    DaysAtRung = 0,
+                    LeadingStratumIndex = 0,
+                });
+            }
+
             return world;
         }
 
