@@ -505,6 +505,7 @@ Written down so they stop leaking into scope. Not rejected — deferred, with a 
 | Dungeon mode | Undefined; needs a pitch before it gets a gate |
 | Multiplayer | Never planned; determinism keeps it possible |
 | Ships as directly controlled units | Evaluate after routes prove fun |
+| Labour market: hiring away from rival ports | After neighbouring ports exist |
 | Subsidised buyers (below) | After trade and routes exist |
 | **Decision Timeline** (below) | After the game is playable and fun |
 

@@ -6,23 +6,23 @@ using RTS.Sim.Engine.Pipeline;
 namespace RTS.Sim.Systems
 {
     /// <summary>
-    /// Buildings produce goods, scaled by their condition and by who is there to work them.
+    /// Buildings produce goods, scaled by their condition and by the crew assigned to them.
     /// </summary>
     /// <remarks>
-    /// Output is deliberately <em>not</em> a constant. The cascade of §5.2.3 depends on a
-    /// feedback loop — unpaid wages lower morale, lower morale lowers output, lower output
-    /// lowers income, which makes wages harder to pay. If production ignored the crew, the
-    /// spiral would have no teeth and the Phase 1 gate would be measuring nothing.
+    /// Output is deliberately not a constant. The cascade of §5.2.3 depends on a feedback loop —
+    /// unpaid wages lower morale, lower morale lowers output, lower output lowers income, which
+    /// makes wages harder to pay.
     /// <para>
-    /// Runs last at the day boundary, per §4.2's order: today's output lands after today's
-    /// eating and paying, so it is available tomorrow. That one-day lag is what makes reserves
-    /// matter rather than being an accounting detail.
+    /// Crew are assigned to specific buildings rather than pooled across the port. The pool was
+    /// tried and it inverted the cascade: staffing was total effort over total producers clamped
+    /// to 1, so a port with surplus crew sat at the cap, and losing someone made it *richer* —
+    /// the corpus measured a two-crew desertion ending 248 coin ahead. With assignment, a lost
+    /// worker is lost output at the building they worked, which is what §5.2.3 requires and what
+    /// §5.4's named individuals imply.
     /// </para>
     /// <para>
-    /// <strong>The staffing model is provisional.</strong> Crew are not yet assigned to specific
-    /// buildings; the port has a pool of effective labour that is spread across everything that
-    /// wants working. Job assignment is a later phase, and when it lands this is the system
-    /// that changes.
+    /// Runs after eating and paying, per §4.2's order: today's output lands after today's costs,
+    /// so it is available tomorrow. That one-day lag is what makes reserves matter.
     /// </para>
     /// </remarks>
     public sealed class ProductionSystem : ISystem
@@ -45,13 +45,9 @@ namespace RTS.Sim.Systems
             ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
             if (buildings.Count == 0) return;
 
-            int producers = CountActiveProducers(world, balance);
-            if (producers == 0) return;
-
-            float staffing = Staffing(world, balance, producers);
-
             for (int i = 0; i < buildings.Count; i++)
             {
+                EntityId building = buildings.Ids[i];
                 BuildingState state = buildings.Values[i];
                 if (state.Mothballed) continue;
 
@@ -61,6 +57,7 @@ namespace RTS.Sim.Systems
                 int goodIndex = ConsumptionSystem.IndexOf(balance, definition.Produces);
                 if (goodIndex < 0) continue;
 
+                float staffing = StaffingOf(world, balance, building, definition);
                 float output = definition.OutputPerDay * state.Condition * staffing;
                 if (output <= 0f) continue;
 
@@ -68,42 +65,32 @@ namespace RTS.Sim.Systems
             }
         }
 
-        private static int CountActiveProducers(World world, BalanceTables balance)
-        {
-            ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
-            int count = 0;
-
-            for (int i = 0; i < buildings.Count; i++)
-            {
-                BuildingState state = buildings.Values[i];
-                if (state.Mothballed) continue;
-                if (balance.Buildings[state.DefinitionIndex].IsProducer) count++;
-            }
-
-            return count;
-        }
-
         /// <summary>
-        /// 0..1 — how well the port's labour covers what wants working. One building takes one
-        /// worker-equivalent; a role's contribution is its work rate scaled by morale.
+        /// 0..1 — how well this building's assigned crew cover what it wants. Effort above the
+        /// requirement is wasted: two people cannot work a one-person mine twice as hard.
         /// </summary>
-        internal static float Staffing(World world, BalanceTables balance, int producers)
+        internal static float StaffingOf(World world, BalanceTables balance, EntityId building,
+            Building definition)
         {
-            if (producers <= 0) return 0f;
+            if (definition.Staff <= 0) return 0f;
 
+            ComponentStore<Assignment> assignments = world.Store<Assignment>();
             ComponentStore<CrewMember> crew = world.Store<CrewMember>();
             float effort = 0f;
 
-            for (int i = 0; i < crew.Count; i++)
+            for (int i = 0; i < assignments.Count; i++)
             {
-                CrewMember member = crew.Values[i];
-                CrewRole role = balance.CrewRoles[member.RoleIndex];
+                if (assignments.Values[i].Building != building) continue;
 
+                EntityId worker = assignments.Ids[i];
+                if (!crew.TryGet(worker, out CrewMember member)) continue;
+
+                CrewRole role = balance.CrewRoles[member.RoleIndex];
                 float moraleFactor = MinimumMoraleEffort + (1f - MinimumMoraleEffort) * member.Morale;
                 effort += role.WorkRate * moraleFactor;
             }
 
-            float ratio = effort / producers;
+            float ratio = effort / definition.Staff;
             return ratio > 1f ? 1f : ratio;
         }
     }

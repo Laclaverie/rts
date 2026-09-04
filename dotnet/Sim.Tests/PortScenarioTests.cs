@@ -24,9 +24,9 @@ namespace RTS.Sim.Tests
                                      "timber,6,0.20,0.00,Local,0,1\n";
 
         private const string Buildings =
-            "id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day\n" +
-            "farm,1,10,0,0,food,6\n" +
-            "sawmill,2,0,0,0,timber,5\n";
+            "id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day,staff\n" +
+            "farm,1,10,0,0,food,6,1\n" +
+            "sawmill,2,0,0,0,timber,5,1\n";
 
         private const string Crew = "id,wage_coin,work_rate,food_per_day,rum_per_day\n" +
                                     "laborer,2,1.00,1.0,0.00\n";

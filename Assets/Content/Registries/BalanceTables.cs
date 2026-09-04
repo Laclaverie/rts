@@ -55,7 +55,7 @@ namespace RTS.Content.Registries
 
             ConfigRegistry<Building> buildingRegistry = ConfigRegistry<Building>.Load(buildings, report,
                 row => ReadBuilding(row, pending), "id", "upkeep_coin", "build_timber",
-                "build_iron", "capacity", "produces", "output_per_day");
+                "build_iron", "capacity", "produces", "output_per_day", "staff");
 
             ConfigRegistry<CrewRole> crewRegistry = ConfigRegistry<CrewRole>.Load(crewRoles, report,
                 row => new CrewRole(
@@ -89,7 +89,8 @@ namespace RTS.Content.Registries
                 row.Int("build_iron", min: 0),
                 row.Int("capacity", min: 0),
                 produces,
-                row.Float("output_per_day", 0f, 1000f));
+                row.Float("output_per_day", 0f, 1000f),
+                row.Int("staff", min: 0, max: 100));
         }
 
         /// <summary>
@@ -172,6 +173,20 @@ namespace RTS.Content.Registries
                     report.Add(BuildingsFile, Buildings.LineOf(building.Id),
                         $"'{building.Id}' produces '{building.Produces}' but its output_per_day " +
                         "is 0, so it produces nothing. Set an output, or clear `produces`.");
+                }
+
+                if (building.IsProducer && building.Staff <= 0)
+                {
+                    report.Add(BuildingsFile, Buildings.LineOf(building.Id),
+                        $"'{building.Id}' produces '{building.Produces}' but wants no staff, so " +
+                        "it would produce at full rate with nobody working it.");
+                }
+
+                if (!building.IsProducer && building.Staff > 0)
+                {
+                    report.Add(BuildingsFile, Buildings.LineOf(building.Id),
+                        $"'{building.Id}' wants {building.Staff} staff but produces nothing, so " +
+                        "they would have nothing to do.");
                 }
 
                 if (!building.IsProducer && building.OutputPerDay > 0f)

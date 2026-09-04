@@ -138,12 +138,61 @@ Not fixed, because there is more than one right answer and they are different ga
 - **Surplus crew do something else** — construction, defence, rowing a boat — so they are not
   idle payroll.
 
-The second is the one the design implies. Until then, read any desertion result knowing the
-sign is currently wrong.
+The second is the one the design implies. **Done** — see below.
+
+### Assigning crew to buildings fixed the sign
+
+Crew now work a named building rather than a port-wide pool. A producer at half its staff makes
+half its output, and someone who leaves takes their building's output with them.
+
+The same scenario, before and after:
+
+```
+one-desertion (lose 2 crew on day 10, 40 days)
+  pooled labour:      Healthy      448 coin      losing crew made the port richer
+  assigned to work:   Struggling    18 coin      losing crew costs what they produced
+```
+
+Every other scenario kept its shape — three correlated shocks still collapse, deep reserves
+still absorb them, single shocks are still survived — so this corrected the labour link without
+disturbing the band.
+
+Two consequences worth knowing:
+
+- **Staff requirements are tuned against the starting crew.** Two farms, a sawmill and a mine
+  want 2+2+1+1 = six; the port hires seven. Everything that produces is worked at full rate and
+  the guard is left idle.
+- **The idle guard costs 3 coin a day.** Deliberate, and deliberately *not* framed as a
+  mistake: over-hiring is a position, not an error. Taking the best hand off a rival port,
+  holding a specialist for a building that is not finished, buying loyalty before you need it —
+  all legitimate, all priced in wages and food. What the model gets right is that the cost is
+  visible; what it does not have yet is anywhere the *benefit* could come from, since there are
+  no rival ports to hire away from. See the parked note below.
+
+Baseline is back to **+2 coin a day** after the change: dropping the sawmill's requirement from
+2 to 1 put a full-rate worker on every producer, where previously the mine fell to the guard at
+0.8.
 
 ---
 
 ## Parked mechanics that came out of tuning
+
+### A labour market gives over-hiring a reason
+
+Idle crew are currently pure cost, which is correct arithmetic and half a mechanic. Over-hiring
+is a real strategy — denying a rival a skilled hand, banking labour before construction
+finishes, holding a specialist who cannot be replaced — but every one of those needs somewhere
+else the person could have gone.
+
+The design already leans this way: §5.4 gives crew skill that improves with use, traits, and
+deserters who leave *"to a neighbour, with what they know"*. Once neighbours exist, hiring is
+two-sided and paying someone to be idle can be the cheapest way to stop a rival having them.
+
+Until then the cost is honest and the benefit is absent, so the default port keeps one spare
+hand rather than being trimmed to exactly six. Trimming would encode "over-hiring is a mistake"
+into the starting position, which is the opposite of what is intended.
+
+Gate: after neighbouring ports exist.
 
 ### Subsidised buyers — the withdrawal is the mechanic
 

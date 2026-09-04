@@ -16,16 +16,31 @@
 #                 warehouse, simultaneous routes for dock, 0 where it does not apply
 # produces        good id, or empty
 # output_per_day  units of `produces` per day at full staffing
+# staff           worker-equivalents wanted. A producer at half its staff makes half its
+#                 output. Non-producers want none: the port buildings of §5.5 do things that
+#                 are not measured in units per day.
+#
+# The staff totals are chosen against the starting crew. Two farms, a sawmill and a mine want
+# 2+2+1+1 = six, and the default port hires seven, so everything that produces is worked at
+# full rate with one crew member spare.
+#
+# Spare is not the same as wasted. Keeping someone on the payroll with nothing to do is a
+# position, not an error: a skilled hand a rival wanted, a specialist you will need when the
+# next building finishes, someone whose loyalty you are buying before you need it. Wages and
+# food are what make that a decision rather than free, which is the whole point of pricing it.
+#
+# A port worked at full rate is also one where losing anybody costs output immediately, which
+# is what §5.2.3's cascade needs.
 #
 # Upkeep is fixed and income is variable — that asymmetry is the whole failure model
 # (§5.2.3). These numbers are a first pass and exist to be tuned against the Phase 1 gate.
 
-id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day
-longhouse,2,20,0,8,,0
-dock,3,30,10,4,,0
-warehouse,2,25,5,200,,0
-tavern,2,15,0,0,,0
-watchtower,3,15,10,0,,0
-farm,1,10,0,0,food,6
-sawmill,2,15,5,0,timber,5
-mine,4,20,10,0,iron,4
+id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day,staff
+longhouse,2,20,0,8,,0,0
+dock,3,30,10,4,,0,0
+warehouse,2,25,5,200,,0,0
+tavern,2,15,0,0,,0,0
+watchtower,3,15,10,0,,0,0
+farm,1,10,0,0,food,6,2
+sawmill,2,15,5,0,timber,5,1
+mine,4,20,10,0,iron,4,1
