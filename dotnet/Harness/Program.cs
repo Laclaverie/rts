@@ -105,7 +105,7 @@ internal static class Program
     private static ISystem[] EconomySystems() => new ISystem[]
     {
         new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
-        new ProductionSystem(), new MarketSystem(),
+        new DesertionSystem(), new ProductionSystem(), new MarketSystem(),
     };
 
     /// <summary>

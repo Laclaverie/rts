@@ -22,7 +22,7 @@ namespace RTS.Sim.Systems
     /// </remarks>
     public sealed class PortScenario
     {
-        public int StartingCoin { get; set; } = 200;
+        public int StartingCoin { get; set; } = 150;
 
         /// <summary>Role id and how many, in the order they are hired.</summary>
         public List<KeyValuePair<string, int>> Crew { get; } = new List<KeyValuePair<string, int>>();
@@ -38,12 +38,20 @@ namespace RTS.Sim.Systems
         /// the first day before anything is produced, and reserves to pay for a while.
         /// </summary>
         /// <remarks>
-        /// These numbers are the starting point for the Phase 1 gate, not a balanced game. The
-        /// gate's question is what happens when they are disturbed.
+        /// 150 coin is about five days of wages and upkeep, and it is chosen rather than
+        /// rounded to. Sweeping reserve levels against the Phase 1 shock set gives a clear
+        /// band: below about 100 a single shock is already fatal, above about 250 three
+        /// correlated ones are absorbed, and between them the design holds — one is survivable,
+        /// three are not, and the difference is the slack you kept (§5.2.3). A starting port
+        /// belongs inside that band, because outside it reserves are not a decision.
+        /// <para>
+        /// The table is in doc/design/ECONOMY_FINDINGS.md. Re-run it after any tuning pass:
+        /// these numbers move together, and the band is the thing to preserve.
+        /// </para>
         /// </remarks>
         public static PortScenario Default()
         {
-            var scenario = new PortScenario { StartingCoin = 200 };
+            var scenario = new PortScenario { StartingCoin = 150 };
 
             scenario.Crew.Add(new KeyValuePair<string, int>("laborer", 4));
             scenario.Crew.Add(new KeyValuePair<string, int>("sailor", 2));

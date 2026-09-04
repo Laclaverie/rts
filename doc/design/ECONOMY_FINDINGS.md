@@ -78,6 +78,45 @@ going dry. Average morale reads 0.99 rather than 1.00 even in a perfectly health
 Correct behaviour, and legible, but it is a standing thumb on the scale to remember when
 reading any morale number — and a reason not to treat 1.00 as the healthy baseline.
 
+### The cascade had no ratchet, and shocks added instead of compounding
+
+The first run of the Phase 1 gate failed, and raising the shock sizes to make three shocks
+fatal made *one* shock fatal too. There was no band where one was survivable and three were
+not.
+
+Cause: every consequence in the economy was a **spring**. Morale returns when food does,
+condition returns when upkeep is paid, so a port always climbed back unless a single blow
+exceeded its reserves. Nothing was irreversible, so shocks added linearly rather than
+compounding.
+
+→ `DesertionSystem`. GDD §5.4 already said it — *"at the floor, crew desert"* — it simply had
+not been built. Someone who leaves does not come back, so labour lost is production lost, which
+is income lost, which is more unpaid wages. One person a day at most: a slope the player can
+see coming and act against, not a cliff.
+
+### Reserves at which the design holds: roughly 100–250
+
+Sweeping starting coin against the standard shock set (storm 0.30 condition, harvest 8 food,
+theft 100 coin — one on day 10, three on days 10/12/14, 40-day runs):
+
+```
+coin | undisturbed | single storm | three correlated
+  80 | Healthy     | Collapsed    | Collapsed          too thin: one shock is already fatal
+ 120 | Healthy     | Healthy      | Collapsed          the design holds
+ 160 | Healthy     | Healthy      | Collapsed          the design holds
+ 200 | Healthy     | Healthy      | Struggling         edge
+ 300 | Healthy     | Healthy      | Healthy            too fat: three are absorbed
+```
+
+The band is wide — about four to five and a half days of reserves — so this is a curve, not a
+knife edge. That is what makes it a design that can be tuned rather than a coincidence.
+
+→ The starting port holds **150 coin**, inside the band, because outside it reserves are not a
+decision. It was 200, which sat just above.
+
+**Re-run this sweep after any tuning pass.** The numbers move together, and the band is the
+thing to preserve — not any individual value in it.
+
 ---
 
 ## Parked mechanics that came out of tuning

@@ -27,6 +27,10 @@
 #   Market after Production        — today's output is sold today, but the coin lands after
 #                                    today's wages were paid. Income always funds tomorrow,
 #                                    which is what makes reserves the real resource.
+#   Desertion after Wages,         — people leave because of what happened to them today, and
+#   before Production                what is left of the crew is what works today. This is the
+#                                    one irreversible step in the day: everything else recovers
+#                                    on its own, so without it shocks add instead of compound.
 #
 # CommandDrain is not here yet: nothing constructs a dispatcher until there is something to
 # command. When it lands, its position decides when input takes effect relative to all of
@@ -36,5 +40,6 @@ phase,order,system,enabled
 DayBoundary,10,Consumption,true
 DayBoundary,20,Wages,true
 DayBoundary,30,Upkeep,true
+DayBoundary,35,Desertion,true
 DayBoundary,40,Production,true
 DayBoundary,50,Market,true
