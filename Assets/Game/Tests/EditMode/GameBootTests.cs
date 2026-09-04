@@ -87,7 +87,7 @@ namespace RTS.Game.Tests
 
             VisualElement root = panel.Build();
 
-            Assert.That(root.childCount, Is.EqualTo(3), "controls, readouts, feed");
+            Assert.That(root.childCount, Is.EqualTo(4), "controls, readouts, orders, feed");
 
             VisualElement readouts = root[1];
             Assert.That(readouts.childCount, Is.EqualTo(session.Readouts().Count));
@@ -131,6 +131,52 @@ namespace RTS.Game.Tests
 
             Assert.That(shut, Is.Not.Null, "the feed did not draw the line");
             Assert.That(shut.style.paddingLeft.value.value, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void An_impossible_order_is_drawn_but_disabled()
+        {
+            // Listed rather than hidden, and greyed with the handler's own reason. A control
+            // that is grey for no stated reason teaches the player that the game is arbitrary.
+            GameSession session = StartTheWayBootDoes(out _);
+            var panel = new Presentation.PortPanel(session);
+            panel.Build();
+
+            Button firm = panel.Root.Query<Button>().ToList()
+                .FirstOrDefault(b => b.text == "Firm");
+
+            Assert.That(firm, Is.Not.Null, "repression is not on screen");
+            Assert.That(firm.enabledSelf, Is.False, "there is no riot to put down");
+            Assert.That(firm.tooltip, Is.EqualTo("not yet"));
+        }
+
+        [Test]
+        public void Every_order_the_game_offers_is_on_screen_with_the_same_verdict()
+        {
+            // Driving a real UI Toolkit click is not reachable from EditMode, so this asserts
+            // the half that can go wrong silently: that the panel draws one button per action
+            // and greys exactly the ones the game refuses. What a click does is a single lambda,
+            // and that the command is accepted is covered headlessly in PlayerActionTests.
+            GameSession session = StartTheWayBootDoes(out _);
+            var panel = new Presentation.PortPanel(session);
+            panel.Build();
+
+            var actions = session.Actions();
+            var buttons = panel.Root.Query<Button>().ToList()
+                .Where(b => actions.Any(a => a.Label == b.text))
+                .ToList();
+
+            Assert.That(buttons.Count, Is.EqualTo(actions.Count),
+                "one button per order the game offers");
+
+            foreach (RTS.Sim.Session.PlayerAction action in actions)
+            {
+                Button drawn = buttons.First(b => b.text == action.Label);
+
+                Assert.That(drawn.enabledSelf, Is.EqualTo(action.Enabled),
+                    action.Label + " is drawn " + (drawn.enabledSelf ? "enabled" : "disabled") +
+                    " but the game says " + (action.Enabled ? "enabled" : action.Reason));
+            }
         }
 
         [Test]

@@ -4,6 +4,7 @@ using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Commands;
 using RTS.Sim.Engine.Entities;
+using RTS.Sim.Engine.Pipeline;
 using RTS.Sim.Engine.State;
 using RTS.Sim.Engine.Time;
 using RTS.Sim.Scenarios;
@@ -36,12 +37,16 @@ namespace RTS.Sim.Session
     public sealed class GameSession
     {
         private readonly List<Readout> _readouts = new List<Readout>();
+        private readonly List<PlayerAction> _actions = new List<PlayerAction>();
+        private readonly ICommandHandler[] _handlers;
 
-        private GameSession(ReplayRun run, Clock clock, BalanceTables balance)
+        private GameSession(ReplayRun run, Clock clock, BalanceTables balance,
+            ICommandHandler[] handlers)
         {
             Run = run;
             Clock = clock;
             Balance = balance;
+            _handlers = handlers;
         }
 
         /// <summary>What has happened, for a player who looked away (§5.1).</summary>
@@ -78,14 +83,16 @@ namespace RTS.Sim.Session
             if (pipelineCsv == null) throw new ArgumentNullException(nameof(pipelineCsv));
             if (scenario == null) throw new ArgumentNullException(nameof(scenario));
 
+            ICommandHandler[] handlers = PlayerCommands();
+
             ReplayRun run = ReplayRun.Start(
                 seed,
-                PlayerCommands(),
+                handlers,
                 dispatcher => ScenarioRunner.BuildPipeline(pipelineCsv, dispatcher),
                 scenario.Build(balance),
                 balance);
 
-            return new GameSession(run, clock, balance);
+            return new GameSession(run, clock, balance, handlers);
         }
 
         /// <summary>
@@ -149,6 +156,170 @@ namespace RTS.Sim.Session
         /// replayable by construction.
         /// </remarks>
         public void Submit(ICommand command) => Run.Submit(command);
+
+        /// <summary>
+        /// Asks the real handler whether a command would be accepted, without applying it.
+        /// </summary>
+        /// <remarks>
+        /// So a greyed-out button and the command it would issue cannot disagree. Writing the
+        /// reasoning a second time in a front end is how a control comes to offer something the
+        /// game refuses, or hide something it would have allowed.
+        /// <para>
+        /// Validation is required not to touch the world (§6), so this is safe to call every
+        /// frame. Nothing is emitted and nothing is logged: a question is not a decision.
+        /// </para>
+        /// </remarks>
+        public CommandRejection Validate(ICommand command)
+        {
+            if (command == null) return CommandRejection.InvalidTarget;
+
+            for (int i = 0; i < _handlers.Length; i++)
+            {
+                if (_handlers[i].CommandType != command.GetType()) continue;
+
+                var ctx = new Context(Day, 0f, Run.Events, Run.Rng, Balance);
+                return _handlers[i].Validate(command, World, in ctx);
+            }
+
+            return CommandRejection.Unavailable;
+        }
+
+        /// <summary>
+        /// Everything the player could do this moment, enabled or not.
+        /// </summary>
+        /// <remarks>
+        /// Disabled actions are listed rather than hidden. A control that appears only when it
+        /// would work leaves the player unable to learn that it exists, and §3.2 is betting on a
+        /// game that can be understood by thinking about it rather than by discovering it.
+        /// <para>
+        /// Rebuilt into the same buffer each call, like the readouts.
+        /// </para>
+        /// </remarks>
+        public IReadOnlyList<PlayerAction> Actions()
+        {
+            _actions.Clear();
+
+            AddRepression();
+            AddBuildings();
+
+            return _actions;
+        }
+
+        /// <summary>Putting down a riot, at each price §5.2.2 offers.</summary>
+        private void AddRepression()
+        {
+            for (int i = 0; i < Balance.Repression.Count; i++)
+            {
+                RepressionRules rules = Balance.Repression[i];
+                var command = new SuppressRiot(rules.Harshness);
+
+                // The price is on the button. §5.2.2 wants repression to be a decision rather
+                // than a reflex, and a decision needs its cost visible at the moment it is made.
+                _actions.Add(new PlayerAction(
+                    group: "Unrest",
+                    label: rules.Harshness.ToString(),
+                    detail: $"−{rules.GrievanceRelief:0.00} now, +{rules.BaselineIncrease:0.00} " +
+                            $"forever, {rules.CowedDays}d quiet",
+                    command: command,
+                    rejection: Validate(command)));
+            }
+        }
+
+        /// <summary>
+        /// Shutting and reopening buildings, and posting named crew to them.
+        /// </summary>
+        /// <remarks>
+        /// One row per building rather than a selection model. §5.5's port is small, and a list
+        /// a player can read top to bottom is worth more than a tidier interaction that hides
+        /// what the port is doing.
+        /// </remarks>
+        private void AddBuildings()
+        {
+            ComponentStore<BuildingState> buildings = World.Store<BuildingState>();
+
+            for (int i = 0; i < buildings.Count; i++)
+            {
+                EntityId id = buildings.Ids[i];
+                BuildingState state = buildings.Values[i];
+                Building definition = Balance.Buildings[state.DefinitionIndex];
+                string detail = Describe(in state, definition, id);
+
+                var mothball = new MothballBuilding(id, !state.Mothballed);
+                _actions.Add(new PlayerAction(
+                    group: "Buildings",
+                    label: (state.Mothballed ? "Reopen " : "Shut ") + definition.Id,
+                    detail: detail,
+                    command: mothball,
+                    rejection: Validate(mothball)));
+
+                if (definition.Staff <= 0) continue;
+
+                var post = new AssignCrew(FirstUnpostedCrew(), id);
+                _actions.Add(new PlayerAction(
+                    group: "Buildings",
+                    label: "post a specialist",
+                    detail: detail,
+                    command: post,
+                    rejection: Validate(post)));
+
+                EntityId posted = FirstCrewAt(id);
+                if (posted.IsNone) continue;
+
+                var recall = new AssignCrew(posted, EntityId.None);
+                _actions.Add(new PlayerAction(
+                    group: "Buildings",
+                    label: "recall a specialist",
+                    detail: detail,
+                    command: recall,
+                    rejection: Validate(recall)));
+            }
+        }
+
+        private string Describe(in BuildingState state, Building definition, EntityId id)
+        {
+            if (state.Mothballed) return "shut";
+
+            string condition = (state.Condition * 100f).ToString("0") + "%";
+
+            return definition.Staff > 0
+                ? $"{state.Workers}/{definition.Staff} worked, {CrewAt(id)} overseeing, {condition}"
+                : condition;
+        }
+
+        /// <summary>A crew member nobody has posted, or None. First in creation order.</summary>
+        private EntityId FirstUnpostedCrew()
+        {
+            ComponentStore<CrewMember> crew = World.Store<CrewMember>();
+
+            for (int i = 0; i < crew.Count; i++)
+            {
+                EntityId id = crew.Ids[i];
+                if (!World.TryGet(id, out Assignment assignment) || assignment.IsIdle) return id;
+            }
+
+            return EntityId.None;
+        }
+
+        private EntityId FirstCrewAt(EntityId building)
+        {
+            ComponentStore<Assignment> assignments = World.Store<Assignment>();
+
+            for (int i = 0; i < assignments.Count; i++)
+                if (assignments.Values[i].Building == building) return assignments.Ids[i];
+
+            return EntityId.None;
+        }
+
+        private int CrewAt(EntityId building)
+        {
+            ComponentStore<Assignment> assignments = World.Store<Assignment>();
+            int found = 0;
+
+            for (int i = 0; i < assignments.Count; i++)
+                if (assignments.Values[i].Building == building) found++;
+
+            return found;
+        }
 
         /// <summary>The day's numbers, computed once for whoever is drawing them.</summary>
         public PortReport Report() => PortReport.Of(World, Balance, Day);
