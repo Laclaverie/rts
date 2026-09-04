@@ -13,6 +13,8 @@
       Unit         no I/O, no clock, no environment. Red means the code is wrong.
       Functional   touches the filesystem, a shipped balance file, later a replay corpus.
                    Red usually means the code is fine and the world around it changed.
+      Flaky        real signal, not trustworthy enough to gate: timing, performance, anything
+                   that depends on what else the machine was doing. Opt-in only.
 
     With no switches both kinds run headlessly, because both are milliseconds today and a
     complete fast loop is worth more than a marginally faster one. Name a kind to run it
@@ -22,6 +24,7 @@
     .\Run-Tests.ps1                  # both kinds, headless
     .\Run-Tests.ps1 -Unit            # unit only
     .\Run-Tests.ps1 -Functional      # functional only
+    .\Run-Tests.ps1 -Flaky           # the opt-in ones; never part of a default or -All run
     .\Run-Tests.ps1 -All             # both kinds, plus the Unity suite
     .\Run-Tests.ps1 -Unity -Launch   # editor suite, starting Unity if it is closed
 #>
@@ -29,6 +32,7 @@
 param(
     [switch]$Unit,
     [switch]$Functional,
+    [switch]$Flaky,
     [switch]$Unity,
     [switch]$All,
     [switch]$Launch,
@@ -40,11 +44,15 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path $PSScriptRoot -Parent
 $Solution = Join-Path $RepoRoot 'dotnet/RTS.Headless.slnx'
 
-# A kind named explicitly narrows the run; naming none runs both.
-$kindNamed = $Unit -or $Functional
+# A kind named explicitly narrows the run; naming none runs both gating kinds.
+$kindNamed = $Unit -or $Functional -or $Flaky
 $runUnit = $All -or -not $kindNamed -or $Unit
 $runFunctional = $All -or -not $kindNamed -or $Functional
 $runUnity = $Unity -or $All
+
+# Flaky is never part of a default or -All run. It is real signal that is not trustworthy
+# enough to gate a build, so it is opt-in only and cannot turn the tree red by accident.
+$runFlaky = $Flaky
 
 $failures = @()
 
@@ -64,13 +72,26 @@ function Resolve-UnityCli {
     return $null
 }
 
-function Invoke-Headless($category) {
+function Get-TestCount($category) {
+    # Locale-independent: count the fully qualified names the runner lists, rather than
+    # matching an English or French "no tests matched" sentence.
+    $listed = & dotnet test $Solution --nologo --list-tests --filter "TestCategory=$category" 2>&1
+    return ([string[]]($listed | Select-String -Pattern '^\s+RTS\.' -AllMatches)).Count
+}
+
+function Invoke-Headless($category, [switch]$AllowEmpty) {
     Write-Section "Headless - $category"
+
+    if ($AllowEmpty -and (Get-TestCount $category) -eq 0) {
+        # An opt-in category is allowed to be empty; a gating one is not.
+        Write-Host "  no $category tests" -ForegroundColor DarkGray
+        return
+    }
 
     & dotnet test $Solution --nologo --filter "TestCategory=$category"
 
-    # A filter that matches nothing exits 1 with "no test matched". That is a real failure:
-    # it means a category was renamed or every fixture in it lost its tag.
+    # For a gating category, a filter that matches nothing exits 1 and that is a real failure:
+    # it means the category was renamed or every fixture in it lost its tag.
     if ($LASTEXITCODE -ne 0) { $script:failures += $category.ToLowerInvariant() }
 }
 
@@ -78,6 +99,7 @@ function Invoke-Headless($category) {
 
 if ($runUnit) { Invoke-Headless 'Unit' }
 if ($runFunctional) { Invoke-Headless 'Functional' }
+if ($runFlaky) { Invoke-Headless 'Flaky' -AllowEmpty }
 
 # ------------------------------------------------------------------ unity
 

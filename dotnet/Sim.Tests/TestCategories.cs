@@ -30,5 +30,23 @@ namespace RTS.Sim.Tests
         /// file, later a replay corpus. Asserts that the code and the world still agree.
         /// </summary>
         public const string Functional = "Functional";
+
+        /// <summary>
+        /// Real signal, but not trustworthy enough to gate a build: timing and performance
+        /// assertions, anything whose result depends on what else the machine was doing.
+        /// Excluded from every default run; `tools\test -Flaky` is the only way to see it.
+        /// </summary>
+        /// <remarks>
+        /// This is not a parking space for tests that fail. A test whose <em>claim</em> is
+        /// sound but whose <em>mechanism</em> is unreliable should have its mechanism fixed —
+        /// the determinism gate's negative test drove divergence from the wall clock, was
+        /// flaky, and the answer was static mutable state, not this category.
+        /// <para>
+        /// Use it only where the unreliability is inherent to the environment. Prefer
+        /// <c>Assert.Warn</c> over <c>Assert.That</c> inside one, so even the opt-in run
+        /// reports rather than fails.
+        /// </para>
+        /// </remarks>
+        public const string Flaky = "Flaky";
     }
 }
