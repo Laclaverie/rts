@@ -524,6 +524,9 @@ attention.
 It also gives Stances (§5.6) an economic instrument rather than only a diplomatic one, and
 it is a reason for Heat to matter at a port that is merely *profitable*.
 
+Numbers behind this, and the other findings from tuning the Phase 1 economy, are in
+`doc/design/ECONOMY_FINDINGS.md`.
+
 **Until then**, the loader rejects a sell price above base price. With one static merchant
 and nobody funding the difference, an above-market price is simply money from nowhere, and
 the bug would read as generous tuning. That rule is a property of the current model, not an

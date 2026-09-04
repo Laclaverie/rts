@@ -17,6 +17,7 @@ Reference docs:
 | `doc/BUILD_ORDER.md` | what gets built in what order |
 | `doc/code/TOOLCHAIN.md` | versions, layout, running tests, CI, git |
 | `doc/code/PITFALLS.md` | mistakes already made, and the rules from them |
+| `doc/design/ECONOMY_FINDINGS.md` | what running the sim actually showed, and what changed because of it |
 | `doc/editor/EDITOR_SETTINGS.md` | anything configured inside Unity |
 
 ---
