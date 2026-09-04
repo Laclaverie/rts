@@ -48,8 +48,10 @@ namespace RTS.Content.Registries
                     row.Int("base_price", min: 0),
                     row.Float("volatility", 0f, 1f),
                     row.Float("heat_per_unit", 0f, 1f),
-                    row.Enum<GoodSupply>("supply")),
-                "id", "base_price", "volatility", "heat_per_unit", "supply");
+                    row.Enum<GoodSupply>("supply"),
+                    row.Float("keep", 0f, 100000f),
+                    row.Int("sell_price", min: 0)),
+                "id", "base_price", "volatility", "heat_per_unit", "supply", "keep", "sell_price");
 
             ConfigRegistry<Building> buildingRegistry = ConfigRegistry<Building>.Load(buildings, report,
                 row => ReadBuilding(row, pending), "id", "upkeep_coin", "build_timber",
@@ -142,6 +144,18 @@ namespace RTS.Content.Registries
                     report.Add(GoodsFile, Goods.LineOf(good.Id),
                         $"nothing consumes '{good.Id}'. A good nobody wants is dead weight; " +
                         "give it a consumer, or mark it ImportOnly if it exists only to trade.");
+                }
+            }
+
+            foreach (Good good in Goods)
+            {
+                // A merchant who pays more than the market is a free money press, and the bug
+                // would look like generous tuning rather than an error.
+                if (good.SellPrice > good.BasePrice)
+                {
+                    report.Add(GoodsFile, Goods.LineOf(good.Id),
+                        $"'{good.Id}' sells for {good.SellPrice} but its base price is " +
+                        $"{good.BasePrice}. A merchant paying above the market is free money.");
                 }
             }
 

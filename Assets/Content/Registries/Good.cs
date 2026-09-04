@@ -18,13 +18,16 @@ namespace RTS.Content.Registries
     /// </summary>
     public sealed class Good : IHasId
     {
-        public Good(string id, int basePrice, float volatility, float heatPerUnit, GoodSupply supply)
+        public Good(string id, int basePrice, float volatility, float heatPerUnit,
+            GoodSupply supply, float keep, int sellPrice)
         {
             Id = id;
             BasePrice = basePrice;
             Volatility = volatility;
             HeatPerUnit = heatPerUnit;
             Supply = supply;
+            Keep = keep;
+            SellPrice = sellPrice;
         }
 
         public string Id { get; }
@@ -39,6 +42,18 @@ namespace RTS.Content.Registries
         public float HeatPerUnit { get; }
 
         public GoodSupply Supply { get; }
+
+        /// <summary>
+        /// Units held back before any is sold. Reserves in kind — food against a bad harvest,
+        /// timber against a repair you have not needed yet.
+        /// </summary>
+        public float Keep { get; }
+
+        /// <summary>
+        /// What a passing merchant pays per unit. Less than <see cref="BasePrice"/>, because
+        /// they have to carry it somewhere and sell it again.
+        /// </summary>
+        public int SellPrice { get; }
 
         public bool IsLocal => Supply == GoodSupply.Local;
 

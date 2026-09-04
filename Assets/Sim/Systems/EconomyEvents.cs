@@ -44,6 +44,13 @@ namespace RTS.Sim.Systems
         public int Crew;
     }
 
+    /// <summary>Surplus sold to a passing merchant. The port's only income for now.</summary>
+    public struct GoodsSold
+    {
+        public int Coin;
+        public int Units;
+    }
+
     /// <summary>A building fell to zero condition and stopped producing.</summary>
     public struct BuildingDerelict
     {
