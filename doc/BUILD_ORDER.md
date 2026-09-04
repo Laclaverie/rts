@@ -128,9 +128,14 @@ First Unity work. Deliberately ugly — lists, labels, buttons.
 
 **Gate: a person who is not you can play a session and describe what happened.**
 
-**Pause and speed are in**, with the clock, the composition root and the readouts. Still to do
-before the gate can be tried on someone: the event feed, and buttons for the commands that
-already exist (`AssignCrew`, `MothballBuilding`, `SuppressRiot`).
+**Pause, speed, the readouts and the event feed are in.** Still to do before the gate can be
+tried on someone: buttons for the commands that already exist (`AssignCrew`,
+`MothballBuilding`, `SuppressRiot`).
+
+The feed is the first thing to consume the causal DAG, which `ARCHITECTURE` §6.2 built months
+early on the grounds that it could not be reconstructed afterwards. That turned out to be
+right: a consequence is drawn indented under its cause, so "you shut a building" and "2 crew
+released" read as one thought rather than two adjacent lines.
 
 The shape this took is worth stating, because it is now a rule (`ARCHITECTURE` §2.2): the game
 is a `GameSession` in `Sim` — advance time, read state, issue commands, see what happened — and

@@ -44,6 +44,9 @@ namespace RTS.Sim.Session
             Balance = balance;
         }
 
+        /// <summary>What has happened, for a player who looked away (§5.1).</summary>
+        public EventFeed Feed { get; } = new EventFeed();
+
         public ReplayRun Run { get; }
 
         public Clock Clock { get; }
@@ -110,11 +113,7 @@ namespace RTS.Sim.Session
         {
             int days = Clock.Advance(realSeconds);
 
-            for (int i = 0; i < days; i++)
-            {
-                Run.AdvanceDay();
-                Run.Events.Drain();
-            }
+            for (int i = 0; i < days; i++) RunOneDay();
 
             DaysLastAdvanced = days;
             return days;
@@ -123,9 +122,22 @@ namespace RTS.Sim.Session
         /// <summary>Advances exactly one day, whatever the clock says. For a step button.</summary>
         public void Step()
         {
-            Run.AdvanceDay();
-            Run.Events.Drain();
+            RunOneDay();
             DaysLastAdvanced = 1;
+        }
+
+        /// <summary>
+        /// One day, with everything it emitted handed to the feed.
+        /// </summary>
+        /// <remarks>
+        /// The drain is what empties the queue, and until now its return value was thrown away
+        /// everywhere. Reading it here is the whole reason §6.2 stamped a cause on every event
+        /// months before anything consumed one.
+        /// </remarks>
+        private void RunOneDay()
+        {
+            Run.AdvanceDay();
+            Feed.Record(Run.CommandLog, Run.Events.Drain(), Balance);
         }
 
         /// <summary>
