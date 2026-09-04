@@ -165,6 +165,37 @@ namespace RTS.Sim.Tests
                 "the replay issued no commands of its own");
         }
 
+        // ----------------------------------------------------------------- logs
+
+        [Test]
+        public void A_running_game_stamps_the_day_onto_its_log_lines()
+        {
+            // Log.Day went unset for three phases, so every line in every log file read
+            // "Day 0". Harmless while only the boot channel was emitting, and exactly the kind
+            // of thing nobody notices until they are reading a log to answer a question.
+            var sink = new Engine.Diagnostics.CaptureLogSink();
+            int day;
+
+            Engine.Diagnostics.Log.Day = 0;
+            Engine.Diagnostics.Log.AddSink(sink);
+            try
+            {
+                GameSession session = Session();
+                session.Advance(30f);
+                day = session.Day;
+
+                Engine.Diagnostics.Log.Info(
+                    Engine.Diagnostics.LogChannel.Game, "something happened");
+            }
+            finally
+            {
+                Engine.Diagnostics.Log.RemoveSink(sink);
+            }
+
+            Assert.That(sink.Snapshot().Last().Day, Is.EqualTo(day - 1),
+                "the stamp is the day that just ran, not the one about to");
+        }
+
         // -------------------------------------------------------------- readouts
 
         [Test]

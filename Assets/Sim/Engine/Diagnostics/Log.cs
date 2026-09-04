@@ -51,9 +51,15 @@ namespace RTS.Sim.Engine.Diagnostics
         public static bool Enabled { get; set; } = true;
 
         /// <summary>
-        /// The in-game day stamped onto records. Set by whoever runs the phases; it is a
-        /// convenience so call sites need not thread the day through every signature.
+        /// The in-game day stamped onto records. A convenience, so call sites need not thread
+        /// the day through every signature.
         /// </summary>
+        /// <remarks>
+        /// Set by <see cref="RTS.Sim.Engine.State.ReplayRun.AdvanceDay"/>, which is the only
+        /// place a day advances. It went unset for three phases and every line in every log
+        /// file read "Day 0" — harmless while only the boot channel was emitting, and exactly
+        /// the kind of thing nobody notices until they are reading a log to answer a question.
+        /// </remarks>
         public static int Day { get; set; }
 
         /// <summary>
