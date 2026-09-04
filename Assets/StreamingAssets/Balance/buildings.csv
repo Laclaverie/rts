@@ -21,11 +21,13 @@
 #                 are not measured in units per day.
 #
 # The staff totals are chosen against the starting crew. Two farms, a sawmill and a mine want
-# 2+2+1+1 = six, and the default port hires seven: everything that produces is worked at full
-# rate, and one crew member is left idle. That is deliberate rather than sloppy — the idle
-# guard costs three coin a day for nothing, which is the clearest possible statement that
-# labour you are not using is a cost. Phase 1 has no defence for a guard to do; when it does,
-# the decision becomes interesting instead of merely visible.
+# 2+2+1+1 = six, and the default port hires seven, so everything that produces is worked at
+# full rate with one crew member spare.
+#
+# Spare is not the same as wasted. Keeping someone on the payroll with nothing to do is a
+# position, not an error: a skilled hand a rival wanted, a specialist you will need when the
+# next building finishes, someone whose loyalty you are buying before you need it. Wages and
+# food are what make that a decision rather than free, which is the whole point of pricing it.
 #
 # A port worked at full rate is also one where losing anybody costs output immediately, which
 # is what §5.2.3's cascade needs.

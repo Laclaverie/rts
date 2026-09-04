@@ -17,8 +17,11 @@ namespace RTS.Sim.Components
     /// <c>AssignCrew</c> command of §6 assumes.
     /// </para>
     /// <para>
-    /// An idle crew member still eats and is still paid. That is the point: labour you are not
-    /// using is a cost, not a free reserve.
+    /// An idle crew member still eats and is still paid, and that is the point — but the point
+    /// is that idle labour is <em>priced</em>, not that it is a mistake. Hiring more people than
+    /// there is work for is a real position: a skilled hand a rival wanted, a specialist for the
+    /// building that is not finished yet, loyalty bought before it is needed (§5.4). The wages
+    /// make it a decision instead of free.
     /// </para>
     /// </remarks>
     public struct Assignment : IComponentData

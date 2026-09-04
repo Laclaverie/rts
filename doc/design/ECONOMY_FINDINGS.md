@@ -162,9 +162,12 @@ Two consequences worth knowing:
 - **Staff requirements are tuned against the starting crew.** Two farms, a sawmill and a mine
   want 2+2+1+1 = six; the port hires seven. Everything that produces is worked at full rate and
   the guard is left idle.
-- **The idle guard costs 3 coin a day for nothing.** That is deliberate: it is the clearest
-  possible statement that labour you are not using is a cost. Phase 1 gives a guard nothing to
-  do, so for now the decision is merely visible rather than interesting.
+- **The idle guard costs 3 coin a day.** Deliberate, and deliberately *not* framed as a
+  mistake: over-hiring is a position, not an error. Taking the best hand off a rival port,
+  holding a specialist for a building that is not finished, buying loyalty before you need it —
+  all legitimate, all priced in wages and food. What the model gets right is that the cost is
+  visible; what it does not have yet is anywhere the *benefit* could come from, since there are
+  no rival ports to hire away from. See the parked note below.
 
 Baseline is back to **+2 coin a day** after the change: dropping the sawmill's requirement from
 2 to 1 put a full-rate worker on every producer, where previously the mine fell to the guard at
@@ -173,6 +176,23 @@ Baseline is back to **+2 coin a day** after the change: dropping the sawmill's r
 ---
 
 ## Parked mechanics that came out of tuning
+
+### A labour market gives over-hiring a reason
+
+Idle crew are currently pure cost, which is correct arithmetic and half a mechanic. Over-hiring
+is a real strategy — denying a rival a skilled hand, banking labour before construction
+finishes, holding a specialist who cannot be replaced — but every one of those needs somewhere
+else the person could have gone.
+
+The design already leans this way: §5.4 gives crew skill that improves with use, traits, and
+deserters who leave *"to a neighbour, with what they know"*. Once neighbours exist, hiring is
+two-sided and paying someone to be idle can be the cheapest way to stop a rival having them.
+
+Until then the cost is honest and the benefit is absent, so the default port keeps one spare
+hand rather than being trimmed to exactly six. Trimming would encode "over-hiring is a mistake"
+into the starting position, which is the opposite of what is intended.
+
+Gate: after neighbouring ports exist.
 
 ### Subsidised buyers — the withdrawal is the mechanic
 
