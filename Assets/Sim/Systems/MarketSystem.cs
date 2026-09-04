@@ -6,7 +6,7 @@ using RTS.Sim.Engine.Pipeline;
 namespace RTS.Sim.Systems
 {
     /// <summary>
-    /// Sells the surplus. The port's only income until routes exist.
+    /// Sells the surplus, and buys food the port cannot grow. Its only trade until routes exist.
     /// </summary>
     /// <remarks>
     /// Deliberately the smallest thing that makes the Phase 1 gate answerable. Without income
@@ -30,10 +30,22 @@ namespace RTS.Sim.Systems
 
         public string Id => SystemId;
 
+        /// <summary>
+        /// Goods the merchant will sell the port as well as buy from it.
+        /// </summary>
+        /// <remarks>
+        /// Only what a passing ship would plausibly carry to a hungry colony, which for now is
+        /// food. Buying timber or iron would let a port skip having industry at all, and the
+        /// point of §5.5's buildings is that what the port makes is a decision.
+        /// </remarks>
+        public const string BuyableGood = "food";
+
         public void Run(World world, in Context ctx)
         {
             BalanceTables balance = ctx.Balance;
             if (balance == null || !Port.HasTreasury(world)) return;
+
+            Buy(world, balance, ctx);
 
             int earned = 0;
             int unitsSold = 0;
@@ -71,6 +83,57 @@ namespace RTS.Sim.Systems
             treasury.Coin += earned;
 
             ctx.Events.Emit(new GoodsSold { Coin = earned, Units = unitsSold });
+        }
+
+        /// <summary>
+        /// Tops the food store back up to what the port wants to keep, as far as coin allows.
+        /// </summary>
+        /// <remarks>
+        /// This exists because a port with a population to feed made reserves meaningless
+        /// without it. The Phase 1 gate rests on "one shock is survivable, three are not, and
+        /// the difference is the slack you kept" (§5.2.3) — but once commoners eat, the binding
+        /// constraint is food rather than coin, and a treasury of four hundred died exactly as
+        /// fast as one of ninety. Slack the player cannot spend is not slack.
+        /// <para>
+        /// Buying at <c>base_price</c> and selling at <c>sell_price</c> is a wide spread — four
+        /// coin against one for food — and deliberately so. Importing what you should be growing
+        /// is meant to be an emergency, not a business model, and a port that answers every
+        /// famine by buying its way out will bleed to death slowly instead of quickly.
+        /// </para>
+        /// <para>
+        /// Runs before selling, so a port cannot fund today's food out of today's sales. Buying
+        /// is spending yesterday's money, which keeps reserves the resource that matters.
+        /// </para>
+        /// </remarks>
+        private static void Buy(World world, BalanceTables balance, in Context ctx)
+        {
+            int goodIndex = ConsumptionSystem.IndexOf(balance, BuyableGood);
+            if (goodIndex < 0) return;
+
+            Good good = balance.Goods[goodIndex];
+            if (good.BasePrice <= 0) return;
+
+            float held = Port.UnitsOf(world, goodIndex);
+            float short_ = good.Keep - held;
+            if (short_ < 1f) return;
+
+            ref Treasury treasury = ref Port.Treasury(world);
+            if (treasury.Coin < good.BasePrice) return;
+
+            int affordable = treasury.Coin / good.BasePrice;
+            int wanted = (int)short_;
+            int bought = affordable < wanted ? affordable : wanted;
+            if (bought <= 0) return;
+
+            treasury.Coin -= bought * good.BasePrice;
+            Port.Add(world, goodIndex, bought);
+
+            ctx.Events.Emit(new GoodsBought
+            {
+                Coin = bought * good.BasePrice,
+                Units = bought,
+                Good = good.Id,
+            });
         }
     }
 }

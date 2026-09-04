@@ -28,10 +28,10 @@ namespace RTS.Sim.Tests
                                     "laborer,2,1.00,1.0,0.00\n";
 
         private const string Strata =
-            "id,decay_per_day,relief_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
-            "Commoners,0.04,0.12,0.10,0.02,0.03,0.02\n" +
-            "NamedCrew,0.05,0.15,0.03,0.12,0.08,0.00\n" +
-            "Merchants,0.06,0.18,0.00,0.00,0.00,0.00\n";
+            "id,decay_per_day,relief_per_day,food_per_day,leave_after_days,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
+            "Commoners,0.04,0.12,0.00,0,0.10,0.02,0.03,0.02\n" +
+            "NamedCrew,0.05,0.15,0.00,0,0.03,0.12,0.08,0.00\n" +
+            "Merchants,0.06,0.18,0.00,0,0.00,0.00,0.00,0.00\n";
 
         private const string Ladder =
             "rung,climb_at,fall_below,days_to_climb,output_multiplier,condition_damage\n" +

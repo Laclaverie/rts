@@ -211,10 +211,12 @@ namespace RTS.Sim.Tests
         // ------------------------------------------------------------------- effect
 
         [Test]
-        public void Moving_a_worker_moves_the_output()
+        public void Moving_a_specialist_moves_the_bonus()
         {
-            EntityId second = _world.CreateEntity();
-            _world.Add(second, new BuildingState { DefinitionIndex = Index("farm"), Condition = 1f });
+            // The commoners working the farm are what produce the food; the specialist is what
+            // makes them better at it. Posting them elsewhere costs the building its bonus, not
+            // its output.
+            _world.Store<BuildingState>().GetRef(_farm).Workers = 1;
 
             Apply(_worker, _farm);
 
@@ -224,10 +226,12 @@ namespace RTS.Sim.Tests
             production.Run(_world, in ctx);
             _events.EndCause();
 
-            float afterFirstDay = Port.UnitsOf(_world, 0);
-            Assert.That(afterFirstDay, Is.EqualTo(6f).Within(1e-4f), "one farm worked");
+            float improved = Port.UnitsOf(_world, 0);
+            Assert.That(improved,
+                Is.EqualTo(6f * (1f + ProductionSystem.MaximumSpecialistBonus)).Within(1e-4f),
+                "one farm worked, with an overseer on it");
 
-            // Take them off work entirely: the port produces nothing at all.
+            // Take them off the building. The hands stay, so the farm keeps working.
             Apply(_worker, EntityId.None);
 
             _events.BeginCause(CauseId.Root, 2);
@@ -235,8 +239,8 @@ namespace RTS.Sim.Tests
             production.Run(_world, in second_ctx);
             _events.EndCause();
 
-            Assert.That(Port.UnitsOf(_world, 0), Is.EqualTo(afterFirstDay).Within(1e-4f),
-                "nobody working, nothing produced");
+            Assert.That(Port.UnitsOf(_world, 0) - improved, Is.EqualTo(6f).Within(1e-4f),
+                "the plain rate, with nobody overseeing it");
         }
     }
 }

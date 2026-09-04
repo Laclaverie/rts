@@ -145,11 +145,7 @@ internal static class Program
         }
     }
 
-    private static ISystem[] EconomySystems() => new ISystem[]
-    {
-        new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
-        new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
-    };
+    private static IEnumerable<ISystem> EconomySystems() => ScenarioRunner.AllSystems();
 
     /// <summary>
     /// The world's state as a digest, so two runs can be compared without reading the table —

@@ -51,16 +51,17 @@ namespace RTS.Sim.Systems
 
                 StratumRules rules = balance.Strata[grievance.StratumIndex];
 
-                // What today gave this stratum to resent. Asked per stratum rather than for the
-                // port as a whole: named crew do not care that a labourer has no work, and a
-                // port-wide test would let one group's complaint deny another its relief. The
-                // shipped port has more crew than places to put them, so a port-wide clean day
-                // would in fact never happen at all.
+                // What today gave this stratum to resent, counted in its own people. A stratum
+                // is angered by its own hunger and its own unemployment, not by another's:
+                // §5.2.2 says three groups each with its own grievance, and reading one shared
+                // set of counts is what made them three weightings of the same thing.
+                StratumDay day = tally.For(rules.Stratum);
+
                 float added =
-                    tally.Hungry * rules.HungerWeight +
-                    tally.Unpaid * rules.UnpaidWeight +
-                    tally.Deserted * rules.DesertionWeight +
-                    tally.Idle * rules.IdleWeight;
+                    day.Hungry * rules.HungerWeight +
+                    day.Unpaid * rules.UnpaidWeight +
+                    day.Deserted * rules.DesertionWeight +
+                    day.Idle * rules.IdleWeight;
 
                 // A stratum recently put down by force says nothing about today. The hunger and
                 // the unpaid wages are still real and will be resented the moment the window
@@ -93,7 +94,7 @@ namespace RTS.Sim.Systems
         }
 
         /// <summary>What happened today, counted from the events already emitted.</summary>
-        internal static DayTally Tally(World world, EventQueue events)
+        public static DayTally Tally(World world, EventQueue events)
         {
             var tally = new DayTally();
 
@@ -103,7 +104,8 @@ namespace RTS.Sim.Systems
                 {
                     Envelope envelope = events.Pending[i];
 
-                    if (envelope.TryGet(out FoodShortfall hunger)) tally.Hungry += hunger.Crew;
+                    if (envelope.TryGet(out FoodShortfall hunger)) tally.CrewHungry += hunger.Crew;
+                    else if (envelope.TryGet(out CommonersWentHungry town)) tally.CommonersHungry += town.Commoners;
                     else if (envelope.TryGet(out WagesUnpaid unpaid)) tally.Unpaid += unpaid.Crew;
                     else if (envelope.Is<CrewDeserted>()) tally.Deserted++;
                 }
@@ -113,18 +115,75 @@ namespace RTS.Sim.Systems
             // work today", and a stratum that resents unemployment resents it every day.
             ComponentStore<Assignment> assignments = world.Store<Assignment>();
             for (int i = 0; i < assignments.Count; i++)
-                if (assignments.Values[i].IsIdle) tally.Idle++;
+                if (assignments.Values[i].IsIdle) tally.CrewIdle++;
+
+            tally.CommonersIdle = LabourSystem.UnemployedIn(world);
 
             return tally;
         }
 
-        /// <summary>The day's counts, as the strata weights expect them.</summary>
-        internal struct DayTally
+        /// <summary>The day's counts, kept apart by who they happened to.</summary>
+        /// <remarks>
+        /// One shared set of counts is what made the three strata into three weightings of the
+        /// same crew events, and it is why the Phase 2 gate found that an emptied port reads as
+        /// Calm: lose the crew and every stratum lost its grievance at once. Counting each
+        /// group's own people is the fix.
+        /// </remarks>
+        public struct DayTally
         {
-            public int Hungry;
+            /// <summary>Crew who went unfed today.</summary>
+            public int CrewHungry;
+
+            /// <summary>Commoners who went unfed today.</summary>
+            public int CommonersHungry;
+
+            /// <summary>Wages that went unpaid. Only crew draw one.</summary>
             public int Unpaid;
+
+            /// <summary>Crew who deserted. Everyone notices people leaving.</summary>
             public int Deserted;
-            public int Idle;
+
+            /// <summary>Crew nobody has assigned to a building.</summary>
+            public int CrewIdle;
+
+            /// <summary>Commoners the port has no work for.</summary>
+            public int CommonersIdle;
+
+            /// <summary>What today looked like to one stratum in particular.</summary>
+            public StratumDay For(Stratum stratum)
+            {
+                switch (stratum)
+                {
+                    case Stratum.Commoners:
+                        return new StratumDay(CommonersHungry, unpaid: 0, Deserted, CommonersIdle);
+
+                    case Stratum.NamedCrew:
+                        return new StratumDay(CrewHungry, Unpaid, Deserted, CrewIdle);
+
+                    // Merchants care about tariffs, blockades and lost convoys (§5.2.2). None of
+                    // those exist, so nothing that happens today is any of their business. The
+                    // row is present so the stratum keeps its index when they do.
+                    default:
+                        return default;
+                }
+            }
+        }
+
+        /// <summary>One stratum's share of the day.</summary>
+        public readonly struct StratumDay
+        {
+            public StratumDay(int hungry, int unpaid, int deserted, int idle)
+            {
+                Hungry = hungry;
+                Unpaid = unpaid;
+                Deserted = deserted;
+                Idle = idle;
+            }
+
+            public readonly int Hungry;
+            public readonly int Unpaid;
+            public readonly int Deserted;
+            public readonly int Idle;
         }
     }
 }

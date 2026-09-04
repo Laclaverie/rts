@@ -1,4 +1,5 @@
 using System.IO;
+using RTS.Sim.Scenarios;
 using RTS.Sim.Systems;
 using System.Linq;
 using RTS.Content.Loading;
@@ -49,17 +50,7 @@ namespace RTS.Sim.Tests
             // Build throws listing both kinds of mismatch, so this test is the §4.2 loud failure
             // arriving in CI rather than at launch — it caught the Phase 1 systems the moment
             // they were written and before their rows were added.
-            Pipeline pipeline = Pipeline.Build(table, new ISystem[]
-            {
-                new ConsumptionSystem(),
-                new WagesSystem(),
-                new UpkeepSystem(),
-                new ProductionSystem(),
-                new MarketSystem(),
-                new DesertionSystem(),
-                new UnrestSystem(),
-                new RevolutionLadderSystem(),
-            });
+            Pipeline pipeline = Pipeline.Build(table, ScenarioRunner.AllSystems());
 
             Assert.That(pipeline.Systems(Phase.Tick), Is.Empty, "nothing runs per-tick yet");
 
@@ -72,6 +63,7 @@ namespace RTS.Sim.Tests
                     WagesSystem.SystemId,
                     UpkeepSystem.SystemId,
                     DesertionSystem.SystemId,
+                    LabourSystem.SystemId,
                     ProductionSystem.SystemId,
                     MarketSystem.SystemId,
                     UnrestSystem.SystemId,

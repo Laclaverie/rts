@@ -8,6 +8,7 @@ using RTS.Sim.Engine.Commands;
 using RTS.Sim.Engine.Entities;
 using RTS.Sim.Engine.Pipeline;
 using RTS.Sim.Engine.State;
+using RTS.Sim.Scenarios;
 using RTS.Sim.Systems;
 
 namespace RTS.Sim.Tests
@@ -63,11 +64,7 @@ namespace RTS.Sim.Tests
         {
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "Balance", "pipeline.csv");
 
-            var systems = new List<ISystem>
-            {
-                new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
-                new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
-            };
+            List<ISystem> systems = ScenarioRunner.AllSystems();
 
             // The drain is not in the shipped pipeline.csv yet, so the scenario declares it
             // alongside the shipped rows rather than the file being edited for a test.

@@ -27,10 +27,10 @@ namespace RTS.Sim.Tests
                                     "laborer,2,1.00,1.0,0.00\n";
 
         private const string Strata =
-            "id,decay_per_day,relief_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
-            "Commoners,0.04,0.12,0.10,0.02,0.03,0.02\n" +
-            "NamedCrew,0.05,0.15,0.03,0.12,0.08,0.00\n" +
-            "Merchants,0.06,0.18,0.00,0.00,0.00,0.00\n";
+            "id,decay_per_day,relief_per_day,food_per_day,leave_after_days,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
+            "Commoners,0.04,0.12,0.00,0,0.10,0.02,0.03,0.02\n" +
+            "NamedCrew,0.05,0.15,0.00,0,0.03,0.12,0.08,0.00\n" +
+            "Merchants,0.06,0.18,0.00,0,0.00,0.00,0.00,0.00\n";
 
         private World _world = null!;
         private BalanceTables _balance = null!;
@@ -102,6 +102,7 @@ namespace RTS.Sim.Tests
                     switch (payload)
                     {
                         case FoodShortfall hunger: _events.Emit(hunger); break;
+                        case CommonersWentHungry town: _events.Emit(town); break;
                         case WagesUnpaid unpaid: _events.Emit(unpaid); break;
                         case CrewDeserted gone: _events.Emit(gone); break;
                     }
@@ -121,25 +122,50 @@ namespace RTS.Sim.Tests
         // ------------------------------------------------------------------- drivers
 
         [Test]
-        public void Hunger_angers_commoners_more_than_it_angers_crew()
+        public void Each_stratum_is_angered_by_its_own_hunger_and_not_the_others()
         {
             // "Crew signed up for hard weather; a commoner who cannot feed a family did not."
-            RunDay(new FoodShortfall { Crew = 3, Wanted = 3f, Eaten = 0f });
+            // The two counts are separate events because the two populations are separate: a
+            // starving town does not calm down because the crew ate.
+            RunDay(new CommonersWentHungry { Commoners = 3, Wanted = 3f, Eaten = 0f });
 
             Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0.30f).Within(1e-4f));
-            Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.09f).Within(1e-4f));
-            Assert.That(GrievanceOf(Stratum.Commoners),
-                Is.GreaterThan(GrievanceOf(Stratum.NamedCrew)));
+            Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0f).Within(1e-4f),
+                "the crew were fed");
         }
 
         [Test]
-        public void Unpaid_wages_anger_crew_more_than_they_anger_commoners()
+        public void Crew_hunger_angers_the_crew_and_not_the_town()
         {
-            // Commoners do not draw a wage, so they mind it much less.
+            RunDay(new FoodShortfall { Crew = 3, Wanted = 3f, Eaten = 0f });
+
+            Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.09f).Within(1e-4f));
+            Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0f).Within(1e-4f));
+        }
+
+        [Test]
+        public void The_same_hunger_angers_commoners_more_than_crew()
+        {
+            // Per head, and this is the asymmetry §5.2.2 asks for.
+            RunDay(new CommonersWentHungry { Commoners = 3 });
+            float commoners = GrievanceOf(Stratum.Commoners);
+
+            SetGrievance(Stratum.Commoners, 0f);
+            RunDay(new FoodShortfall { Crew = 3 });
+
+            Assert.That(commoners, Is.GreaterThan(GrievanceOf(Stratum.NamedCrew)));
+        }
+
+        [Test]
+        public void Unpaid_wages_anger_only_the_people_who_draw_one()
+        {
+            // Commoners are not on the payroll. What will anger them about money is taxes
+            // (§5.2.2), and there is no tax yet — so a missed payday is the crew's grievance
+            // alone rather than a small share of everyone's.
             RunDay(new WagesUnpaid { Crew = 2, Owed = 4, Paid = 0 });
 
             Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.24f).Within(1e-4f));
-            Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0.04f).Within(1e-4f));
+            Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0f).Within(1e-4f));
         }
 
         [Test]
@@ -151,14 +177,15 @@ namespace RTS.Sim.Tests
             Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0.03f).Within(1e-4f));
         }
 
-        private void AddIdleCrew(int count)
+        /// <summary>
+        /// A town with nowhere to work. Unemployment is commoners' grievance, not the crew's:
+        /// named crew have an idle_weight of zero because a specialist nobody has posted yet is
+        /// the port's problem, not theirs.
+        /// </summary>
+        private void AddUnemployedCommoners(int count)
         {
-            for (int i = 0; i < count; i++)
-            {
-                EntityId idle = _world.CreateEntity();
-                _world.Add(idle, new CrewMember { RoleIndex = 0, Morale = 1f, Loyalty = 1f });
-                _world.Add(idle, new Assignment { Building = EntityId.None });
-            }
+            EntityId town = _world.CreateEntity();
+            _world.Add(town, new Population { Commoners = count });
         }
 
         [Test]
@@ -167,7 +194,7 @@ namespace RTS.Sim.Tests
             // Unemployment is a standing condition, not an event, so it renews daily — but at
             // 0.02 a day against 0.04 of decay it settles rather than escalating. A single
             // person with nothing to do should be a background annoyance, not a countdown.
-            AddIdleCrew(1);
+            AddUnemployedCommoners(1);
 
             RunDay();
             float afterOneDay = GrievanceOf(Stratum.Commoners);
@@ -184,7 +211,7 @@ namespace RTS.Sim.Tests
         {
             // Three at 0.02 is 0.06 a day against 0.04 of decay. Unemployment becomes a problem
             // when it is widespread, which is the shape §5.2.2 wants.
-            AddIdleCrew(3);
+            AddUnemployedCommoners(3);
 
             RunDay();
             float afterOneDay = GrievanceOf(Stratum.Commoners);
@@ -195,14 +222,12 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void A_crew_member_with_work_does_not_anger_anybody()
+        public void A_commoner_with_work_does_not_anger_anybody()
         {
             EntityId building = _world.CreateEntity();
-            _world.Add(building, new BuildingState { DefinitionIndex = 0, Condition = 1f });
+            _world.Add(building, new BuildingState { DefinitionIndex = 0, Condition = 1f, Workers = 1 });
 
-            EntityId worker = _world.CreateEntity();
-            _world.Add(worker, new CrewMember { RoleIndex = 0, Morale = 1f, Loyalty = 1f });
-            _world.Add(worker, new Assignment { Building = building });
+            AddUnemployedCommoners(1);   // the one commoner, and the one job
 
             RunDay();
 
@@ -253,14 +278,14 @@ namespace RTS.Sim.Tests
         [Test]
         public void One_stratums_complaint_does_not_deny_another_its_relief()
         {
-            // Named crew do not care that a labourer has no work (idle_weight 0.00), so an idle
-            // day is a clean day for them and a slow one for the commoners who resent it. Asking
-            // the question port-wide would let either group hold the other's recovery hostage —
-            // and the shipped port has more crew than places to put them, so a port-wide clean
-            // day would never happen at all.
+            // A commoner with no work is the commoners' grievance and nobody else's, so the same
+            // day is a slow one for them and a clean one for the crew. Asking the question
+            // port-wide would let either group hold the other's recovery hostage — and the
+            // shipped port always has somebody unemployed, so a port-wide clean day would never
+            // happen at all.
             SetGrievance(Stratum.NamedCrew, 0.50f);
             SetGrievance(Stratum.Commoners, 0.50f);
-            AddIdleCrew(1);
+            AddUnemployedCommoners(1);
 
             RunDay();
 
@@ -299,7 +324,7 @@ namespace RTS.Sim.Tests
         {
             SetGrievance(Stratum.Commoners, 0.95f);
 
-            RunDay(new FoodShortfall { Crew = 10 });
+            RunDay(new CommonersWentHungry { Commoners = 10 });
 
             Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(1f).Within(1e-4f));
         }

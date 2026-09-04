@@ -24,11 +24,22 @@ namespace RTS.Sim.Components
         /// </summary>
         public bool Mothballed;
 
+        /// <summary>
+        /// Commoners working here today, set by <c>Labour</c> at the day boundary.
+        /// </summary>
+        /// <remarks>
+        /// A count rather than a set of entities, because commoners are anonymous (§5.2.2). The
+        /// named crew who work a building are a separate thing entirely — they are entities with
+        /// an <see cref="Assignment"/>, and they improve a building rather than staffing it.
+        /// </remarks>
+        public int Workers;
+
         public void Write(IStateWriter writer)
         {
             writer.Write("definition", DefinitionIndex);
             writer.Write("condition", Condition);
             writer.Write("mothballed", Mothballed);
+            writer.Write("workers", Workers);
         }
     }
 }

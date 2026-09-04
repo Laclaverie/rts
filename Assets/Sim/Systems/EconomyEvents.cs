@@ -44,6 +44,41 @@ namespace RTS.Sim.Systems
         public int Crew;
     }
 
+    /// <summary>
+    /// The town went short of food. Separate from <see cref="FoodShortfall"/>, which counts
+    /// crew: the two strata are angered by their own hunger, not by each other's (§5.2.2).
+    /// </summary>
+    public struct CommonersWentHungry
+    {
+        public int Commoners;
+        public float Wanted;
+        public float Eaten;
+
+        /// <summary>How long this has been going on. People leave over a streak, not a day.</summary>
+        public int ConsecutiveDays;
+    }
+
+    /// <summary>
+    /// Commoners gave up on the port. The slow ending, as against a riot.
+    /// </summary>
+    public struct CommonersLeft
+    {
+        public int Left;
+        public int Remaining;
+        public int HungryDays;
+    }
+
+    /// <summary>
+    /// Food bought in because the port could not grow enough. The expensive way to survive a
+    /// famine, and the reason a treasury is worth keeping.
+    /// </summary>
+    public struct GoodsBought
+    {
+        public int Coin;
+        public int Units;
+        public string Good;
+    }
+
     /// <summary>Surplus sold to a passing merchant. The port's only income for now.</summary>
     public struct GoodsSold
     {

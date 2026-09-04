@@ -28,13 +28,13 @@
 # That is a known gap in the population model, recorded in RevoltGateTests and §A.
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,ad4a6c2ebfe09390
-one-storm,1,150,40,10:Storm:0.30,9749ee5768a3d899
-one-theft,1,150,40,10:Theft:100,fb897b6211bd1517
-one-harvest-failure,1,150,40,10:HarvestFailure:8,0229eea2d5595ab3
-one-desertion,1,150,40,10:Desertion:2,447e5ce0f776e7f1
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,691a9ab3c15ee05d
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,dd75a0179fe8cf16
-lean-start,1,90,30,,03ebd30a6b1e54ba
-long-quiet-run,7,150,120,,387d25e2b09184dc
-late-storm,3,150,60,50:Storm:0.40,f05a1f822454a1d2
+undisturbed,1,150,40,,454ec6cf198d299b
+one-storm,1,150,40,10:Storm:0.30,72226a44aa257148
+one-theft,1,150,40,10:Theft:100,ff59449dd3d52e0e
+one-harvest-failure,1,150,40,10:HarvestFailure:8,58367e7a9e0fe47d
+one-desertion,1,150,40,10:Desertion:2,502ddfd599e28687
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,7da4aa2a2d67bbcc
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,a4c57b4427f52191
+lean-start,1,90,30,,2d426c9fb4a755c5
+long-quiet-run,7,150,120,,983b16bacf15600d
+late-storm,3,150,60,50:Storm:0.40,aebbd53ba70f0290

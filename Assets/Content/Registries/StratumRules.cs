@@ -6,12 +6,15 @@ namespace RTS.Content.Registries
     public sealed class StratumRules : IHasId
     {
         public StratumRules(string id, Stratum stratum, float decayPerDay, float reliefPerDay,
-            float hungerWeight, float unpaidWeight, float desertionWeight, float idleWeight)
+            float foodPerDay, int leaveAfterDays, float hungerWeight, float unpaidWeight,
+            float desertionWeight, float idleWeight)
         {
             Id = id;
             Stratum = stratum;
             DecayPerDay = decayPerDay;
             ReliefPerDay = reliefPerDay;
+            FoodPerDay = foodPerDay;
+            LeaveAfterDays = leaveAfterDays;
             HungerWeight = hungerWeight;
             UnpaidWeight = unpaidWeight;
             DesertionWeight = desertionWeight;
@@ -48,16 +51,46 @@ namespace RTS.Content.Registries
         /// </remarks>
         public float ReliefPerDay { get; }
 
-        /// <summary>Per crew member who went unfed today.</summary>
+        /// <summary>
+        /// Food eaten per head of this stratum's own population, per day. Zero for a stratum
+        /// with no population of its own.
+        /// </summary>
+        /// <remarks>
+        /// Only commoners have a population here. Named crew eat as individuals through
+        /// <c>crew_roles.csv</c>, because they are entities rather than a count; merchants are
+        /// not modelled as a population at all yet, since nothing they care about — tariffs,
+        /// blockades, lost convoys (§5.2.2) — exists. A zero means "this stratum has no mouths
+        /// of its own to feed", not "these people do not eat".
+        /// </remarks>
+        public float FoodPerDay { get; }
+
+        /// <summary>
+        /// Consecutive hungry days before this stratum's population starts to leave. Zero means
+        /// it never leaves this way.
+        /// </summary>
+        /// <remarks>
+        /// Commoners leave an order of magnitude slower than crew desert, and that gap is
+        /// deliberate. Crew go within days of a missed payday — they are paid professionals with
+        /// somewhere else to be (§5.4). Commoners live here; leaving means abandoning a home, so
+        /// it takes sustained starvation. If they left as readily as crew, a collapsing port
+        /// would empty before the revolution ladder could climb, which is exactly the failure
+        /// the Phase 2 gate found.
+        /// </remarks>
+        public int LeaveAfterDays { get; }
+
+        /// <summary>Per head of this stratum who went unfed today.</summary>
         public float HungerWeight { get; }
 
-        /// <summary>Per crew member whose wage went unpaid today.</summary>
+        /// <summary>Per wage that went unpaid today. Only crew draw one.</summary>
         public float UnpaidWeight { get; }
 
-        /// <summary>Per crew member who left today.</summary>
+        /// <summary>Per crew member who deserted today. Everyone notices people leaving.</summary>
         public float DesertionWeight { get; }
 
-        /// <summary>Per crew member with no work, per day.</summary>
+        /// <summary>
+        /// Per head of this stratum with no work, per day. Commoners count their own unemployed;
+        /// named crew count crew nobody has assigned to a building.
+        /// </summary>
         public float IdleWeight { get; }
 
         /// <summary>Whether anything at all angers this stratum yet.</summary>
