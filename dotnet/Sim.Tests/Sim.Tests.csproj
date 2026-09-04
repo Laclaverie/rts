@@ -10,6 +10,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- Warnings are errors. They accumulate otherwise: this project reached 18 nullable
+         warnings without anyone deciding to accept one, and CI surfaced them only once it
+         existed. If an SDK bump introduces a new warning, that is a change worth reading. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

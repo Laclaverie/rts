@@ -56,7 +56,7 @@ namespace RTS.Sim.Tests
                     return false;
                 }
 
-                reason = null;
+                reason = null!;   // no reason: the command is legal
                 return true;
             }
 
@@ -81,7 +81,7 @@ namespace RTS.Sim.Tests
 
             public bool Validate(ICommand command, World world, in Context ctx, out string reason)
             {
-                reason = null;
+                reason = null!;   // no reason: the command is legal
                 return true;
             }
 
@@ -96,7 +96,7 @@ namespace RTS.Sim.Tests
         /// <summary>Enqueues another command while being applied, to test re-entrancy.</summary>
         private sealed class ReentrantHandler : ICommandHandler
         {
-            private CommandDispatcher _dispatcher;
+            private CommandDispatcher _dispatcher = null!;   // set by Bind before use
 
             public void Bind(CommandDispatcher dispatcher) => _dispatcher = dispatcher;
 
@@ -106,7 +106,7 @@ namespace RTS.Sim.Tests
 
             public bool Validate(ICommand command, World world, in Context ctx, out string reason)
             {
-                reason = null;
+                reason = null!;   // no reason: the command is legal
                 return true;
             }
 
@@ -339,7 +339,7 @@ namespace RTS.Sim.Tests
         {
             var events = new EventQueue();
 
-            var e = Assert.Throws<InvalidOperationException>(() => Dispatcher(events, null as ICommandHandler));
+            var e = Assert.Throws<InvalidOperationException>(() => Dispatcher(events, (ICommandHandler)null!));
 
             Assert.That(e.Message, Does.Contain("null handler"));
         }

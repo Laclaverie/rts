@@ -50,7 +50,7 @@ namespace RTS.Sim.Tests
                     return false;
                 }
 
-                reason = null;
+                reason = null!;   // no reason: the command is legal
                 return true;
             }
 
