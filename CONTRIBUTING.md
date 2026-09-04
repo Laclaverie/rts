@@ -118,6 +118,13 @@ With no switches it runs both kinds headlessly, because a complete fast loop is 
 than a marginally faster one. `-Unit` or `-Functional` runs one kind alone. `tools	est -All`
 adds the Unity suite; `-Unity -Launch` starts the editor first.
 
+**Recorded scenarios** live in `StreamingAssets/Scenarios/scenarios.csv` and are replayed in
+CI: a seed, a starting port, a command log and the digest the run must produce (§8.2). To add
+one, write the row with an empty digest, run `dotnet run --project dotnet/Harness -- --corpus`,
+and paste back what it prints. A corpus failure means the simulation changed — which is not
+automatically wrong, but updating a digest should be a decision with a reason in the commit,
+never a reflex.
+
 **CI runs the same script**, so it cannot drift from what you run locally: `.github/workflows/ci.yml`
 calls `tools/Run-Tests.ps1` with no switches — on **Ubuntu for pull requests, and Ubuntu plus
 Windows for pushes to `main`**. Keeping a Windows thread is deliberate: saves are a seed plus a

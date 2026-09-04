@@ -1,0 +1,32 @@
+# Recorded runs, replayed in CI (ARCHITECTURE §8.2).
+#
+# A scenario is a seed, a starting port, and a command log — which is exactly what a save is
+# (§6.1). Each row is replayed and its digest compared, so any change that alters the
+# simulation is caught here rather than in a player's save.
+#
+# shocks            day:kind:magnitude, separated by ';'. Empty for an undisturbed run.
+#                   Kinds: HarvestFailure (food lost), Storm (condition lost per building),
+#                   Theft (coin taken), Desertion (crew lost).
+# expected_digest   what the run must produce. Leave empty when adding a scenario, run
+#                   `dotnet run --project dotnet/Harness -- --corpus`, and paste back what it
+#                   prints.
+#
+# A failure here means the sim changed. That is not automatically wrong — but it is never
+# nothing, and updating a digest should be a decision with a reason, not a reflex. If a change
+# was intended, the message shows the new value.
+#
+# These deliberately include the Phase 1 gate's own scenarios. The gate asserts the *shape*
+# (survived, collapsed); this asserts the exact arithmetic, so tuning that keeps the shape but
+# moves the numbers still shows up.
+
+id,seed,coin,days,shocks,expected_digest
+undisturbed,1,150,40,,21a379c7c72504db
+one-storm,1,150,40,10:Storm:0.30,df04c4c39ba7d28c
+one-theft,1,150,40,10:Theft:100,c293ee888a69f39c
+one-harvest-failure,1,150,40,10:HarvestFailure:8,a07bcf094b3285c3
+one-desertion,1,150,40,10:Desertion:2,e6ff26f94b1fdd51
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,d67212877a787403
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,a400c8e8e62ddc08
+lean-start,1,90,30,,1ebd48fb1253d7ed
+long-quiet-run,7,150,120,,124e518fe5f63b7f
+late-storm,3,150,60,50:Storm:0.40,bab2acec863152ce
