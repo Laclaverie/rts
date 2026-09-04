@@ -1,0 +1,28 @@
+Copyright (c) 2026 Pierre Laclaverie. All rights reserved.
+
+This repository is public so that its source can be read, and so that continuous
+integration runs on it. It is not open source.
+
+No permission is granted to any person to use, copy, modify, merge, publish,
+distribute, sublicense, or sell any part of this repository, in whole or in part,
+in source or compiled form, whether or not modified. This applies to the source
+code, the design documents, the balance and configuration data, and any art,
+audio or other assets added later.
+
+Two things are explicitly permitted:
+
+  1. Reading it, and learning from it. Ideas are not copyrightable; write your
+     own implementation of anything here.
+
+  2. The forking and viewing that GitHub's Terms of Service grant to users of
+     the platform, for the purpose of reading and proposing changes back.
+
+Contributions submitted as pull requests are accepted on the understanding that
+copyright in them is assigned to the copyright holder above, so that the project
+can be relicensed or released commercially without tracking down contributors.
+
+No warranty is given. The software is provided "as is", without warranty of any
+kind, express or implied, and the copyright holder is not liable for any claim,
+damages or other liability arising from it.
+
+To ask for permission beyond the above, open an issue.
