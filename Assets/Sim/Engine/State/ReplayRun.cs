@@ -4,6 +4,7 @@ using RTS.Sim.Engine.Commands;
 using RTS.Sim.Engine.Entities;
 using RTS.Sim.Engine.Events;
 using RTS.Sim.Engine.Pipeline;
+using RTS.Content.Registries;
 using RTS.Sim.Engine.Randomness;
 
 namespace RTS.Sim.Engine.State
@@ -23,16 +24,20 @@ namespace RTS.Sim.Engine.State
         private readonly CommandDispatcher _dispatcher;
 
         private ReplayRun(World world, Rng rng, EventQueue events,
-            Pipeline.Pipeline pipeline, CommandDispatcher dispatcher)
+            Pipeline.Pipeline pipeline, CommandDispatcher dispatcher, BalanceTables balance)
         {
             World = world;
             Rng = rng;
             Events = events;
+            Balance = balance;
             _pipeline = pipeline;
             _dispatcher = dispatcher;
         }
 
         public World World { get; }
+
+        /// <summary>The content this run uses, handed to every system through the context.</summary>
+        public BalanceTables Balance { get; }
         public Rng Rng { get; }
         public EventQueue Events { get; }
         public CommandLog CommandLog => _dispatcher.Log;
@@ -56,10 +61,17 @@ namespace RTS.Sim.Engine.State
         /// alternative is making the caller construct and thread three objects in the right
         /// order every time, which is a rule to remember rather than a shape to follow.
         /// </summary>
+        /// <param name="world">
+        /// The starting world, or null for an empty one. A scenario builds this (§8.2), and it
+        /// must be built the same way every run or the replay means nothing.
+        /// </param>
+        /// <param name="balance">The content every system reads. Null for runs that need none.</param>
         public static ReplayRun Start(
             ulong seed,
             IEnumerable<ICommandHandler> handlers,
-            Func<CommandDispatcher, Pipeline.Pipeline> buildPipeline)
+            Func<CommandDispatcher, Pipeline.Pipeline> buildPipeline,
+            World world = null,
+            BalanceTables balance = null)
         {
             if (buildPipeline == null) throw new ArgumentNullException(nameof(buildPipeline));
 
@@ -69,7 +81,7 @@ namespace RTS.Sim.Engine.State
             Pipeline.Pipeline pipeline = buildPipeline(dispatcher)
                 ?? throw new InvalidOperationException("buildPipeline returned null.");
 
-            return new ReplayRun(new World(), new Rng(seed), events, pipeline, dispatcher);
+            return new ReplayRun(world ?? new World(), new Rng(seed), events, pipeline, dispatcher, balance);
         }
 
         /// <summary>A run whose pipeline needs nothing from the dispatcher.</summary>
@@ -204,6 +216,6 @@ namespace RTS.Sim.Engine.State
             return writer.ToString();
         }
 
-        private Context Context(float dt) => new Context(Day, dt, Events, Rng);
+        private Context Context(float dt) => new Context(Day, dt, Events, Rng, Balance);
     }
 }

@@ -53,6 +53,7 @@ namespace RTS.Sim.Tests
                 new UpkeepSystem(),
                 new ProductionSystem(),
                 new MarketSystem(),
+                new DesertionSystem(),
             });
 
             Assert.That(pipeline.Systems(Phase.Tick), Is.Empty, "nothing runs per-tick yet");
@@ -65,6 +66,7 @@ namespace RTS.Sim.Tests
                     ConsumptionSystem.SystemId,
                     WagesSystem.SystemId,
                     UpkeepSystem.SystemId,
+                    DesertionSystem.SystemId,
                     ProductionSystem.SystemId,
                     MarketSystem.SystemId,
                 }));

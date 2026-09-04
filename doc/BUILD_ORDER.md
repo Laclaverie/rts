@@ -60,7 +60,10 @@ One port, no map, no neighbours, no routes. Numbers in a console.
 - Day-boundary phase wired and ordered (`Wages` before `Unrest` later — §4.2)
 - Console harness: run N days, print a state table per day
 
-**Gate: the cascade behaves as designed** (`GDD` §5.2.3). Two executable assertions:
+**Gate: the cascade behaves as designed** (`GDD` §5.2.3). *Implemented as
+`CascadeGateTests`, asserting on `PortCondition` rather than raw numbers so it survives
+tuning. Passing; the reserve band it depends on is recorded in
+`doc/design/ECONOMY_FINDINGS.md`.* Two executable assertions:
 
 - a **single** shock is always survivable — inject one, assert recovery
 - **correlated** shocks spiral — inject three, assert collapse
