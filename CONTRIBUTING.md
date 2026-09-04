@@ -9,6 +9,18 @@ are requirements, not style preferences.
 
 ---
 
+Reference docs:
+
+| | |
+|---|---|
+| `doc/ARCHITECTURE.md` | design and its constraints |
+| `doc/BUILD_ORDER.md` | what gets built in what order |
+| `doc/code/TOOLCHAIN.md` | versions, layout, running tests, CI, git |
+| `doc/code/PITFALLS.md` | mistakes already made, and the rules from them |
+| `doc/editor/EDITOR_SETTINGS.md` | anything configured inside Unity |
+
+---
+
 ## 1. Rules that are easy to break by accident
 
 Each of these has a specific, non-obvious cost. Breaking one is a scope change to be

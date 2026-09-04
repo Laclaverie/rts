@@ -39,6 +39,9 @@
     <None Include="../../Assets/StreamingAssets/Balance/**/*.csv"
           Link="Balance/%(RecursiveDir)%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../Assets/StreamingAssets/Config/**/*.csv"
+          Link="Config/%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

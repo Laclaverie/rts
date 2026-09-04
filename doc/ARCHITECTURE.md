@@ -565,6 +565,36 @@ Non-negotiable, because replay-based functional testing (§8.2) depends on them:
 - Fixed `Dt` in the Tick phase; never frame-time
 - **No coroutines and no `async`/`await` inside `Sim`** — see §7.2
 
+### 7.3 Logging — outside the contract, and kept there
+
+Channelled logging exists for the workflow where engine work happens **without opening the
+editor**: a log file plus a reader that filters channels in and out. `Sim/Engine/Diagnostics`
+holds the facade; the sinks that touch a file or a console are Unity-side (C5).
+
+Three rules, and they are the whole design:
+
+1. **It can always be turned off.** `Log.Enabled` is checked before anything else, so
+   disabling costs one boolean read per call site. A logging system that cannot be disabled
+   becomes a reason not to log.
+2. **Nothing is formatted until it is wanted.** `Log.On(channel, level)` guards message
+   building; an unguarded interpolated string is paid for whether or not the channel is on.
+3. **Logging may not influence sim state.** This is what makes it acceptable for the logger to
+   be the static mutable state §7.1 otherwise forbids. Every write method returns void, so
+   there is nothing to read back — but `On` returns a bool, so a system *could* do
+   state-changing work inside a guard. Nothing structural prevents it, so it is tested:
+   `LogDeterminismTests` replays one seed and command log with logging off, on at Error, and
+   on at Trace, and asserts all three digests match.
+
+Levels live in `logging.csv`, read by the §5.3 harness — same reader, same loud failure. A
+misspelled level is a load error, not a silently disabled channel, for the same reason a
+system missing from `pipeline.csv` is an error rather than a skip.
+
+Events and logs are different jobs. A system reporting **what happened** emits an event: it
+carries `CauseId`, it replays, and it feeds the player-facing feed (§6.2). A log line reports
+**how the machinery ran** — what loaded, what was skipped, how long it took.
+
+---
+
 ### 7.2 No coroutines in the sim
 
 > **All sim state lives in `World`.**
