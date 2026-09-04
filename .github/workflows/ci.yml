@@ -1,0 +1,61 @@
+name: CI
+
+# Phase 0's last bullet (BUILD_ORDER §2). Runs the headless suites — the ones that need
+# nothing but a .NET SDK. The Unity EditMode suite is deliberately not here: it needs a
+# licensed Unity runner, and paying that cost buys four tests today. Revisit when the
+# Unity side is load-bearing.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push supersedes an in-flight run on the same ref. main is exempt, so its history
+# keeps a result for every commit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  headless:
+    name: Headless (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    # Two runtimes on purpose. This project's saves are a seed plus a command log (§6.1), so
+    # determinism across runtimes is a correctness property, not a portability nicety — the
+    # Rng golden vectors are asserted here on Linux .NET as well as on the developer's Windows
+    # machine and inside Unity's runtime. Three independent checks of the same table, free.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore dotnet/RTS.Headless.slnx
+
+      # Through the same entry point developers use, so CI cannot drift from `tools\test`.
+      - name: Test
+        shell: pwsh
+        run: ./tools/Run-Tests.ps1 -ResultsDirectory ${{ runner.temp }}/test-results
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: ${{ runner.temp }}/test-results
+          if-no-files-found: warn
+          retention-days: 14
