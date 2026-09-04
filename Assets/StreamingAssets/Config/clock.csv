@@ -1,0 +1,26 @@
+# How fast the world runs. Edit and relaunch; no rebuild.
+#
+# This file is pacing, not design. Nothing here reaches the simulation: the clock decides only
+# when a day happens, and a day is identical however long the player took to watch it. A session
+# played at x4 and a headless replay of its command log produce the same digest, which is the
+# property the whole save format rests on (ARCHITECTURE §6.1, §7.1).
+#
+# seconds_per_day   real seconds in one in-game day at x1.
+# speeds            multipliers offered to the player, ascending, separated by ';'.
+#
+# Twenty minutes is GDD §5.1, and it is a design number rather than a convenience: the day is
+# the decision unit, route round trips are measured in days, and revolution rungs advance on day
+# boundaries so the player always has a day to answer one. Shortening it would quietly make the
+# ladder harsher without any rung changing.
+#
+# For testing, drop it. Ten seconds a day turns a ten-minute sitting into two months and makes a
+# cascade visible in one session — which is the point of it being a file rather than a constant.
+# Put it back before judging how the pacing feels.
+#
+# Speeds are for boredom, pause is for complexity (§3.2). They are different problems and both
+# need answering: a quiet stretch must be skippable or twenty-minute days read as dead air, and
+# a hard decision must be thinkable without a clock running.
+
+key,value
+seconds_per_day,1200
+speeds,1;2;4

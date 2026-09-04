@@ -128,6 +128,16 @@ First Unity work. Deliberately ugly — lists, labels, buttons.
 
 **Gate: a person who is not you can play a session and describe what happened.**
 
+**Pause and speed are in**, with the clock, the composition root and the readouts. Still to do
+before the gate can be tried on someone: the event feed, and buttons for the commands that
+already exist (`AssignCrew`, `MothballBuilding`, `SuppressRiot`).
+
+The shape this took is worth stating, because it is now a rule (`ARCHITECTURE` §2.2): the game
+is a `GameSession` in `Sim` — advance time, read state, issue commands, see what happened — and
+Unity is a renderer holding a `GameBoot` and a `PortPanel`. Everything Phase 3 added that could
+be tested headlessly was, including the readouts' own wording; the editor answers only whether
+StreamingAssets resolves and whether the panel has something to draw with.
+
 From here on, **hand it to someone at every phase.** The formal kill test is Phase 6,
 but informal ones start now and are cheap. Waiting until Phase 6 to learn how it reads
 would waste the entire point of building headless-first.

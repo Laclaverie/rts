@@ -18,6 +18,12 @@ namespace RTS.Game.Boot
 
         public const string LoggingFile = "logging.csv";
 
+        /// <summary>
+        /// How fast the world runs. Config rather than balance because it is pacing: nothing in
+        /// it reaches the simulation, and a session played at any speed reaches the same state.
+        /// </summary>
+        public const string ClockFile = "clock.csv";
+
         public static string Directory => StreamingFiles.DirectoryFor(FolderName);
 
         public static string PathTo(string fileName) => StreamingFiles.PathTo(FolderName, fileName);
