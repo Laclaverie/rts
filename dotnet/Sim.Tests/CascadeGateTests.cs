@@ -38,27 +38,26 @@ namespace RTS.Sim.Tests
     {
         private static BalanceTables ShippedBalance()
         {
-            string directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "Balance");
             var report = new ValidationReport();
 
-            BalanceTables tables = BalanceTables.Load(
-                CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.GoodsFile)),
-                    BalanceTables.GoodsFile),
-                CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.BuildingsFile)),
-                    BalanceTables.BuildingsFile),
-                CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.CrewRolesFile)),
-                    BalanceTables.CrewRolesFile),
-                report,
-                CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.StrataFile)),
-                    BalanceTables.StrataFile),
-                CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.LadderFile)),
-                    BalanceTables.LadderFile),
-                CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.RepressionFile)),
-                    BalanceTables.RepressionFile));
+            BalanceTables tables = BalanceTables.Load(new BalanceSources
+            {
+                Goods = Table(BalanceTables.GoodsFile),
+                Buildings = Table(BalanceTables.BuildingsFile),
+                CrewRoles = Table(BalanceTables.CrewRolesFile),
+                Strata = Table(BalanceTables.StrataFile),
+                Ladder = Table(BalanceTables.LadderFile),
+                Repression = Table(BalanceTables.RepressionFile),
+            }, report);
 
             report.ThrowIfInvalid();
             return tables;
         }
+
+        private static CsvTable Table(string file) => CsvTable.Parse(
+            File.ReadAllText(Path.Combine(
+                TestContext.CurrentContext.TestDirectory, "Balance", file)),
+            file);
 
         private static Pipeline DayBoundary(CommandDispatcher dispatcher)
         {

@@ -136,7 +136,13 @@ namespace RTS.Sim.Scenarios
                 }
 
                 seen.Add(id, row.Line);
-                scenarios.Add(new Scenario(id, (ulong)seed, coin, days, shocks, digest));
+                scenarios.Add(new Scenario(
+                    id: id,
+                    seed: (ulong)seed,
+                    startingCoin: coin,
+                    days: days,
+                    shocks: shocks,
+                    expectedDigest: digest));
             }
 
             return scenarios;

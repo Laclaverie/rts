@@ -98,6 +98,28 @@ it loud.
 **Ambiguous ordering is non-determinism.** Two systems claiming the same `(phase, order)` are
 rejected, not tie-broken.
 
+**Same-typed parameters are the real hazard, not long parameter lists.** A survey found 15
+signatures with more than four parameters; five of them take all-distinct types, so the compiler
+catches any misordering and the length is harmless. The dangerous ones were the runs:
+`StratumRules` took six consecutive `float`s, `Building` four consecutive `int`s, `PortReport`
+three `int`s then three `float`s, and `BalanceTables.Load` had a `ValidationReport` wedged
+fourth among six `CsvTable`s.
+
+A transposition in any of those compiles, loads, and produces plausible numbers in the right
+columns. That is the worst failure mode this project has, because the numbers are exactly what
+nobody can check by eye — swapping goods and buildings gives you farms that cost four coin a day
+to eat, and nothing looks wrong until a balance pass makes no sense.
+
+→ Every such call site now passes **named arguments**. Where the parameters are one coherent
+group, a struct instead: `BalanceSources`. Prefer named arguments over object initialisers
+here — the editor compiles C# 9, which has no `required`, so an initialiser that forgets a
+property silently yields `0f`, trading a misordering risk for a missing-value one. Named
+arguments keep the compiler's "you must supply every parameter".
+
+→ Count parameters to find candidates; count *consecutive same-typed* parameters to decide which
+ones matter. `tools/` has no script for this — it was a one-off; re-derive it if the question
+comes up again.
+
 ---
 
 ## 4. Testing

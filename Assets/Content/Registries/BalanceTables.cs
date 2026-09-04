@@ -57,36 +57,28 @@ namespace RTS.Content.Registries
         /// Loads and validates every table. Collects problems rather than throwing, so one run
         /// reports everything wrong with the content.
         /// </summary>
-        public static BalanceTables Load(
-            CsvTable goods, CsvTable buildings, CsvTable crewRoles, ValidationReport report,
-            CsvTable strata = null, CsvTable ladder = null, CsvTable repression = null)
+        /// <remarks>
+        /// The tables arrive named rather than ordered because they are all the same type: passed
+        /// positionally, goods and buildings could be swapped and this would compile and load
+        /// happily. See <see cref="BalanceSources"/>.
+        /// </remarks>
+        public static BalanceTables Load(BalanceSources sources, ValidationReport report)
         {
             if (report == null) throw new ArgumentNullException(nameof(report));
 
             var pending = new List<PendingReference>();
 
-            ConfigRegistry<Good> goodRegistry = ConfigRegistry<Good>.Load(goods, report,
-                row => new Good(
-                    row.Id(),
-                    row.Int("base_price", min: 0),
-                    row.Float("volatility", 0f, 1f),
-                    row.Float("heat_per_unit", 0f, 1f),
-                    row.Enum<GoodSupply>("supply"),
-                    row.Float("keep", 0f, 100000f),
-                    row.Int("sell_price", min: 0)),
+            ConfigRegistry<Good> goodRegistry = ConfigRegistry<Good>.Load(sources.Goods, report,
+                ReadGood,
                 "id", "base_price", "volatility", "heat_per_unit", "supply", "keep", "sell_price");
 
-            ConfigRegistry<Building> buildingRegistry = ConfigRegistry<Building>.Load(buildings, report,
+            ConfigRegistry<Building> buildingRegistry = ConfigRegistry<Building>.Load(
+                sources.Buildings, report,
                 row => ReadBuilding(row, pending), "id", "upkeep_coin", "build_timber",
                 "build_iron", "capacity", "produces", "output_per_day", "staff");
 
-            ConfigRegistry<CrewRole> crewRegistry = ConfigRegistry<CrewRole>.Load(crewRoles, report,
-                row => new CrewRole(
-                    row.Id(),
-                    row.Int("wage_coin", min: 0),
-                    row.Float("work_rate", 0f, 10f),
-                    row.Float("food_per_day", 0f, 100f),
-                    row.Float("rum_per_day", 0f, 100f)),
+            ConfigRegistry<CrewRole> crewRegistry = ConfigRegistry<CrewRole>.Load(
+                sources.CrewRoles, report, ReadCrewRole,
                 "id", "wage_coin", "work_rate", "food_per_day", "rum_per_day");
 
             // Optional so that tests exercising the economy alone need not carry a strata table.
@@ -94,7 +86,7 @@ namespace RTS.Content.Registries
             // state rather than a broken one.
             ConfigRegistry<StratumRules> strataRegistry =
                 ConfigRegistry<StratumRules>.Load(
-                    strata ?? CsvTable.Parse(StrataHeader, StrataFile),
+                    sources.Strata ?? CsvTable.Parse(StrataHeader, StrataFile),
                     report, ReadStratum,
                     "id", "decay_per_day", "relief_per_day", "hunger_weight", "unpaid_weight",
                     "desertion_weight", "idle_weight");
@@ -103,14 +95,14 @@ namespace RTS.Content.Registries
 
             ConfigRegistry<LadderStep> ladderRegistry =
                 ConfigRegistry<LadderStep>.Load(
-                    ladder ?? CsvTable.Parse(LadderHeader, LadderFile),
+                    sources.Ladder ?? CsvTable.Parse(LadderHeader, LadderFile),
                     report, ReadLadderStep,
                     "rung", "climb_at", "fall_below", "days_to_climb", "output_multiplier",
                     "condition_damage");
 
             ConfigRegistry<RepressionRules> repressionRegistry =
                 ConfigRegistry<RepressionRules>.Load(
-                    repression ?? CsvTable.Parse(RepressionHeader, RepressionFile),
+                    sources.Repression ?? CsvTable.Parse(RepressionHeader, RepressionFile),
                     report, ReadRepression,
                     "id", "grievance_relief", "cowed_days", "baseline_increase", "loyalty_cost");
 
@@ -120,16 +112,34 @@ namespace RTS.Content.Registries
             return tables;
         }
 
+        private static Good ReadGood(RowReader row) => new Good(
+            id: row.Id(),
+            basePrice: row.Int("base_price", min: 0),
+            volatility: row.Float("volatility", 0f, 1f),
+            heatPerUnit: row.Float("heat_per_unit", 0f, 1f),
+            supply: row.Enum<GoodSupply>("supply"),
+            keep: row.Float("keep", 0f, 100000f),
+            sellPrice: row.Int("sell_price", min: 0));
+
+        private static CrewRole ReadCrewRole(RowReader row) => new CrewRole(
+            id: row.Id(),
+            wageCoin: row.Int("wage_coin", min: 0),
+            workRate: row.Float("work_rate", 0f, 10f),
+            foodPerDay: row.Float("food_per_day", 0f, 100f),
+            rumPerDay: row.Float("rum_per_day", 0f, 100f));
+
         private static RepressionRules ReadRepression(RowReader row)
         {
             string id = row.Id();
             Harshness harshness = row.Enum<Harshness>("id");
 
-            return new RepressionRules(id, harshness,
-                row.Float("grievance_relief", 0f, 1f),
-                row.Int("cowed_days", 0, 365),
-                row.Float("baseline_increase", 0f, 1f),
-                row.Float("loyalty_cost", 0f, 1f));
+            return new RepressionRules(
+                id: id,
+                harshness: harshness,
+                grievanceRelief: row.Float("grievance_relief", 0f, 1f),
+                cowedDays: row.Int("cowed_days", 0, 365),
+                baselineIncrease: row.Float("baseline_increase", 0f, 1f),
+                loyaltyCost: row.Float("loyalty_cost", 0f, 1f));
         }
 
         private static LadderStep ReadLadderStep(RowReader row)
@@ -137,12 +147,14 @@ namespace RTS.Content.Registries
             string id = row.Id("rung");
             LadderRung rung = row.Enum<LadderRung>("rung");
 
-            return new LadderStep(id, rung,
-                row.Float("climb_at", 0f, 1f),
-                row.Float("fall_below", 0f, 1f),
-                row.Int("days_to_climb", 1, 365),
-                row.Float("output_multiplier", 0f, 1f),
-                row.Float("condition_damage", 0f, 1f));
+            return new LadderStep(
+                id: id,
+                rung: rung,
+                climbAt: row.Float("climb_at", 0f, 1f),
+                fallBelow: row.Float("fall_below", 0f, 1f),
+                daysToClimb: row.Int("days_to_climb", 1, 365),
+                outputMultiplier: row.Float("output_multiplier", 0f, 1f),
+                conditionDamage: row.Float("condition_damage", 0f, 1f));
         }
 
         private static StratumRules ReadStratum(RowReader row)
@@ -150,13 +162,17 @@ namespace RTS.Content.Registries
             string id = row.Id();
             Stratum stratum = row.Enum<Stratum>("id");
 
-            return new StratumRules(id, stratum,
-                row.Float("decay_per_day", 0f, 1f),
-                row.Float("relief_per_day", 0f, 1f),
-                row.Float("hunger_weight", 0f, 1f),
-                row.Float("unpaid_weight", 0f, 1f),
-                row.Float("desertion_weight", 0f, 1f),
-                row.Float("idle_weight", 0f, 1f));
+            // Six floats in a row: the one signature in the project where a transposition would
+            // compile, load, and quietly rebalance the flagship system. Named, always.
+            return new StratumRules(
+                id: id,
+                stratum: stratum,
+                decayPerDay: row.Float("decay_per_day", 0f, 1f),
+                reliefPerDay: row.Float("relief_per_day", 0f, 1f),
+                hungerWeight: row.Float("hunger_weight", 0f, 1f),
+                unpaidWeight: row.Float("unpaid_weight", 0f, 1f),
+                desertionWeight: row.Float("desertion_weight", 0f, 1f),
+                idleWeight: row.Float("idle_weight", 0f, 1f));
         }
 
         private static Building ReadBuilding(RowReader row, ICollection<PendingReference> pending)
@@ -166,17 +182,24 @@ namespace RTS.Content.Registries
             // Empty is legitimate — most buildings produce nothing — so it is only a reference
             // when it is filled in.
             if (!string.IsNullOrEmpty(produces))
-                pending.Add(new PendingReference("buildings.csv", row.Line, "produces", produces, GoodsFile));
+            {
+                pending.Add(new PendingReference(
+                    source: BuildingsFile,
+                    line: row.Line,
+                    column: "produces",
+                    value: produces,
+                    targetTable: GoodsFile));
+            }
 
             return new Building(
-                row.Id(),
-                row.Int("upkeep_coin", min: 0),
-                row.Int("build_timber", min: 0),
-                row.Int("build_iron", min: 0),
-                row.Int("capacity", min: 0),
-                produces,
-                row.Float("output_per_day", 0f, 1000f),
-                row.Int("staff", min: 0, max: 100));
+                id: row.Id(),
+                upkeepCoin: row.Int("upkeep_coin", min: 0),
+                buildTimber: row.Int("build_timber", min: 0),
+                buildIron: row.Int("build_iron", min: 0),
+                capacity: row.Int("capacity", min: 0),
+                produces: produces,
+                outputPerDay: row.Float("output_per_day", 0f, 1000f),
+                staff: row.Int("staff", min: 0, max: 100));
         }
 
         /// <summary>

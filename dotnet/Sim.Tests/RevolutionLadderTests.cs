@@ -51,13 +51,15 @@ namespace RTS.Sim.Tests
         public void SetUp()
         {
             var report = new ValidationReport();
-            _balance = BalanceTables.Load(
-                CsvTable.Parse(Goods, "goods.csv"),
-                CsvTable.Parse(Buildings, "buildings.csv"),
-                CsvTable.Parse(Crew, "crew_roles.csv"),
-                report,
-                CsvTable.Parse(Strata, "strata.csv"),
-                CsvTable.Parse(Ladder, "ladder.csv"));
+            _balance = BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(Goods, "goods.csv"),
+                Buildings = CsvTable.Parse(Buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(Crew, "crew_roles.csv"),
+                Strata = CsvTable.Parse(Strata, "strata.csv"),
+                Ladder =
+                CsvTable.Parse(Ladder, "ladder.csv"),
+            }, report);
 
             Assert.That(report.IsValid, Is.True, string.Join("; ", report.Problems));
 
@@ -151,15 +153,17 @@ namespace RTS.Sim.Tests
             // saturates in a day and decays in fortieths, so with no dwell time a port that
             // reached Riot was deposed three days later whatever the player did.
             var report = new ValidationReport();
-            BalanceTables slow = BalanceTables.Load(
-                CsvTable.Parse(Goods, "goods.csv"),
-                CsvTable.Parse(Buildings, "buildings.csv"),
-                CsvTable.Parse(Crew, "crew_roles.csv"),
-                report,
-                CsvTable.Parse(Strata, "strata.csv"),
+            BalanceTables slow = BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(Goods, "goods.csv"),
+                Buildings = CsvTable.Parse(Buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(Crew, "crew_roles.csv"),
+                Strata = CsvTable.Parse(Strata, "strata.csv"),
+                Ladder =
                 // Every rung paced at three days, so the table still satisfies the rule that a
                 // ladder must not speed up as it gets worse.
-                CsvTable.Parse(Ladder.Replace(",1,", ",3,"), "ladder.csv"));
+                CsvTable.Parse(Ladder.Replace(",1,", ",3,"), "ladder.csv"),
+            }, report);
 
             Assert.That(report.IsValid, Is.True, string.Join("; ", report.Problems));
 
@@ -319,13 +323,15 @@ namespace RTS.Sim.Tests
         public void A_rung_with_no_hysteresis_is_rejected()
         {
             var report = new ValidationReport();
-            BalanceTables.Load(
-                CsvTable.Parse(Goods, "goods.csv"),
-                CsvTable.Parse(Buildings, "buildings.csv"),
-                CsvTable.Parse(Crew, "crew_roles.csv"),
-                report,
-                CsvTable.Parse(Strata, "strata.csv"),
-                CsvTable.Parse(Ladder.Replace("Slowdown,0.50,0.40", "Slowdown,0.50,0.50"), "ladder.csv"));
+            BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(Goods, "goods.csv"),
+                Buildings = CsvTable.Parse(Buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(Crew, "crew_roles.csv"),
+                Strata = CsvTable.Parse(Strata, "strata.csv"),
+                Ladder =
+                CsvTable.Parse(Ladder.Replace("Slowdown,0.50,0.40", "Slowdown,0.50,0.50"), "ladder.csv"),
+            }, report);
 
             Assert.That(report.Problems.Any(p => p.Contains("no hysteresis")), Is.True,
                 string.Join("; ", report.Problems));
@@ -338,14 +344,16 @@ namespace RTS.Sim.Tests
             // the stakes. A ladder that escalated fastest at the top would take longest where it
             // mattered least.
             var report = new ValidationReport();
-            BalanceTables.Load(
-                CsvTable.Parse(Goods, "goods.csv"),
-                CsvTable.Parse(Buildings, "buildings.csv"),
-                CsvTable.Parse(Crew, "crew_roles.csv"),
-                report,
-                CsvTable.Parse(Strata, "strata.csv"),
+            BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(Goods, "goods.csv"),
+                Buildings = CsvTable.Parse(Buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(Crew, "crew_roles.csv"),
+                Strata = CsvTable.Parse(Strata, "strata.csv"),
+                Ladder =
                 CsvTable.Parse(
-                    Ladder.Replace("Slowdown,0.50,0.40,1", "Slowdown,0.50,0.40,4"), "ladder.csv"));
+                    Ladder.Replace("Slowdown,0.50,0.40,1", "Slowdown,0.50,0.40,4"), "ladder.csv"),
+            }, report);
 
             Assert.That(report.Problems.Any(p => p.Contains("speed up as it")), Is.True,
                 string.Join("; ", report.Problems));
@@ -356,13 +364,15 @@ namespace RTS.Sim.Tests
         {
             // It would be skipped without ever being seen, and §5.2.2 wants every rung visible.
             var report = new ValidationReport();
-            BalanceTables.Load(
-                CsvTable.Parse(Goods, "goods.csv"),
-                CsvTable.Parse(Buildings, "buildings.csv"),
-                CsvTable.Parse(Crew, "crew_roles.csv"),
-                report,
-                CsvTable.Parse(Strata, "strata.csv"),
-                CsvTable.Parse(Ladder.Replace("Agitator,0.65,0.55,1,0.60,0.00\n", ""), "ladder.csv"));
+            BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(Goods, "goods.csv"),
+                Buildings = CsvTable.Parse(Buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(Crew, "crew_roles.csv"),
+                Strata = CsvTable.Parse(Strata, "strata.csv"),
+                Ladder =
+                CsvTable.Parse(Ladder.Replace("Agitator,0.65,0.55,1,0.60,0.00\n", ""), "ladder.csv"),
+            }, report);
 
             Assert.That(report.Problems.Any(p => p.Contains("'Agitator' is missing")), Is.True,
                 string.Join("; ", report.Problems));

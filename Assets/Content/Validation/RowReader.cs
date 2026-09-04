@@ -167,7 +167,12 @@ namespace RTS.Content.Validation
             string value = Text(column, required: true);
             if (HasProblems) return string.Empty;
 
-            pending.Add(new PendingReference(_source, _row.Line, column, value, targetTable));
+            pending.Add(new PendingReference(
+                source: _source,
+                line: _row.Line,
+                column: column,
+                value: value,
+                targetTable: targetTable));
             return value;
         }
     }

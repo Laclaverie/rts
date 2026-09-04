@@ -25,19 +25,23 @@ namespace RTS.Sim.Tests
         private static string Balance(string file) =>
             Path.Combine(TestContext.CurrentContext.TestDirectory, "Balance", file);
 
+        private static CsvTable Table(string file) =>
+            CsvTable.Parse(File.ReadAllText(Balance(file)), file);
+
         private static string PipelineCsv() => File.ReadAllText(Balance("pipeline.csv"));
 
         private static BalanceTables Tables()
         {
             var report = new ValidationReport();
-            BalanceTables tables = BalanceTables.Load(
-                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.GoodsFile)), BalanceTables.GoodsFile),
-                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.BuildingsFile)), BalanceTables.BuildingsFile),
-                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.CrewRolesFile)), BalanceTables.CrewRolesFile),
-                report,
-                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.StrataFile)), BalanceTables.StrataFile),
-                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.LadderFile)), BalanceTables.LadderFile),
-                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.RepressionFile)), BalanceTables.RepressionFile));
+            BalanceTables tables = BalanceTables.Load(new BalanceSources
+            {
+                Goods = Table(BalanceTables.GoodsFile),
+                Buildings = Table(BalanceTables.BuildingsFile),
+                CrewRoles = Table(BalanceTables.CrewRolesFile),
+                Strata = Table(BalanceTables.StrataFile),
+                Ladder = Table(BalanceTables.LadderFile),
+                Repression = Table(BalanceTables.RepressionFile),
+            }, report);
 
             report.ThrowIfInvalid();
             return tables;
