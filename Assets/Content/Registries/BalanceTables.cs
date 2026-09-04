@@ -20,6 +20,7 @@ namespace RTS.Content.Registries
         public const string CrewRolesFile = "crew_roles.csv";
         public const string StrataFile = "strata.csv";
         public const string LadderFile = "ladder.csv";
+        public const string RepressionFile = "repression.csv";
 
         /// <summary>The strata columns, used to stand in an empty table when none is supplied.</summary>
         public const string StrataHeader =
@@ -29,11 +30,16 @@ namespace RTS.Content.Registries
         public const string LadderHeader =
             "rung,climb_at,fall_below,output_multiplier,condition_damage\n";
 
+        /// <summary>The repression columns, used to stand in an empty table when none is supplied.</summary>
+        public const string RepressionHeader =
+            "id,grievance_relief,baseline_increase,loyalty_cost\n";
+
         private BalanceTables(ConfigRegistry<Good> goods, ConfigRegistry<Building> buildings,
             ConfigRegistry<CrewRole> crewRoles, ConfigRegistry<StratumRules> strata,
-            ConfigRegistry<LadderStep> ladder)
+            ConfigRegistry<LadderStep> ladder, ConfigRegistry<RepressionRules> repression)
         {
             Ladder = ladder;
+            Repression = repression;
             Goods = goods;
             Buildings = buildings;
             CrewRoles = crewRoles;
@@ -45,6 +51,7 @@ namespace RTS.Content.Registries
         public ConfigRegistry<CrewRole> CrewRoles { get; }
         public ConfigRegistry<StratumRules> Strata { get; }
         public ConfigRegistry<LadderStep> Ladder { get; }
+        public ConfigRegistry<RepressionRules> Repression { get; }
 
         /// <summary>
         /// Loads and validates every table. Collects problems rather than throwing, so one run
@@ -52,7 +59,7 @@ namespace RTS.Content.Registries
         /// </summary>
         public static BalanceTables Load(
             CsvTable goods, CsvTable buildings, CsvTable crewRoles, ValidationReport report,
-            CsvTable strata = null, CsvTable ladder = null)
+            CsvTable strata = null, CsvTable ladder = null, CsvTable repression = null)
         {
             if (report == null) throw new ArgumentNullException(nameof(report));
 
@@ -100,10 +107,27 @@ namespace RTS.Content.Registries
                     report, ReadLadderStep,
                     "rung", "climb_at", "fall_below", "output_multiplier", "condition_damage");
 
+            ConfigRegistry<RepressionRules> repressionRegistry =
+                ConfigRegistry<RepressionRules>.Load(
+                    repression ?? CsvTable.Parse(RepressionHeader, RepressionFile),
+                    report, ReadRepression,
+                    "id", "grievance_relief", "baseline_increase", "loyalty_cost");
+
             var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry,
-                strataRegistry, ladderRegistry);
+                strataRegistry, ladderRegistry, repressionRegistry);
             tables.CrossCheck(report);
             return tables;
+        }
+
+        private static RepressionRules ReadRepression(RowReader row)
+        {
+            string id = row.Id();
+            Harshness harshness = row.Enum<Harshness>("id");
+
+            return new RepressionRules(id, harshness,
+                row.Float("grievance_relief", 0f, 1f),
+                row.Float("baseline_increase", 0f, 1f),
+                row.Float("loyalty_cost", 0f, 1f));
         }
 
         private static LadderStep ReadLadderStep(RowReader row)
@@ -169,6 +193,19 @@ namespace RTS.Content.Registries
         private void CrossCheck(ValidationReport report)
         {
             if (Ladder.Count > 0) CheckLadder(report);
+
+            foreach (RepressionRules rules in Repression)
+            {
+                // Repression that raised grievance on the day it was used would be a trap
+                // rather than a decision: the player would be punished for taking the option
+                // the game offered them, with no way to see it coming.
+                if (rules.BaselineIncrease >= rules.GrievanceRelief)
+                {
+                    report.Add(RepressionFile, Repression.LineOf(rules.Id),
+                        $"'{rules.Id}' relieves {rules.GrievanceRelief} but raises the floor by " +
+                        $"{rules.BaselineIncrease}, so using it would make things worse the same day.");
+                }
+            }
 
             var produced = new HashSet<string>(StringComparer.Ordinal);
             var consumed = new HashSet<string>(StringComparer.Ordinal);
