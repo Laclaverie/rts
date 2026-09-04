@@ -84,20 +84,35 @@ namespace RTS.Sim.Tests
             }
         }
 
-        /// <summary>Deliberately non-deterministic, to prove the gate can fail.</summary>
-        private sealed class WallClockDrift : ISystem
+        /// <summary>
+        /// Deliberately non-deterministic, to prove the gate can fail.
+        /// </summary>
+        /// <remarks>
+        /// Static mutable state, which §7.1 forbids in exactly these words and for exactly this
+        /// reason: the second run sees what the first left behind.
+        /// <para>
+        /// This started as a wall-clock read, which was the wrong choice — two runs could
+        /// coincidentally land on the same value, so the test that proves the gate can fail was
+        /// itself flaky. A counter differs across runs by construction, so the failure it
+        /// demonstrates is as deterministic as the success it contrasts with.
+        /// </para>
+        /// </remarks>
+        private sealed class LeakyStaticDrift : ISystem
         {
-            public string Id => "WallClockDrift";
+            private static int _leaked;
+
+            public string Id => "LeakyStaticDrift";
 
             public void Run(World world, in Context ctx)
             {
+                _leaked++;
+
                 ComponentStore<Stock> stocks = world.Store<Stock>();
 
                 for (int i = 0; i < stocks.Count; i++)
                 {
                     ref Stock stock = ref stocks.GetRef(stocks.Ids[i]);
-                    // Exactly what §7.1 forbids.
-                    stock.Units += (int)(DateTime.UtcNow.Ticks % 7);
+                    stock.Units += _leaked;
                 }
             }
         }
@@ -152,11 +167,10 @@ namespace RTS.Sim.Tests
             // A gate that cannot fail is not a gate (BUILD_ORDER §1.6). A system reading the
             // wall clock is precisely what §7.1 forbids, and the digest must notice.
             ReplayRun first = RunScriptWithDrain(nonDeterministic: true);
-            System.Threading.Thread.Sleep(2);
             ReplayRun second = RunScriptWithDrain(nonDeterministic: true);
 
             Assert.That(second.Digest(), Is.Not.EqualTo(first.Digest()),
-                "a wall-clock read must break the digest, or the gate proves nothing");
+                "state leaking between runs must break the digest, or the gate proves nothing");
         }
 
         [Test]
@@ -250,7 +264,7 @@ namespace RTS.Sim.Tests
 
         private static ReplayRun StartRun(ulong seed, bool nonDeterministic = false)
         {
-            ISystem drift = nonDeterministic ? (ISystem)new WallClockDrift() : new DriftPrices();
+            ISystem drift = nonDeterministic ? (ISystem)new LeakyStaticDrift() : new DriftPrices();
 
             return ReplayRun.Start(
                 seed,
