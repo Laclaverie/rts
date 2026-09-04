@@ -37,6 +37,12 @@ namespace RTS.Sim.Engine.State
         public EventQueue Events { get; }
         public CommandLog CommandLog => _dispatcher.Log;
 
+        /// <summary>
+        /// The digest's format version. Bump it when the written shape changes, so an old
+        /// digest is recognisably from a different format rather than merely different.
+        /// </summary>
+        public const int SchemaVersion = 1;
+
         /// <summary>The in-game day. Starts at 1, as day 0 is "before anything happened".</summary>
         public int Day { get; private set; } = 1;
 
@@ -116,6 +122,16 @@ namespace RTS.Sim.Engine.State
         public void WriteTo(IStateWriter writer)
         {
             writer.BeginSection("replay");
+
+            // The shape of everything below. Bump it deliberately when the format changes;
+            // §6.1 already refuses to load a save whose stamps do not match, and this is the
+            // stamp for "the digest means something different now".
+            //
+            // These names are a file format, not code identifiers, which is why they are
+            // literals rather than nameof(): renaming a field is a refactor that must not
+            // change what a save looks like. The golden schema test is what notices when the
+            // shape does change, so the change is a decision rather than an accident.
+            writer.Write("schema", SchemaVersion);
             writer.Write("day", Day);
 
             World.WriteTo(writer);
