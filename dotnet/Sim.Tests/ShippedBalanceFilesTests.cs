@@ -1,5 +1,6 @@
 using System.IO;
 using RTS.Content.Loading;
+using RTS.Content.Registries;
 using RTS.Content.Validation;
 using RTS.Sim.Engine.Diagnostics;
 using RTS.Sim.Engine.Pipeline;
@@ -61,6 +62,28 @@ namespace RTS.Sim.Tests
             Assert.That(report.IsValid, Is.True, string.Join("; ", report.Problems));
             Assert.That(settings.Levels.Count, Is.GreaterThan(0),
                 "the shipped file should configure at least one channel");
+        }
+
+        [Test]
+        public void The_shipped_balance_tables_load_and_cross_check_clean()
+        {
+            // The rules of §5.3 applied to the real files: every Local good produced by
+            // something, everything consumed by something, every `produces` resolving.
+            var report = new ValidationReport();
+
+            BalanceTables tables = BalanceTables.Load(
+                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.GoodsFile)), BalanceTables.GoodsFile),
+                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.BuildingsFile)), BalanceTables.BuildingsFile),
+                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.CrewRolesFile)), BalanceTables.CrewRolesFile),
+                report);
+
+            Assert.That(report.IsValid, Is.True,
+                "shipped balance content is invalid:" + System.Environment.NewLine +
+                string.Join(System.Environment.NewLine, report.Problems));
+
+            Assert.That(tables.Goods.Count, Is.GreaterThan(0));
+            Assert.That(tables.Buildings.Count, Is.GreaterThan(0));
+            Assert.That(tables.CrewRoles.Count, Is.GreaterThan(0));
         }
     }
 }

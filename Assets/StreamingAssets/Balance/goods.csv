@@ -1,0 +1,21 @@
+# Goods (GDD §5.3). Deliberately small: four commodities plus one morale good.
+# Coin is not here — it is the currency, not a good.
+#
+# supply   Local       produced somewhere in the port; must have a producing building
+#          ImportOnly  arrives only by trade, so it has no local producer
+#
+# ImportOnly exists because §5.3 makes spice a pure trade good — no producer and no
+# consumer — and rum's only source is the Workshop, which §5.5 parks as post-MVP. Without
+# this column the "every good has a producer and a consumer" check would either be wrong or
+# would have to be skipped, and a skipped check is worth nothing.
+#
+# base_price      coin per unit at a neutral market
+# volatility      0..1, how far local supply moves the price
+# heat_per_unit   0..1, attention drawn per unit held or moved (§5.2)
+
+id,base_price,volatility,heat_per_unit,supply
+food,4,0.25,0.00,Local
+timber,6,0.20,0.00,Local
+iron,12,0.30,0.05,Local
+rum,15,0.35,0.10,ImportOnly
+spice,40,0.50,0.30,ImportOnly

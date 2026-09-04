@@ -1,0 +1,31 @@
+# Buildings (GDD §5.5, and the extraction sources named in §5.3).
+#
+# §5.5 lists the five port buildings: longhouse, dock, warehouse, tavern, watchtower. None
+# of them produce anything. §5.3 names the sources of food, timber and iron as "farms,
+# fishing", "forest" and "mine", so those three are here as buildings. They are not a new
+# design idea — they are the sources §5.3 already assumes, made explicit because Production
+# needs something to produce from.
+#
+# The Workshop (Food -> Rum, Timber+Iron -> tools) stays post-MVP per §5.5, which is why rum
+# is ImportOnly in goods.csv.
+#
+# upkeep_coin     charged every day boundary, whether or not the building is useful
+# build_timber    one-off construction cost
+# build_iron      one-off construction cost
+# capacity        meaning depends on the building: population for longhouse, storage for
+#                 warehouse, simultaneous routes for dock, 0 where it does not apply
+# produces        good id, or empty
+# output_per_day  units of `produces` per day at full staffing
+#
+# Upkeep is fixed and income is variable — that asymmetry is the whole failure model
+# (§5.2.3). These numbers are a first pass and exist to be tuned against the Phase 1 gate.
+
+id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day
+longhouse,2,20,0,8,,0
+dock,3,30,10,4,,0
+warehouse,2,25,5,200,,0
+tavern,2,15,0,0,,0
+watchtower,3,15,10,0,,0
+farm,1,10,0,0,food,6
+sawmill,2,15,5,0,timber,5
+mine,4,20,10,0,iron,4
