@@ -173,6 +173,36 @@ Baseline is back to **+2 coin a day** after the change: dropping the sawmill's r
 2 to 1 put a full-rate worker on every producer, where previously the mine fell to the guard at
 0.8.
 
+## Phase 2
+
+### The economy already drives the ladder, without anything connecting them on purpose
+
+The first run of the corpus after the ladder landed:
+
+```
+three-correlated                 Collapsed   Deposition      0
+one-harvest-failure              Healthy     Calm          120     (was 176)
+three-correlated-deep-reserves   Healthy     Calm          251     (was 298)
+everything else                  Healthy     Calm          unchanged
+```
+
+`three-correlated` no longer merely bankrupts the port — it **deposes** you. Nothing was
+written to make that happen: the cascade produces hunger and unpaid wages, those are what
+grievance is made of, and grievance is what the ladder climbs. §5.2.2 calls unrest "a state
+machine fed by the economy", and it is now literally that.
+
+`one-harvest-failure` is the more interesting line. It lost 56 coin and **ends Calm**. Only
+rungs at Slowdown and above reduce output, so it must have climbed at least to Slowdown and
+come back down on its own — the Phase 2 gate's property showing up before the gate was written.
+
+### One idle worker is visible in every reading
+
+Commoner grievance sits at **0.02** in a perfectly healthy port, because the spare crew member
+has nothing to do and commoners resent unemployment. It plateaus there and never climbs.
+
+Harmless, and worth knowing when reading any grievance number: 0.00 is not the resting state of
+a working port, 0.02 is.
+
 ---
 
 ## Parked mechanics that came out of tuning

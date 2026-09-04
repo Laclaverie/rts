@@ -49,3 +49,4 @@ DayBoundary,35,Desertion,true
 DayBoundary,40,Production,true
 DayBoundary,50,Market,true
 DayBoundary,70,Unrest,true
+DayBoundary,80,RevolutionLadder,true

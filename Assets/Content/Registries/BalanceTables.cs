@@ -19,14 +19,21 @@ namespace RTS.Content.Registries
         public const string BuildingsFile = "buildings.csv";
         public const string CrewRolesFile = "crew_roles.csv";
         public const string StrataFile = "strata.csv";
+        public const string LadderFile = "ladder.csv";
 
         /// <summary>The strata columns, used to stand in an empty table when none is supplied.</summary>
         public const string StrataHeader =
             "id,decay_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n";
 
+        /// <summary>The ladder columns, used to stand in an empty table when none is supplied.</summary>
+        public const string LadderHeader =
+            "rung,climb_at,fall_below,output_multiplier,condition_damage\n";
+
         private BalanceTables(ConfigRegistry<Good> goods, ConfigRegistry<Building> buildings,
-            ConfigRegistry<CrewRole> crewRoles, ConfigRegistry<StratumRules> strata)
+            ConfigRegistry<CrewRole> crewRoles, ConfigRegistry<StratumRules> strata,
+            ConfigRegistry<LadderStep> ladder)
         {
+            Ladder = ladder;
             Goods = goods;
             Buildings = buildings;
             CrewRoles = crewRoles;
@@ -37,6 +44,7 @@ namespace RTS.Content.Registries
         public ConfigRegistry<Building> Buildings { get; }
         public ConfigRegistry<CrewRole> CrewRoles { get; }
         public ConfigRegistry<StratumRules> Strata { get; }
+        public ConfigRegistry<LadderStep> Ladder { get; }
 
         /// <summary>
         /// Loads and validates every table. Collects problems rather than throwing, so one run
@@ -44,7 +52,7 @@ namespace RTS.Content.Registries
         /// </summary>
         public static BalanceTables Load(
             CsvTable goods, CsvTable buildings, CsvTable crewRoles, ValidationReport report,
-            CsvTable strata = null)
+            CsvTable strata = null, CsvTable ladder = null)
         {
             if (report == null) throw new ArgumentNullException(nameof(report));
 
@@ -86,9 +94,28 @@ namespace RTS.Content.Registries
 
             ReferenceResolver.Resolve(report, pending, GoodsFile, goodRegistry);
 
-            var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry, strataRegistry);
+            ConfigRegistry<LadderStep> ladderRegistry =
+                ConfigRegistry<LadderStep>.Load(
+                    ladder ?? CsvTable.Parse(LadderHeader, LadderFile),
+                    report, ReadLadderStep,
+                    "rung", "climb_at", "fall_below", "output_multiplier", "condition_damage");
+
+            var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry,
+                strataRegistry, ladderRegistry);
             tables.CrossCheck(report);
             return tables;
+        }
+
+        private static LadderStep ReadLadderStep(RowReader row)
+        {
+            string id = row.Id("rung");
+            LadderRung rung = row.Enum<LadderRung>("rung");
+
+            return new LadderStep(id, rung,
+                row.Float("climb_at", 0f, 1f),
+                row.Float("fall_below", 0f, 1f),
+                row.Float("output_multiplier", 0f, 1f),
+                row.Float("condition_damage", 0f, 1f));
         }
 
         private static StratumRules ReadStratum(RowReader row)
@@ -141,6 +168,8 @@ namespace RTS.Content.Registries
         /// </remarks>
         private void CrossCheck(ValidationReport report)
         {
+            if (Ladder.Count > 0) CheckLadder(report);
+
             var produced = new HashSet<string>(StringComparer.Ordinal);
             var consumed = new HashSet<string>(StringComparer.Ordinal);
 
@@ -225,6 +254,49 @@ namespace RTS.Content.Registries
                     report.Add(BuildingsFile, Buildings.LineOf(building.Id),
                         $"'{building.Id}' has an output_per_day but no `produces`, so the number " +
                         "does nothing.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// The ladder's own rules: every rung present, thresholds ordered, and every rung with
+        /// real hysteresis.
+        /// </summary>
+        /// <remarks>
+        /// A missing rung would be skipped silently and a player would never see it. Thresholds
+        /// out of order would make a rung unreachable. And a rung whose climb and fall points
+        /// are equal flickers every day on the boundary, which makes "pull it back out"
+        /// meaningless — the thing the Phase 2 gate exists to prove.
+        /// </remarks>
+        private void CheckLadder(ValidationReport report)
+        {
+            foreach (LadderRung rung in (LadderRung[])Enum.GetValues(typeof(LadderRung)))
+            {
+                if (!Ladder.Contains(rung.ToString()))
+                {
+                    report.Add(LadderFile, 1,
+                        $"rung '{rung}' is missing. Every rung must be present, or it would be " +
+                        "skipped without ever being seen.");
+                }
+            }
+
+            for (int i = 0; i < Ladder.Count; i++)
+            {
+                LadderStep step = Ladder[i];
+                if (step.Rung == LadderRung.Calm || step.Rung == LadderRung.Deposition) continue;
+
+                if (step.FallBelow >= step.ClimbAt)
+                {
+                    report.Add(LadderFile, Ladder.LineOf(step.Id),
+                        $"'{step.Id}' climbs at {step.ClimbAt} and falls below {step.FallBelow}, " +
+                        "so it has no hysteresis and would flicker on the boundary.");
+                }
+
+                if (i > 0 && Ladder[i - 1].ClimbAt >= step.ClimbAt && Ladder[i - 1].Rung != LadderRung.Calm)
+                {
+                    report.Add(LadderFile, Ladder.LineOf(step.Id),
+                        $"'{step.Id}' climbs at {step.ClimbAt}, no higher than '{Ladder[i - 1].Id}' " +
+                        $"at {Ladder[i - 1].ClimbAt}, so one of them is unreachable.");
                 }
             }
         }

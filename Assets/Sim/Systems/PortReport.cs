@@ -23,8 +23,11 @@ namespace RTS.Sim.Systems
     public readonly struct PortReport
     {
         public PortReport(int day, int coin, int arrears, float averageMorale, float averageLoyalty,
-            float averageCondition, int crew, int buildings, IReadOnlyList<float> stock)
+            float averageCondition, int crew, int buildings, IReadOnlyList<float> stock,
+            LadderRung rung, IReadOnlyList<float> grievance)
         {
+            Rung = rung;
+            Grievance = grievance;
             Day = day;
             Coin = coin;
             Arrears = arrears;
@@ -48,6 +51,12 @@ namespace RTS.Sim.Systems
         /// <summary>Units per good, indexed as the goods registry is.</summary>
         public readonly IReadOnlyList<float> Stock;
 
+        /// <summary>Where the port sits on the revolution ladder (§5.2.2).</summary>
+        public readonly LadderRung Rung;
+
+        /// <summary>Grievance per stratum, indexed as the strata registry is.</summary>
+        public readonly IReadOnlyList<float> Grievance;
+
         public static PortReport Of(World world, BalanceTables balance, int day)
         {
             ComponentStore<Treasury> treasuries = world.Store<Treasury>();
@@ -70,12 +79,24 @@ namespace RTS.Sim.Systems
             var stock = new float[balance.Goods.Count];
             for (int i = 0; i < stock.Length; i++) stock[i] = Port.UnitsOf(world, i);
 
+            ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
+            LadderRung rung = ladders.Count > 0 ? ladders.Values[0].Rung : LadderRung.Calm;
+
+            var grievance = new float[balance.Strata.Count];
+            ComponentStore<Grievance> grievances = world.Store<Grievance>();
+            for (int i = 0; i < grievances.Count; i++)
+            {
+                Grievance entry = grievances.Values[i];
+                if (entry.StratumIndex >= 0 && entry.StratumIndex < grievance.Length)
+                    grievance[entry.StratumIndex] = entry.Value;
+            }
+
             return new PortReport(
                 day, coin, arrears,
                 crew.Count > 0 ? morale / crew.Count : 0f,
                 crew.Count > 0 ? loyalty / crew.Count : 0f,
                 buildings.Count > 0 ? condition / buildings.Count : 0f,
-                crew.Count, buildings.Count, stock);
+                crew.Count, buildings.Count, stock, rung, grievance);
         }
 
         /// <summary>The header matching <see cref="ToRow"/>. Fixed width, so columns line up.</summary>
@@ -87,6 +108,10 @@ namespace RTS.Sim.Systems
             for (int i = 0; i < balance.Goods.Count; i++)
                 text.Append('|').Append(Pad(balance.Goods[i].Id, 8));
 
+            for (int i = 0; i < balance.Strata.Count; i++)
+                text.Append('|').Append(Pad(balance.Strata[i].Id, 6));
+
+            text.Append("| rung");
             return text.ToString();
         }
 
@@ -111,6 +136,14 @@ namespace RTS.Sim.Systems
                     .Append(' ');
             }
 
+            for (int i = 0; i < Grievance.Count; i++)
+            {
+                text.Append('|')
+                    .Append(Grievance[i].ToString("0.00", CultureInfo.InvariantCulture).PadLeft(5))
+                    .Append(' ');
+            }
+
+            text.Append("| ").Append(Rung);
             return text.ToString();
         }
 

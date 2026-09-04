@@ -50,7 +50,9 @@ namespace RTS.Sim.Tests
                     BalanceTables.CrewRolesFile),
                 report,
                 CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.StrataFile)),
-                    BalanceTables.StrataFile));
+                    BalanceTables.StrataFile),
+                CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.LadderFile)),
+                    BalanceTables.LadderFile));
 
             report.ThrowIfInvalid();
             return tables;
@@ -63,7 +65,7 @@ namespace RTS.Sim.Tests
             var systems = new List<ISystem>
             {
                 new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
-                new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(),
+                new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
             };
 
             // The drain is not in the shipped pipeline.csv yet, so the scenario declares it

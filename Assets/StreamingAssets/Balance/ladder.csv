@@ -1,0 +1,28 @@
+# The revolution ladder (GDD §5.2.2). One row per rung, in order.
+#
+# The port sits on the rung the angriest stratum has earned. Escalation moves one rung a day
+# at most, in either direction, so every rung is visible and a player has a day to act on it.
+#
+# climb_at              grievance at or above which the port moves up to this rung
+# fall_below            grievance below which it drops out of this rung
+# output_multiplier     what production is worth at this rung
+# condition_damage      condition lost per building per day at this rung
+#
+# climb_at is deliberately above the rung below's fall_below. That gap is hysteresis: without
+# it a port on the boundary would flicker between rungs every day, which would be unreadable
+# and would make "pull it back out" meaningless.
+#
+# Falling is as real as climbing. §5.2.2 says every rung has an exit, and the Phase 2 gate is
+# that a port can be driven into revolt AND pulled back out by playing the numbers. A ladder
+# that only climbs is a timer wearing a costume.
+#
+# Deposition never falls: fall_below is 0 because it is the failure state, not a bad mood.
+
+rung,climb_at,fall_below,output_multiplier,condition_damage
+Calm,0.00,0.00,1.00,0.00
+Grumbling,0.35,0.25,1.00,0.00
+Slowdown,0.50,0.40,0.75,0.00
+Agitator,0.65,0.55,0.60,0.00
+Riot,0.80,0.70,0.35,0.05
+Uprising,0.92,0.85,0.10,0.10
+Deposition,0.99,0.00,0.00,0.00

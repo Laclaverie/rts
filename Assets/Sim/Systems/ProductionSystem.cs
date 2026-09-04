@@ -45,6 +45,8 @@ namespace RTS.Sim.Systems
             ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
             if (buildings.Count == 0) return;
 
+            float unrest = UnrestMultiplier(world, balance);
+
             for (int i = 0; i < buildings.Count; i++)
             {
                 EntityId building = buildings.Ids[i];
@@ -58,11 +60,31 @@ namespace RTS.Sim.Systems
                 if (goodIndex < 0) continue;
 
                 float staffing = StaffingOf(world, balance, building, definition);
-                float output = definition.OutputPerDay * state.Condition * staffing;
+                float output = definition.OutputPerDay * state.Condition * staffing * unrest;
                 if (output <= 0f) continue;
 
                 Port.Add(world, goodIndex, output);
             }
+        }
+
+        /// <summary>
+        /// What the ladder is doing to output today. Slowdown is a rung, not a metaphor: at
+        /// rung 2 work really is done late and badly, and by Uprising almost nothing gets done.
+        /// </summary>
+        /// <remarks>
+        /// Production runs before Unrest and the ladder in the day (§4.2), so this reads
+        /// yesterday's rung. That lag is wanted: a port does not stop working the instant
+        /// somebody becomes angry, and the player sees the rung before feeling it.
+        /// </remarks>
+        public static float UnrestMultiplier(World world, BalanceTables balance)
+        {
+            if (balance.Ladder.Count == 0) return 1f;
+
+            ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
+            if (ladders.Count == 0) return 1f;
+
+            int rung = (int)ladders.Values[0].Rung;
+            return rung >= 0 && rung < balance.Ladder.Count ? balance.Ladder[rung].OutputMultiplier : 1f;
         }
 
         /// <summary>
