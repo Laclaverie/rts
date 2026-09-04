@@ -4,6 +4,7 @@ using System.Linq;
 using RTS.Content.Loading;
 using RTS.Sim.Engine.Commands;
 using RTS.Sim.Engine.Entities;
+using RTS.Sim.Engine.State;
 using RTS.Sim.Engine.Events;
 using RTS.Sim.Engine.Pipeline;
 
@@ -21,7 +22,12 @@ namespace RTS.Sim.Tests
 
         private struct Raised { public int To; }
 
-        private struct Tally { public int Value; }
+        private struct Tally : IComponentData
+        {
+            public int Value;
+
+            public void Write(IStateWriter writer) => writer.Write("value", Value);
+        }
 
         /// <summary>Adds to a Tally on a fixed entity, and reports it.</summary>
         private sealed class RaiseHandler : ICommandHandler

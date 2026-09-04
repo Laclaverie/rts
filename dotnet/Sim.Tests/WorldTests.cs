@@ -1,13 +1,24 @@
 using System;
 using RTS.Sim.Engine.Entities;
+using RTS.Sim.Engine.State;
 
 namespace RTS.Sim.Tests
 {
     [Category(TestCategories.Unit)]
     public class WorldTests
     {
-        private struct Hp { public int Value; }
-        private struct Tag { public int Kind; }
+        private struct Hp : IComponentData
+        {
+            public int Value;
+
+            public void Write(IStateWriter writer) => writer.Write("value", Value);
+        }
+        private struct Tag : IComponentData
+        {
+            public int Kind;
+
+            public void Write(IStateWriter writer) => writer.Write("kind", Kind);
+        }
 
         [Test]
         public void Ids_are_allocated_in_a_deterministic_sequence()

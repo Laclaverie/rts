@@ -42,7 +42,9 @@ Infrastructure only. No game concepts anywhere in this phase.
 - CI running the test project
 
 **Gate: replay determinism.** Run an empty world with a scripted command log twice;
-assert byte-identical end state. Everything downstream — saves, tests, the timeline —
+assert byte-identical end state. *Implemented as `ReplayRun` plus
+`ReplayDeterminismGateTests`: `Digest()` for "did it change", `Dump()` for "where", and a
+deliberately wall-clock-reading system proving the gate can fail.* Everything downstream — saves, tests, the timeline —
 rests on this, so it gets proven before anything is built on it.
 
 **Not now:** anything visual, any game concept, any Unity scene beyond an empty one.

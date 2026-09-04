@@ -123,6 +123,17 @@ public sealed class World
 > that genuinely needs one. Deliberately in that order: loosening this later breaks no
 > existing code, whereas tightening it later would.
 
+> **Every component implements `IComponentData`, which writes its own fields.** The
+> replay-determinism gate compares end states and §6.1's snapshots serialise them, so a
+> component the writer cannot see is a hole in both. Making it optional would mean a component
+> that forgot to implement it is silently excluded from the comparison — the gate would stay
+> green while the sim diverged, which is worse than having no gate. The cost is spelling out
+> fields once; that is the same work snapshots need anyway, and being explicit rather than
+> reflective makes field order and float formatting decisions rather than accidents.
+>
+> Floats are digested **by bit pattern**, never by formatted text: rounding would hide exactly
+> the one-ulp drift the gate exists to catch.
+
 A crew member is whatever components it has. A building is whatever components it has.
 Behaviour lives in systems, never on the data.
 

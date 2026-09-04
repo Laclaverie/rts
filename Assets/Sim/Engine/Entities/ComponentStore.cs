@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RTS.Sim.Engine.State;
 
 namespace RTS.Sim.Engine.Entities
 {
@@ -13,6 +14,15 @@ namespace RTS.Sim.Engine.Entities
         bool Has(EntityId id);
         bool Remove(EntityId id);
         void Clear();
+
+        /// <summary>The component type's name, for the digest's section header.</summary>
+        string ComponentName { get; }
+
+        /// <summary>
+        /// Writes every entry in insertion order. Part of the interface rather than a generic
+        /// helper so <see cref="World"/> can digest stores of mixed types in one pass.
+        /// </summary>
+        void WriteTo(IStateWriter writer);
     }
 
     /// <summary>
@@ -26,7 +36,7 @@ namespace RTS.Sim.Engine.Entities
     /// deliberate: ARCHITECTURE §3 caps this at dozens of named agents plus a few hundred
     /// mobs, and a swap-remove would trade determinism for a speed-up nothing needs.
     /// </remarks>
-    public sealed class ComponentStore<T> : IComponentStore where T : struct
+    public sealed class ComponentStore<T> : IComponentStore where T : struct, IComponentData
     {
         private const int DefaultCapacity = 16;
 
@@ -128,6 +138,27 @@ namespace RTS.Sim.Engine.Entities
             _indexOf.Remove(id);
 
             return true;
+        }
+
+        public string ComponentName => typeof(T).Name;
+
+        /// <summary>
+        /// Ids and values in insertion order (§7.1). The id is written before the value so a
+        /// text digest reads as a list of entities rather than two parallel columns.
+        /// </summary>
+        public void WriteTo(IStateWriter writer)
+        {
+            writer.BeginSection(ComponentName);
+            writer.Write("count", _count);
+
+            for (int i = 0; i < _count; i++)
+            {
+                writer.BeginSection(_ids[i].ToString());
+                _values[i].Write(writer);
+                writer.EndSection();
+            }
+
+            writer.EndSection();
         }
 
         public void Clear()
