@@ -120,6 +120,15 @@ namespace RTS.Sim.Systems
             }
 
             Assign(world, balance);
+
+            // One per stratum, in file order, so a port always has the same strata in the same
+            // order regardless of what happens to it later.
+            for (int i = 0; i < balance.Strata.Count; i++)
+            {
+                EntityId stratum = world.CreateEntity();
+                world.Add(stratum, new Grievance { StratumIndex = i, Value = 0f, Baseline = 0f });
+            }
+
             return world;
         }
 

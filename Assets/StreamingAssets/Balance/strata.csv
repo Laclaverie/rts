@@ -1,0 +1,25 @@
+# Grievance per stratum (GDD §5.2.2). One row per group, one column per thing that angers it.
+#
+# Grievance is 0..1. Each day it decays, then rises by whatever happened that day times the
+# weight below. A weight of 0 means that stratum does not care about that thing.
+#
+# decay_per_day       how fast anger fades when nothing new happens. Slower than it rises, or
+#                     nothing ever compounds.
+# hunger_weight       per crew member who went unfed today
+# unpaid_weight       per crew member whose wage went unpaid today
+# desertion_weight    per crew member who left today
+# idle_weight         per crew member with no work, per day
+#
+# Merchants have every weight at zero, and that is honest rather than an oversight: what
+# angers them — tariffs, blockades, lost convoys, seizures — needs trade, routes and
+# neighbours, none of which exist yet. The stratum is here because the ladder reads all three
+# and adding it later would mean re-tuning the other two. Its weights arrive with trade.
+#
+# Commoners care about hunger far more than crew do: crew signed up for hard weather, and a
+# commoner who cannot feed a family did not. Crew care about pay, which commoners do not
+# receive at all.
+
+id,decay_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight
+Commoners,0.04,0.10,0.02,0.03,0.02
+NamedCrew,0.05,0.03,0.12,0.08,0.00
+Merchants,0.06,0.00,0.00,0.00,0.00

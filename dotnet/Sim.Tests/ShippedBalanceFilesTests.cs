@@ -54,6 +54,7 @@ namespace RTS.Sim.Tests
                 new ProductionSystem(),
                 new MarketSystem(),
                 new DesertionSystem(),
+                new UnrestSystem(),
             });
 
             Assert.That(pipeline.Systems(Phase.Tick), Is.Empty, "nothing runs per-tick yet");
@@ -69,6 +70,7 @@ namespace RTS.Sim.Tests
                     DesertionSystem.SystemId,
                     ProductionSystem.SystemId,
                     MarketSystem.SystemId,
+                    UnrestSystem.SystemId,
                 }));
         }
 
@@ -98,7 +100,8 @@ namespace RTS.Sim.Tests
                 CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.GoodsFile)), BalanceTables.GoodsFile),
                 CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.BuildingsFile)), BalanceTables.BuildingsFile),
                 CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.CrewRolesFile)), BalanceTables.CrewRolesFile),
-                report);
+                report,
+                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.StrataFile)), BalanceTables.StrataFile));
 
             Assert.That(report.IsValid, Is.True,
                 "shipped balance content is invalid:" + System.Environment.NewLine +

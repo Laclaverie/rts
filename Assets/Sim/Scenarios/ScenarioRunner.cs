@@ -92,7 +92,7 @@ namespace RTS.Sim.Scenarios
             var systems = new List<ISystem>
             {
                 new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
-                new DesertionSystem(), new ProductionSystem(), new MarketSystem(),
+                new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(),
                 new CommandDrainSystem(dispatcher),
             };
 
