@@ -1,0 +1,22 @@
+# Putting down a riot (GDD §5.2.2). One row per level of harshness.
+#
+# "Crushing a riot lowers Unrest immediately, raises baseline grievance permanently, and costs
+# loyalty with every crew member who disagreed. A viable strategy, not a free one."
+#
+# grievance_relief    taken off every stratum's grievance at once
+# baseline_increase   added to every stratum's floor, forever. Grievance decays towards the
+#                     floor, so this is the part that never goes away: a port put down by force
+#                     never returns to calm.
+# loyalty_cost        taken from every crew member. They were not asked.
+#
+# The trade is deliberately real. Brutal buys three times the quiet of Restrained and costs six
+# times the permanent floor, so it is the right answer when the alternative is deposition
+# tomorrow and the wrong one when the port could have been fed instead.
+#
+# Every relief is larger than its baseline increase, and the loader enforces it: repression
+# that raised grievance on the day it was used would be a trap rather than a decision.
+
+id,grievance_relief,baseline_increase,loyalty_cost
+Restrained,0.15,0.03,0.05
+Firm,0.30,0.08,0.12
+Brutal,0.50,0.18,0.25

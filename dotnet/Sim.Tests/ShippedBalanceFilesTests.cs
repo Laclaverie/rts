@@ -104,7 +104,8 @@ namespace RTS.Sim.Tests
                 CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.CrewRolesFile)), BalanceTables.CrewRolesFile),
                 report,
                 CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.StrataFile)), BalanceTables.StrataFile),
-                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.LadderFile)), BalanceTables.LadderFile));
+                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.LadderFile)), BalanceTables.LadderFile),
+                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.RepressionFile)), BalanceTables.RepressionFile));
 
             Assert.That(report.IsValid, Is.True,
                 "shipped balance content is invalid:" + System.Environment.NewLine +

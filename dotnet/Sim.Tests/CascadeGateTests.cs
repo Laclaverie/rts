@@ -52,7 +52,9 @@ namespace RTS.Sim.Tests
                 CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.StrataFile)),
                     BalanceTables.StrataFile),
                 CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.LadderFile)),
-                    BalanceTables.LadderFile));
+                    BalanceTables.LadderFile),
+                CsvTable.Parse(File.ReadAllText(Path.Combine(directory, BalanceTables.RepressionFile)),
+                    BalanceTables.RepressionFile));
 
             report.ThrowIfInvalid();
             return tables;

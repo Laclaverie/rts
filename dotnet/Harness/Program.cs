@@ -172,7 +172,8 @@ internal static class Program
             Read(directory, BalanceTables.CrewRolesFile),
             report,
             Read(directory, BalanceTables.StrataFile),
-            Read(directory, BalanceTables.LadderFile));
+            Read(directory, BalanceTables.LadderFile),
+            Read(directory, BalanceTables.RepressionFile));
 
         // Loud, and before anything runs. A sim started on invalid content produces numbers
         // that look plausible and mean nothing (§5.3).

@@ -36,7 +36,8 @@ namespace RTS.Sim.Tests
                 CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.CrewRolesFile)), BalanceTables.CrewRolesFile),
                 report,
                 CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.StrataFile)), BalanceTables.StrataFile),
-                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.LadderFile)), BalanceTables.LadderFile));
+                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.LadderFile)), BalanceTables.LadderFile),
+                CsvTable.Parse(File.ReadAllText(Balance(BalanceTables.RepressionFile)), BalanceTables.RepressionFile));
 
             report.ThrowIfInvalid();
             return tables;
