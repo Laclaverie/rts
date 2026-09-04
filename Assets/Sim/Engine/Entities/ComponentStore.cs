@@ -106,6 +106,38 @@ namespace RTS.Sim.Engine.Entities
         }
 
         /// <summary>
+        /// Ensures the entity has this component with this value: adds it, or overwrites it in
+        /// place if it is already there.
+        /// </summary>
+        /// <remarks>
+        /// Added when the first real caller appeared, exactly as §3 said it would be:
+        /// <c>AssignCrew</c> means "this person now works here", and it is the same command
+        /// whether they were idle or working somewhere else. Making the handler branch on
+        /// <see cref="Has"/> would put that decision at every call site instead of here.
+        /// <para>
+        /// An overwrite keeps the entity's position in iteration order, which matters: reordering
+        /// on write would change the order systems see and §7.1 makes that order part of
+        /// determinism.
+        /// </para>
+        /// <para>
+        /// <see cref="Add"/> remains strict. This is for callers that mean "ensure", not for
+        /// callers that have forgotten whether the component is there.
+        /// </para>
+        /// </remarks>
+        public void Set(EntityId id, in T value)
+        {
+            if (id.IsNone) throw new ArgumentException("EntityId.None cannot own a component.", nameof(id));
+
+            if (_indexOf.TryGetValue(id, out int index))
+            {
+                _values[index] = value;
+                return;
+            }
+
+            Add(id, value);
+        }
+
+        /// <summary>
         /// Mutable access to a stored component, so callers can update a field without
         /// copying the struct out and back. Throws if the entity has no component.
         /// </summary>
