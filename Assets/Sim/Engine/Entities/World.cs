@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RTS.Sim.Engine.State;
 
 namespace RTS.Sim.Engine.Entities
 {
@@ -71,7 +72,7 @@ namespace RTS.Sim.Engine.Entities
         /// The store for <typeparamref name="T"/>, created on first use. Registration order
         /// therefore follows first use, which is deterministic for a given code path.
         /// </summary>
-        public ComponentStore<T> Store<T>() where T : struct
+        public ComponentStore<T> Store<T>() where T : struct, IComponentData
         {
             if (_storesByType.TryGetValue(typeof(T), out IComponentStore existing))
                 return (ComponentStore<T>)existing;
@@ -82,10 +83,10 @@ namespace RTS.Sim.Engine.Entities
             return store;
         }
 
-        public bool TryGet<T>(EntityId id, out T value) where T : struct =>
+        public bool TryGet<T>(EntityId id, out T value) where T : struct, IComponentData =>
             Store<T>().TryGet(id, out value);
 
-        public void Add<T>(EntityId id, in T value) where T : struct
+        public void Add<T>(EntityId id, in T value) where T : struct, IComponentData
         {
             if (!IsAlive(id))
                 throw new ArgumentException($"{id} is not alive.", nameof(id));
@@ -93,10 +94,39 @@ namespace RTS.Sim.Engine.Entities
             Store<T>().Add(id, value);
         }
 
-        public ref T GetRef<T>(EntityId id) where T : struct => ref Store<T>().GetRef(id);
+        public ref T GetRef<T>(EntityId id) where T : struct, IComponentData => ref Store<T>().GetRef(id);
 
-        public bool Remove<T>(EntityId id) where T : struct => Store<T>().Remove(id);
+        public bool Remove<T>(EntityId id) where T : struct, IComponentData => Store<T>().Remove(id);
 
-        public bool Has<T>(EntityId id) where T : struct => Store<T>().Has(id);
+        public bool Has<T>(EntityId id) where T : struct, IComponentData => Store<T>().Has(id);
+
+        /// <summary>
+        /// Writes the whole world in a fixed order, for the replay-determinism gate and for
+        /// snapshots (§6.1).
+        /// </summary>
+        /// <remarks>
+        /// Entities in creation order, then stores in registration order, then each store's
+        /// entries in insertion order. Every one of those is deterministic; iterating
+        /// <c>_storesByType</c> instead would not be (§7.1).
+        /// </remarks>
+        public void WriteTo(IStateWriter writer)
+        {
+            writer.BeginSection("world");
+
+            writer.BeginSection("entities");
+            writer.Write("count", _living.Count);
+            writer.Write("lastId", _lastEntityId);
+            for (int i = 0; i < _living.Count; i++)
+                writer.Write(i.ToString(), _living[i].Value);
+            writer.EndSection();
+
+            writer.BeginSection("stores");
+            writer.Write("count", _stores.Count);
+            for (int i = 0; i < _stores.Count; i++)
+                _stores[i].WriteTo(writer);
+            writer.EndSection();
+
+            writer.EndSection();
+        }
     }
 }

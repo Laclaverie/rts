@@ -1,14 +1,17 @@
 using System;
 using RTS.Sim.Engine.Entities;
+using RTS.Sim.Engine.State;
 
 namespace RTS.Sim.Tests
 {
     [Category(TestCategories.Unit)]
     public class ComponentStoreTests
     {
-        private struct Hp
+        private struct Hp : IComponentData
         {
             public int Value;
+
+            public void Write(IStateWriter writer) => writer.Write("value", Value);
         }
 
         private static EntityId Id(int v) => new EntityId(v);
