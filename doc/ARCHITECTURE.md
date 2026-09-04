@@ -534,10 +534,23 @@ campaign scripts (`GDD` §6.3).
 
 Non-negotiable, because replay-based functional testing (§8.2) depends on them:
 
-- **No `UnityEngine.Random`.** One seeded `Rng` per world, seed saved with the game
+- **No `UnityEngine.Random`, and no `System.Random` either.** One seeded `Rng` per world,
+  seed saved with the game. `System.Random`'s algorithm is *not stable across runtimes* —
+  .NET Framework/Mono and .NET Core 3.0+ produce different sequences from the same seed, and
+  Microsoft documents the implementation as subject to change. `Sim` compiles under Unity's
+  runtime **and** under .NET for the headless suite, so using it would mean the tests pass
+  while the game replays a different world. `Rng` implements PCG-XSH-RR explicitly, and
+  golden vectors are asserted by both suites so a divergence fails a build rather than a
+  player's save
 - **No `DateTime.Now`**, no wall-clock, anywhere in `Sim`
 - **No static mutable state.** It breaks determinism and parallel test runs at once
 - Iteration that affects state must be over ordered collections — never raw `Dictionary`
+- **The generator's position is sim state.** A snapshot that restored the world but not the
+  stream would diverge on the next draw, so `Rng.Capture()`/`Restore()` exist and snapshots
+  carry them (§6.1, §7.2)
+- **Subsystems draw from separate streams** of the same seed. Sharing one stream means adding
+  a single draw anywhere shifts every later draw everywhere — the usual way a harmless change
+  silently invalidates every stored replay
 - Fixed `Dt` in the Tick phase; never frame-time
 - **No coroutines and no `async`/`await` inside `Sim`** — see §7.2
 
