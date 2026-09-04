@@ -3,6 +3,7 @@ using RTS.Sim.Engine.Events;
 
 namespace RTS.Sim.Tests
 {
+    [Category(TestCategories.Unit)]
     public class EventQueueTests
     {
         private struct PortStarved { public int Port; }
