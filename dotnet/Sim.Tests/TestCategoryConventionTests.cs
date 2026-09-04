@@ -13,7 +13,10 @@ namespace RTS.Sim.Tests
     [Category(TestCategories.Unit)]
     public class TestCategoryConventionTests
     {
-        private static readonly string[] Valid = { TestCategories.Unit, TestCategories.Functional };
+        private static readonly string[] Valid =
+        {
+            TestCategories.Unit, TestCategories.Functional, TestCategories.Flaky,
+        };
 
         private static IEnumerable<Type> Fixtures =>
             Assembly.GetExecutingAssembly()

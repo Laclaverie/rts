@@ -75,14 +75,22 @@ Compiler-mandated namespaces win; nothing else gets an exception.
 **Two kinds of test, and they run separately** (ARCHITECTURE §8.1, §8.2). Every fixture
 carries exactly one `[Category]`:
 
-| | `TestCategories.Unit` | `TestCategories.Functional` |
-|---|---|---|
-| Touches | nothing outside the code under test | filesystem, shipped balance files, later replay corpora |
-| A red test means | **the code is wrong** | usually the code is fine and **the world around it changed** |
+| | `TestCategories.Unit` | `TestCategories.Functional` | `TestCategories.Flaky` |
+|---|---|---|---|
+| Touches | nothing outside the code under test | filesystem, shipped balance files, later replay corpora | timing, performance, whatever else the machine was doing |
+| A red test means | **the code is wrong** | usually the code is fine and **the world around it changed** | maybe nothing — it does not gate |
+| Runs by default | yes | yes | **no**, `-Flaky` only |
 
 The split is not about speed — both are milliseconds today. It is about what a failure
 tells you, so a red build is not ambiguous. `tools	est -Unit` and `tools	est -Functional`
 run them alone.
+
+`Flaky` is **not a parking space for tests that fail.** A test whose *claim* is sound but
+whose *mechanism* is unreliable should have its mechanism fixed — the determinism gate's
+negative test drove divergence from the wall clock, was flaky, and the answer was static
+mutable state, not a category. Use `Flaky` only where the unreliability is inherent to the
+environment, and prefer `Assert.Warn` over `Assert.That` inside one so even the opt-in run
+reports rather than fails.
 
 **A fixture with no category runs in neither suite** — it does not fail, it disappears. A
 convention test reflects over the assembly and fails if any fixture has no category, more
