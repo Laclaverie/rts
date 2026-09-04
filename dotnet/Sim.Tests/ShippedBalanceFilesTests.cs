@@ -1,4 +1,6 @@
 using System.IO;
+using RTS.Sim.Systems;
+using System.Linq;
 using RTS.Content.Loading;
 using RTS.Content.Registries;
 using RTS.Content.Validation;
@@ -40,13 +42,30 @@ namespace RTS.Sim.Tests
         {
             CsvTable table = CsvTable.Parse(File.ReadAllText(PathTo("pipeline.csv")), "pipeline.csv");
 
-            // Phase 0 implements no systems, so the shipped file must declare none. When the
-            // first system lands this test starts failing until its row is added — which is
-            // the loud failure of §4.2 arriving one step earlier, in CI rather than at launch.
-            Pipeline pipeline = Pipeline.Build(table, new ISystem[0]);
+            // Every system that exists must be declared, and everything declared must exist.
+            // Build throws listing both kinds of mismatch, so this test is the §4.2 loud failure
+            // arriving in CI rather than at launch — it caught the Phase 1 systems the moment
+            // they were written and before their rows were added.
+            Pipeline pipeline = Pipeline.Build(table, new ISystem[]
+            {
+                new ConsumptionSystem(),
+                new WagesSystem(),
+                new UpkeepSystem(),
+                new ProductionSystem(),
+            });
 
-            Assert.That(pipeline.Systems(Phase.Tick), Is.Empty);
-            Assert.That(pipeline.Systems(Phase.DayBoundary), Is.Empty);
+            Assert.That(pipeline.Systems(Phase.Tick), Is.Empty, "nothing runs per-tick yet");
+
+            // The order is design, not incidental: crew eat yesterday's stock before today's
+            // output lands, and wages are paid before buildings are maintained (§5.2.3).
+            Assert.That(pipeline.Systems(Phase.DayBoundary).Select(s => s.Id),
+                Is.EqualTo(new[]
+                {
+                    ConsumptionSystem.SystemId,
+                    WagesSystem.SystemId,
+                    UpkeepSystem.SystemId,
+                    ProductionSystem.SystemId,
+                }));
         }
 
         [Test]
