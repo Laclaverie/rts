@@ -117,6 +117,30 @@ decision. It was 200, which sat just above.
 **Re-run this sweep after any tuning pass.** The numbers move together, and the band is the
 thing to preserve — not any individual value in it.
 
+### The port is over-staffed, so losing crew currently makes it richer
+
+The scenario corpus put a number on something the gate had hidden. Against a 200-coin
+baseline, losing two crew on day 10 ends the run at **448 coin** — desertion is *profitable*.
+
+Staffing is `crew effort / producing buildings`, clamped to 1. The default port has 7 crew and
+4 producers, so effort is about 6.8 against 4: staffing is already **capped**. Crew beyond the
+cap draw wages and add no output, so removing them is pure saving until the cap finally binds.
+
+This inverts the cascade's labour link. §5.2.3 wants desertion to hurt — fewer crew, less
+production, less income, more unpaid wages — and right now it helps until roughly half the
+crew are gone.
+
+Not fixed, because there is more than one right answer and they are different games:
+
+- **Fewer starting crew**, so the cap binds from day one and every hire is a real decision.
+- **Crew are assigned to buildings**, so a producer without staff simply stops rather than
+  drawing from a pool. This is the direction `ProductionSystem` already flags as provisional.
+- **Surplus crew do something else** — construction, defence, rowing a boat — so they are not
+  idle payroll.
+
+The second is the one the design implies. Until then, read any desertion result knowing the
+sign is currently wrong.
+
 ---
 
 ## Parked mechanics that came out of tuning

@@ -7,6 +7,7 @@ using RTS.Sim.Engine.Entities;
 using RTS.Sim.Engine.Events;
 using RTS.Sim.Engine.Pipeline;
 using RTS.Sim.Engine.State;
+using RTS.Sim.Scenarios;
 using RTS.Sim.Systems;
 
 namespace RTS.Harness;
@@ -37,7 +38,7 @@ internal static class Program
                 return 0;
             }
 
-            return Run(options);
+            return options.Corpus ? RunCorpus(options) : Run(options);
         }
         catch (Exception e)
         {
@@ -46,6 +47,48 @@ internal static class Program
             Console.Error.WriteLine(Options.Usage);
             return 1;
         }
+    }
+
+    /// <summary>
+    /// Replays every recorded scenario and prints its digest, so a new one can be pinned by
+    /// pasting rather than by computing a hash by hand.
+    /// </summary>
+    private static int RunCorpus(Options options)
+    {
+        BalanceTables balance = LoadBalance(options.BalanceDirectory);
+        string pipeline = File.ReadAllText(Path.Combine(options.BalanceDirectory, "pipeline.csv"));
+
+        string scenariosPath = Path.Combine(
+            Path.GetDirectoryName(options.BalanceDirectory.TrimEnd(Path.DirectorySeparatorChar)) ?? ".",
+            "Scenarios", ScenarioFile.FileName);
+
+        var report = new ValidationReport();
+        var scenarios = ScenarioFile.Load(
+            CsvTable.Parse(File.ReadAllText(scenariosPath), ScenarioFile.FileName), report);
+        report.ThrowIfInvalid();
+
+        Console.WriteLine($"{"id",-32} {"digest",-18} {"state",-11} coin");
+        Console.WriteLine(new string('-', 78));
+
+        int changed = 0;
+
+        foreach (Scenario scenario in scenarios)
+        {
+            ScenarioResult result = ScenarioRunner.Run(scenario, balance, pipeline);
+
+            string mark = !scenario.IsPinned ? "new" : result.Matches ? "" : "CHANGED";
+            if (mark == "CHANGED") changed++;
+
+            Console.WriteLine($"{scenario.Id,-32} {result.Digest,-18} {result.Condition,-11} " +
+                              $"{result.Report.Coin,5}  {mark}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(changed == 0
+            ? "Paste any new digests into scenarios.csv."
+            : $"{changed} scenario(s) changed. If that was intended, update scenarios.csv and say why.");
+
+        return changed == 0 ? 0 : 1;
     }
 
     private static int Run(Options options)
@@ -148,6 +191,7 @@ internal static class Program
               --coin N        starting coin, overriding the scenario
               --balance PATH  where the CSVs live             (default: found by walking up)
               --events        list the events emitted each day
+              --corpus        replay every recorded scenario and print its digest
               --help
 
             Everything it runs comes from pipeline.csv and everything it prints comes from the
@@ -159,6 +203,7 @@ internal static class Program
         public int? StartingCoin { get; private set; }
         public string BalanceDirectory { get; private set; } = string.Empty;
         public bool ShowEvents { get; private set; }
+        public bool Corpus { get; private set; }
         public bool ShowHelp { get; private set; }
 
         public static Options Parse(string[] args)
@@ -174,6 +219,7 @@ internal static class Program
                     case "--coin": options.StartingCoin = Int(args, ++i, "--coin"); break;
                     case "--balance": options.BalanceDirectory = Next(args, ++i, "--balance"); break;
                     case "--events": options.ShowEvents = true; break;
+                    case "--corpus": options.Corpus = true; break;
                     case "--help":
                     case "-h": options.ShowHelp = true; break;
                     default: throw new ArgumentException($"Unknown argument '{args[i]}'.");
