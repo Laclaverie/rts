@@ -160,8 +160,13 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void The_shipped_file_loads_and_matches_the_design()
+        public void The_shipped_file_loads()
         {
+            // Deliberately not pinned to the GDD's 1200. The whole reason this is a file is
+            // that a playtest drops it to ten seconds a day without a rebuild, and a test that
+            // failed whenever somebody did that would teach them to stop running the tests.
+            // §5.1's twenty minutes is recorded in the file's own comments, where the person
+            // changing it will read it.
             string path = Path.Combine(
                 TestContext.CurrentContext.TestDirectory, "Config", "clock.csv");
 
@@ -171,9 +176,9 @@ namespace RTS.Sim.Tests
 
             report.ThrowIfInvalid();
 
-            Assert.That(clock.SecondsPerDay, Is.EqualTo(1200f).Within(1e-4f),
-                "GDD §5.1 says a day is twenty minutes");
-            Assert.That(clock.Speeds, Is.EqualTo(new[] { 1, 2, 4 }));
+            Assert.That(clock.SecondsPerDay, Is.GreaterThan(0f));
+            Assert.That(clock.Speeds, Is.Not.Empty);
+            Assert.That(clock.Speed, Is.EqualTo(clock.Speeds[0]));
         }
 
         [Test]

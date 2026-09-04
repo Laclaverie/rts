@@ -81,6 +81,19 @@ kind of thing nobody notices until they are reading a log to answer a question. 
 before the first day boundary still read `Day 0`, which is correct rather than missing:
 nothing has happened yet.
 
+**The two sinks have different thresholds, on purpose.** The file takes whatever
+`logging.csv` allows and ships with `Pipeline` and `Commands` at `Debug`: every system as it
+runs with what it emitted, and every command as it is queued, applied or refused. The Unity
+console has its own floor, set in `LogBoot` at `Warn`, and drops everything below it.
+
+They answer different questions. The file is the record of what the engine did; the console is
+for noticing that something is wrong while the editor happens to be open. A console carrying
+every day boundary is a console nobody reads, and a real warning scrolls past unseen.
+
+To hunt something in the console, construct the sink with a lower floor —
+`new UnityConsoleLogSink(LogLevel.Debug)` — rather than turning channels down in
+`logging.csv`, which would cost the file its record too.
+
 Unity's own `Editor.log` and `Player.log` are separate and still exist; ours is the filtered
 one.
 

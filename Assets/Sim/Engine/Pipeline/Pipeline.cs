@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Linq;
 using RTS.Content.Loading;
 using RTS.Sim.Engine.Entities;
@@ -48,11 +49,40 @@ namespace RTS.Sim.Engine.Pipeline
             EventQueue events = ctx.Events;
             events?.BeginCause(CauseId.Root, ctx.Day);
 
+            // Guarded rather than called unconditionally: the message is built at the call site,
+            // so an unguarded Debug would format a string every phase of every day even with
+            // the channel off. The guard is one boolean read.
+            bool trace = Diagnostics.Log.On(Diagnostics.LogChannel.Pipeline, Diagnostics.LogLevel.Debug);
+            if (trace)
+            {
+                Diagnostics.Log.Debug(Diagnostics.LogChannel.Pipeline,
+                    $"{phase} begins, {systems.Length} systems");
+            }
+
             try
             {
                 // Indexed rather than foreach: the order of this loop is the whole point of the type.
                 for (int i = 0; i < systems.Length; i++)
+                {
+                    int before = trace && events != null ? events.PendingCount : 0;
+
                     systems[i].Run(world, in ctx);
+
+                    if (!trace) continue;
+
+                    // Written after the system rather than before, and carrying what it
+                    // emitted. The order alone is already in the binding line at startup and
+                    // does not change; repeating it every day would be a wall of identical
+                    // blocks. What varies — and what someone reading a log actually wants — is
+                    // which systems did something today.
+                    int emitted = events != null ? events.PendingCount - before : 0;
+
+                    Diagnostics.Log.Debug(Diagnostics.LogChannel.Pipeline,
+                        emitted > 0
+                            ? $"  {i + 1}/{systems.Length} {systems[i].Id} → {emitted} " +
+                              (emitted == 1 ? "event" : "events")
+                            : $"  {i + 1}/{systems.Length} {systems[i].Id}");
+                }
             }
             finally
             {
@@ -64,6 +94,37 @@ namespace RTS.Sim.Engine.Pipeline
 
         private ISystem[] Resolve(Phase phase) =>
             _byPhase.TryGetValue(phase, out ISystem[] systems) ? systems : Array.Empty<ISystem>();
+
+        /// <summary>
+        /// Writes the resolved order once, at build.
+        /// </summary>
+        /// <remarks>
+        /// The order is the thing most worth having in a log when a run behaves strangely: it is
+        /// declared in a file, so it can differ from what anybody remembers, and §4.2 makes it a
+        /// design decision rather than an implementation detail. Written once rather than per
+        /// day, because it cannot change while the game runs.
+        /// </remarks>
+        private void LogBinding(string source)
+        {
+            if (!Diagnostics.Log.On(Diagnostics.LogChannel.Pipeline, Diagnostics.LogLevel.Debug)) return;
+
+            foreach (KeyValuePair<Phase, ISystem[]> phase in _byPhase)
+            {
+                // A phase with nothing in it is a fact about the design, not a line worth
+                // writing: Tick is empty until movement and combat land (§4.2).
+                if (phase.Value.Length == 0) continue;
+
+                var order = new StringBuilder();
+                for (int i = 0; i < phase.Value.Length; i++)
+                {
+                    if (i > 0) order.Append(" → ");
+                    order.Append(phase.Value[i].Id);
+                }
+
+                Diagnostics.Log.Debug(Diagnostics.LogChannel.Pipeline,
+                    $"{source} binds {phase.Key}: {order}");
+            }
+        }
 
         /// <summary>
         /// Binds the declared order to the implemented systems, or throws describing every
@@ -86,7 +147,9 @@ namespace RTS.Sim.Engine.Pipeline
 
             if (problems.Count > 0) throw new PipelineConfigurationException(problems);
 
-            return new Pipeline(GroupByPhase(entries, implemented));
+            var pipeline = new Pipeline(GroupByPhase(entries, implemented));
+            pipeline.LogBinding(table.SourceName);
+            return pipeline;
         }
 
         private static Dictionary<string, ISystem> IndexImplementations(

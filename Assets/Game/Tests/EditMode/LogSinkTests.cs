@@ -169,13 +169,40 @@ namespace RTS.Game.Tests
         {
             var sink = new UnityConsoleLogSink();
 
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Log, new System.Text.RegularExpressions.Regex("info line"));
             UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new System.Text.RegularExpressions.Regex("warn line"));
             UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new System.Text.RegularExpressions.Regex("error line"));
 
-            sink.Write(new LogRecord(LogLevel.Info, LogChannel.Game, 1, "info line"));
             sink.Write(new LogRecord(LogLevel.Warn, LogChannel.Game, 1, "warn line"));
             sink.Write(new LogRecord(LogLevel.Error, LogChannel.Game, 1, "error line"));
+        }
+
+        [Test]
+        public void The_console_sink_drops_everything_below_its_floor()
+        {
+            // The file is the record of what the engine did; the console is for noticing that
+            // something is wrong while the editor happens to be open. A console carrying every
+            // day boundary is a console nobody reads, and a real warning scrolls past unseen.
+            //
+            // LogAssert fails the test on any unexpected console entry, so writing these
+            // without expecting them is the assertion.
+            var sink = new UnityConsoleLogSink();
+
+            Assert.That(sink.Minimum, Is.EqualTo(LogLevel.Warn));
+
+            sink.Write(new LogRecord(LogLevel.Trace, LogChannel.Pipeline, 1, "trace line"));
+            sink.Write(new LogRecord(LogLevel.Debug, LogChannel.Pipeline, 1, "debug line"));
+            sink.Write(new LogRecord(LogLevel.Info, LogChannel.Game, 1, "info line"));
+        }
+
+        [Test]
+        public void The_console_floor_can_be_lowered_when_something_is_being_hunted()
+        {
+            var sink = new UnityConsoleLogSink(LogLevel.Debug);
+
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new System.Text.RegularExpressions.Regex("debug line"));
+
+            sink.Write(new LogRecord(LogLevel.Trace, LogChannel.Pipeline, 1, "trace line"));
+            sink.Write(new LogRecord(LogLevel.Debug, LogChannel.Pipeline, 1, "debug line"));
         }
 
         [Test]

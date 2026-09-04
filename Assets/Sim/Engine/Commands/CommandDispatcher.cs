@@ -55,6 +55,12 @@ namespace RTS.Sim.Engine.Commands
             }
 
             _pending.Add(command);
+
+            if (Diagnostics.Log.On(Diagnostics.LogChannel.Commands, Diagnostics.LogLevel.Debug))
+            {
+                Diagnostics.Log.Debug(Diagnostics.LogChannel.Commands,
+                    $"queued {command} ({_pending.Count} waiting)");
+            }
         }
 
         /// <summary>
@@ -113,6 +119,15 @@ namespace RTS.Sim.Engine.Commands
             CommandRejection rejection = handler.Validate(command, world, in ctx);
             if (rejection != CommandRejection.None)
             {
+                // Debug rather than Warn. A refused command is ordinary play — the player asked
+                // for something the port cannot do yet — and putting it on the console would
+                // train everyone to ignore warnings that do matter.
+                if (Diagnostics.Log.On(Diagnostics.LogChannel.Commands, Diagnostics.LogLevel.Debug))
+                {
+                    Diagnostics.Log.Debug(Diagnostics.LogChannel.Commands,
+                        $"refused {command}: {rejection}");
+                }
+
                 // EventId.None: nothing happened, so there is no node in the causal DAG for
                 // anything to point at.
                 Log.Append(new CommandLogEntry(EventId.None, ctx.Day, command, rejection));
@@ -132,6 +147,14 @@ namespace RTS.Sim.Engine.Commands
             {
                 // A throwing handler must not leave the attribution stack unbalanced.
                 _events.EndCause();
+            }
+
+            if (Diagnostics.Log.On(Diagnostics.LogChannel.Commands, Diagnostics.LogLevel.Debug))
+            {
+                // The node id is here on purpose: it is what every event this command caused
+                // points back at (§6.2), so a line in the log can be followed into the DAG.
+                Diagnostics.Log.Debug(Diagnostics.LogChannel.Commands,
+                    $"applied {command} as node {node.Value}");
             }
 
             Log.Append(new CommandLogEntry(node, ctx.Day, command, CommandRejection.None));

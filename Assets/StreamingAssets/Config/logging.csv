@@ -20,12 +20,27 @@
 # None of this is the kill switch. Log.Enabled turns everything off in one boolean read, for
 # when logging itself is the performance problem.
 
+# These levels are the FILE's. The Unity console has its own floor, set in code at Warn, so
+# turning a channel up here fills the log without filling the console. The two answer different
+# questions: the file is the record of what the engine did, the console is for noticing that
+# something is wrong while the editor happens to be open. A console carrying every day boundary
+# is a console nobody reads, and a real warning scrolls past unseen.
+#
+# Pipeline and Commands ship at Debug because that is the in-depth view worth having by default:
+# every system as it runs, in declared order, and every command as it is queued, applied or
+# refused, with the DAG node id that its events point back at. It is a few dozen lines a day,
+# which is nothing against a twenty-minute day, and it is the difference between reading what
+# the engine did and guessing.
+#
+# Trace stays off everywhere. It is the per-entity firehose, and turning it on is something you
+# do while hunting one specific thing.
+
 channel,level
 *,Info
 Boot,Info
 Content,Info
-Pipeline,Info
-Commands,Info
+Pipeline,Debug
+Commands,Debug
 Events,Info
 State,Info
 Game,Info
