@@ -170,6 +170,15 @@ died with `unexpected EOF` and silently skipped an earlier file in the same comm
 Python turned `\n` inside a C# string literal into a real newline twice, producing `CS1010`.
 Use a file-writing tool; keep heredocs for short data files with no escapes.
 
+**It corrupts prose too, and there the compiler cannot catch it.** `EDITOR_SETTINGS.md`
+carried `Logs\rts_<utc>.log` for three phases with a real carriage return where the `\r`
+should have been, because a Windows path went through a non-raw Python string. It rendered as
+`Logsts_<utc>.log` and nobody noticed, since no build step reads a markdown file.
+
+→ Any Windows path, regex, or escape sequence goes through a file written with the editing
+tools, or through a Python script written to a file with `r'...'` literals — never through an
+inline heredoc. If a doc must contain a backslash, read it back after writing.
+
 ---
 
 ## 6. CI

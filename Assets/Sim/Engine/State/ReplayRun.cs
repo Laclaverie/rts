@@ -108,6 +108,16 @@ namespace RTS.Sim.Engine.State
         /// <summary>Runs one DayBoundary phase and advances the day.</summary>
         public void AdvanceDay()
         {
+            // Stamped before the phase runs, so everything the day emits is filed under the day
+            // it happened on rather than the one before it. This is the only place a day
+            // advances, which makes it the only place that has to remember.
+            //
+            // Diagnostics.Log.Day is a static, so two worlds stepped alternately would overwrite
+            // each other's stamp. Nothing does that — the corpus runs scenarios one after
+            // another — and the alternative is threading a day through every logging call site
+            // to serve a case that does not exist.
+            Diagnostics.Log.Day = Day;
+
             _pipeline.Run(Phase.DayBoundary, World, Context(0f));
             Day++;
         }

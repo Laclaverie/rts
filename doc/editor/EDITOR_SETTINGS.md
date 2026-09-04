@@ -62,11 +62,24 @@ Never reference `Game` from `Sim` or `Content`.
 
 ## Logs
 
-Runtime logs go to `%LOCALAPPDATA%\..\LocalLow\<company>\<product>\Logsts_<utc>.log`
-(`Application.persistentDataPath`), newest ten kept. `LogBoot` installs the sinks before the
-first scene loads and applies `StreamingAssets/Config/logging.csv`.
+Runtime logs go to `Application.persistentDataPath\Logs\rts_<utc>.log`, which on this
+machine is:
+
+```
+C:\Users\<user>\AppData\LocalLow\Laclaverie\RTS Port\Logs\
+```
+
+Newest ten kept. `LogBoot` installs the sinks before the first scene loads and applies
+`StreamingAssets/Config/logging.csv`.
 
 The file is opened `FileShare.ReadWrite` so a reader can tail it while the game runs.
+
+Columns are seconds since start, in-game day, level, channel. **The day is stamped by
+`ReplayRun.AdvanceDay`**, the only place a day advances. It went unset for three phases and
+every line read `Day 0` — harmless while only the boot channel was emitting, and exactly the
+kind of thing nobody notices until they are reading a log to answer a question. Lines written
+before the first day boundary still read `Day 0`, which is correct rather than missing:
+nothing has happened yet.
 
 Unity's own `Editor.log` and `Player.log` are separate and still exist; ours is the filtered
 one.
@@ -75,8 +88,26 @@ one.
 
 ## Player and quality
 
-Unchanged from the URP template defaults. Record changes here, particularly anything affecting
-determinism or the fixed timestep.
+| Setting | Value | Was |
+|---|---|---|
+| Company name | `Laclaverie` | `DefaultCompany` |
+| Product name | `RTS Port` | `RTS_Sandbox` |
+| Application identifier | `com.laclaverie.rtsport` | the URP template's, on all three platforms |
+
+`RTS_Sandbox` was the name Unity Hub generated when it created the project, and the identifier
+was still `com.Unity-Technologies.com.unity.template.urp-blank`. The product name is the
+working title from `GDD.md`.
+
+**Changing the product name moves `persistentDataPath`,** so logs written before this are
+orphaned under the old folder and can be deleted.
+
+Set through the `PlayerSettings` API rather than by editing the YAML. Worth knowing if you do
+it again: assigning the properties is not enough, because a domain reload re-reads the file
+and discards the change. The assignment and `File/Save Project` have to happen in the same
+call.
+
+Otherwise unchanged from the URP template defaults. Record changes here, particularly anything
+affecting determinism or the fixed timestep.
 
 ---
 
