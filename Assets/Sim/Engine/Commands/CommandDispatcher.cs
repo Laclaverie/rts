@@ -110,9 +110,12 @@ namespace RTS.Sim.Engine.Commands
 
             // Validation runs outside the cause scope: it must not mutate, and it must not
             // emit, so there is nothing to attribute yet.
-            if (!handler.Validate(command, world, in ctx, out string reason))
+            CommandRejection rejection = handler.Validate(command, world, in ctx);
+            if (rejection != CommandRejection.None)
             {
-                Log.Append(new CommandLogEntry(EventId.None, ctx.Day, command, false, reason ?? "no reason given"));
+                // EventId.None: nothing happened, so there is no node in the causal DAG for
+                // anything to point at.
+                Log.Append(new CommandLogEntry(EventId.None, ctx.Day, command, rejection));
                 return false;
             }
 
@@ -131,7 +134,7 @@ namespace RTS.Sim.Engine.Commands
                 _events.EndCause();
             }
 
-            Log.Append(new CommandLogEntry(node, ctx.Day, command, true, null));
+            Log.Append(new CommandLogEntry(node, ctx.Day, command, CommandRejection.None));
             return true;
         }
 

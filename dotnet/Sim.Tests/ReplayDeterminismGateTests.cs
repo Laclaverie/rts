@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using RTS.Content.Loading;
 using RTS.Sim.Engine.Commands;
 using RTS.Sim.Engine.Entities;
@@ -36,23 +37,33 @@ namespace RTS.Sim.Tests
 
         private sealed record Deliver(int Units) : ICommand;
 
+        /// <summary>Carries a float on purpose: its ToString is culture-sensitive.</summary>
+        private sealed record Tune(float Rate) : ICommand;
+
         private struct Delivered { public int Units; }
+
+        private sealed class TuneHandler : ICommandHandler
+        {
+            public Type CommandType => typeof(Tune);
+
+            public CommandRejection Validate(ICommand command, World world, in Context ctx) =>
+                ((Tune)command).Rate < 0f ? CommandRejection.OutOfRange : CommandRejection.None;
+
+            public void Apply(ICommand command, World world, in Context ctx)
+            {
+                EntityId port = world.Entities.Count > 0 ? world.Entities[0] : world.CreateEntity();
+                if (!world.Has<Stock>(port)) world.Add(port, new Stock());
+
+                world.GetRef<Stock>(port).Price += ((Tune)command).Rate;
+            }
+        }
 
         private sealed class DeliverHandler : ICommandHandler
         {
             public Type CommandType => typeof(Deliver);
 
-            public bool Validate(ICommand command, World world, in Context ctx, out string reason)
-            {
-                if (((Deliver)command).Units <= 0)
-                {
-                    reason = "a delivery must carry something";
-                    return false;
-                }
-
-                reason = null!;   // no reason: the command is legal
-                return true;
-            }
+            public CommandRejection Validate(ICommand command, World world, in Context ctx) =>
+                ((Deliver)command).Units <= 0 ? CommandRejection.OutOfRange : CommandRejection.None;
 
             public void Apply(ICommand command, World world, in Context ctx)
             {
@@ -139,7 +150,9 @@ namespace RTS.Sim.Tests
             new Deliver(5),
             new Deliver(0),    // rejected, and still part of the record
             new Deliver(12),
+            new Tune(1.5f),    // a float payload: ToString would be culture-sensitive
             new Deliver(-3),   // rejected
+            new Tune(-0.25f),  // rejected, and also a float
             new Deliver(1),
         };
 
@@ -171,6 +184,33 @@ namespace RTS.Sim.Tests
 
             Assert.That(second.Digest(), Is.Not.EqualTo(first.Digest()),
                 "state leaking between runs must break the digest, or the gate proves nothing");
+        }
+
+        [Test]
+        public void The_digest_does_not_depend_on_the_machine_locale()
+        {
+            // The command log is a save artifact and part of the digest, so anything in it that
+            // formats numbers with the current culture makes the same log hash differently on a
+            // French machine than on CI. This is why rejections are codes and commands are
+            // digested by type name.
+            string underFrench = WithCulture("fr-FR", () => RunScriptWithDrain().Digest());
+            string underInvariant = WithCulture("en-US", () => RunScriptWithDrain().Digest());
+
+            Assert.That(underInvariant, Is.EqualTo(underFrench));
+        }
+
+        private static T WithCulture<T>(string name, Func<T> body)
+        {
+            System.Globalization.CultureInfo previous = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = new CultureInfo(name);
+                return body();
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
         }
 
         [Test]
@@ -268,7 +308,7 @@ namespace RTS.Sim.Tests
 
             return ReplayRun.Start(
                 seed,
-                new ICommandHandler[] { new DeliverHandler() },
+                new ICommandHandler[] { new DeliverHandler(), new TuneHandler() },
                 dispatcher => BuildPipeline(new CommandDrainSystem(dispatcher), drift));
         }
 

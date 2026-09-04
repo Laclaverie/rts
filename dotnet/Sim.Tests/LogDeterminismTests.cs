@@ -40,17 +40,8 @@ namespace RTS.Sim.Tests
         {
             public Type CommandType => typeof(Add);
 
-            public bool Validate(ICommand command, World world, in Context ctx, out string reason)
-            {
-                if (((Add)command).Amount == 0)
-                {
-                    reason = "nothing to add";
-                    return false;
-                }
-
-                reason = null!;
-                return true;
-            }
+            public CommandRejection Validate(ICommand command, World world, in Context ctx) =>
+                ((Add)command).Amount == 0 ? CommandRejection.OutOfRange : CommandRejection.None;
 
             public void Apply(ICommand command, World world, in Context ctx)
             {

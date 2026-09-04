@@ -9,13 +9,12 @@ namespace RTS.Sim.Engine.Commands
     /// </summary>
     public readonly struct CommandLogEntry
     {
-        public CommandLogEntry(EventId node, int day, ICommand command, bool applied, string rejectedBecause)
+        public CommandLogEntry(EventId node, int day, ICommand command, CommandRejection rejection)
         {
             Node = node;
             Day = day;
             Command = command;
-            Applied = applied;
-            RejectedBecause = rejectedBecause;
+            Rejection = rejection;
         }
 
         /// <summary>This command's node in the causal DAG — the cause of whatever it emitted.</summary>
@@ -23,17 +22,19 @@ namespace RTS.Sim.Engine.Commands
 
         public readonly int Day;
         public readonly ICommand Command;
-        public readonly bool Applied;
 
-        /// <summary>Why validation refused it, or null when it was applied.</summary>
-        public readonly string RejectedBecause;
+        /// <summary>Why validation refused it, or None when it was applied.</summary>
+        public readonly CommandRejection Rejection;
+
+        /// <summary>Derived, so the two can never disagree.</summary>
+        public bool Applied => Rejection == CommandRejection.None;
 
         public CauseId AsCause() => Node.AsCause();
 
         public override string ToString() =>
             Applied
                 ? $"{Node} day {Day} {Command}"
-                : $"{Node} day {Day} {Command} REJECTED: {RejectedBecause}";
+                : $"{Node} day {Day} {Command} REJECTED: {Rejection}";
     }
 
     /// <summary>
@@ -46,6 +47,11 @@ namespace RTS.Sim.Engine.Commands
     /// would make the log a record of outcomes rather than of what actually happened, and a
     /// bug report replaying "what the player did" would omit everything the player tried and
     /// was refused.
+    /// <para>
+    /// Refusals are recorded as a <see cref="CommandRejection"/> code, never as a sentence:
+    /// this log is serialised into saves and digested for replay, and prose in either place is
+    /// a localisation problem and a locale-dependent digest.
+    /// </para>
     /// </remarks>
     public sealed class CommandLog
     {
