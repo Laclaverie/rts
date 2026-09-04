@@ -4,9 +4,10 @@ A single-player, age-of-sail strategy game about running one port town — where
 coin of wealth physically travels a route someone can steal, and your crew are
 individuals with their own needs, opinions and limits.
 
-**Status: pre-MVP.** No Unity project yet. The design and architecture are specified; the
-next step is Phase 0. Nothing here has passed its kill test, and the project is
-explicitly allowed to fail it.
+**Status: pre-MVP.** Phase 0 is complete — the sim's foundations exist, run headless in
+milliseconds, and are covered by ~200 tests and a replay-determinism gate. There is no
+game yet: no map, no economy, nothing visual. Phase 1 is the economy skeleton. Nothing
+here has passed its kill test, and the project is explicitly allowed to fail it.
 
 ---
 
@@ -79,4 +80,9 @@ contents were rewritten, corrected and cut down in `doc/GDD.md`.
 
 ## License
 
-None yet. Private repository, all rights reserved.
+**All rights reserved.** See [LICENSE](LICENSE).
+
+This repository is public so the source can be read and so CI runs on it. It is not
+open source: you may read it and learn from it, but not use, copy, modify or
+redistribute it. Ideas are not copyrightable — write your own implementation of
+anything here.
