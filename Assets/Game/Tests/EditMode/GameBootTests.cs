@@ -87,10 +87,50 @@ namespace RTS.Game.Tests
 
             VisualElement root = panel.Build();
 
-            Assert.That(root.childCount, Is.EqualTo(2), "a control bar and the readouts");
+            Assert.That(root.childCount, Is.EqualTo(3), "controls, readouts, feed");
 
             VisualElement readouts = root[1];
             Assert.That(readouts.childCount, Is.EqualTo(session.Readouts().Count));
+        }
+
+        [Test]
+        public void The_panel_draws_the_feed_after_a_day()
+        {
+            GameSession session = StartTheWayBootDoes(out _);
+            var panel = new Presentation.PortPanel(session);
+            panel.Build();
+
+            session.Step();
+            panel.Refresh();
+
+            var lines = panel.Root.Query<Label>().ToList()
+                .Where(l => l.text.Length > 0)
+                .ToList();
+
+            Assert.That(session.Feed.Count, Is.GreaterThan(0));
+            Assert.That(lines.Count, Is.GreaterThan(session.Readouts().Count),
+                "the feed's lines are on screen as well as the readouts");
+        }
+
+        [Test]
+        public void A_caused_line_is_indented_under_its_cause()
+        {
+            // The causal DAG showing through (§6.2): a consequence sits under its cause rather
+            // than merely after it.
+            GameSession session = StartTheWayBootDoes(out _);
+            var panel = new Presentation.PortPanel(session);
+            panel.Build();
+
+            session.Submit(new MothballBuilding(
+                session.World.Store<RTS.Sim.Components.BuildingState>().Ids[0], true));
+            session.Step();
+            panel.Refresh();
+
+            Label shut = panel.Root.Query<Label>().ToList()
+                .FirstOrDefault(l => l.text.Contains("was shut"));
+
+            Assert.That(shut, Is.Not.Null, "the feed did not draw the line");
+            Assert.That(shut.style.paddingLeft.value.value, Is.GreaterThan(0f));
         }
 
         [Test]
