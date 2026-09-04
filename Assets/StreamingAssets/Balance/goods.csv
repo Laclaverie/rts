@@ -12,10 +12,20 @@
 # base_price      coin per unit at a neutral market
 # volatility      0..1, how far local supply moves the price
 # heat_per_unit   0..1, attention drawn per unit held or moved (§5.2)
+# keep            units held back before any is sold. Reserves in kind: food against a bad
+#                 harvest, timber and iron against a repair you have not needed yet.
+# sell_price      what a passing merchant pays per unit, which is less than base_price
+#                 because they have to carry it somewhere and sell it again.
+#
+# The sell prices are the whole balance of Phase 1. A port at full health earns about 31
+# coin a day against 29 of wages and upkeep — marginally profitable, so reserves grow
+# slowly and any drop in production tips it into loss. That margin is what makes "a single
+# shock is survivable, correlated shocks cascade" (§5.2.3) a question with an answer rather
+# than a foregone conclusion in either direction.
 
-id,base_price,volatility,heat_per_unit,supply
-food,4,0.25,0.00,Local
-timber,6,0.20,0.00,Local
-iron,12,0.30,0.05,Local
-rum,15,0.35,0.10,ImportOnly
-spice,40,0.50,0.30,ImportOnly
+id,base_price,volatility,heat_per_unit,supply,keep,sell_price
+food,4,0.25,0.00,Local,10,1
+timber,6,0.20,0.00,Local,20,2
+iron,12,0.30,0.05,Local,10,4
+rum,15,0.35,0.10,ImportOnly,0,8
+spice,40,0.50,0.30,ImportOnly,0,20

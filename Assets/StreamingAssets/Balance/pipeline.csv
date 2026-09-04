@@ -24,6 +24,9 @@
 #   Wages before Unrest            — an unpaid wage must feed grievance the same day rather
 #                                    than the next (GDD §5.2.3). Unrest arrives in Phase 2;
 #                                    leave room before it.
+#   Market after Production        — today's output is sold today, but the coin lands after
+#                                    today's wages were paid. Income always funds tomorrow,
+#                                    which is what makes reserves the real resource.
 #
 # CommandDrain is not here yet: nothing constructs a dispatcher until there is something to
 # command. When it lands, its position decides when input takes effect relative to all of
@@ -34,3 +37,4 @@ DayBoundary,10,Consumption,true
 DayBoundary,20,Wages,true
 DayBoundary,30,Upkeep,true
 DayBoundary,40,Production,true
+DayBoundary,50,Market,true

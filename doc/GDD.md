@@ -505,7 +505,32 @@ Written down so they stop leaking into scope. Not rejected — deferred, with a 
 | Dungeon mode | Undefined; needs a pitch before it gets a gate |
 | Multiplayer | Never planned; determinism keeps it possible |
 | Ships as directly controlled units | Evaluate after routes prove fun |
+| Subsidised buyers (below) | After trade and routes exist |
 | **Decision Timeline** (below) | After the game is playable and fun |
+
+### A.0 Subsidised buyers — a price that is not a market
+
+A merchant who pays *above* the going rate is not necessarily a mistake. A rival power can
+fund a buyer to overpay, absorbing the loss out of tax revenue, to capture a market and
+squeeze out competitors — which is what mercantile states actually did.
+
+The mechanic is not the good price. It is the **withdrawal**. A player restructures around
+a buyer paying well above base, grows to match it, and raises their fixed costs
+permanently (§5.2.3). When the subsidy stops, income falls to the real rate while upkeep
+stays where the good years put it. That is a correlated shock arriving through the economy
+rather than through an event roll, and it is legible in advance to a player paying
+attention.
+
+It also gives Stances (§5.6) an economic instrument rather than only a diplomatic one, and
+it is a reason for Heat to matter at a port that is merely *profitable*.
+
+Numbers behind this, and the other findings from tuning the Phase 1 economy, are in
+`doc/design/ECONOMY_FINDINGS.md`.
+
+**Until then**, the loader rejects a sell price above base price. With one static merchant
+and nobody funding the difference, an above-market price is simply money from nowhere, and
+the bug would read as generous tuning. That rule is a property of the current model, not an
+economic law, and it is the first thing to change when a buyer has an actor behind it.
 
 ### A.1 Decision Timeline — replacing the save-slot list
 

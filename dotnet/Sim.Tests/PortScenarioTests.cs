@@ -19,9 +19,9 @@ namespace RTS.Sim.Tests
     [Category(TestCategories.Unit)]
     public class PortScenarioTests
     {
-        private const string Goods = "id,base_price,volatility,heat_per_unit,supply\n" +
-                                     "food,4,0.25,0.00,Local\n" +
-                                     "timber,6,0.20,0.00,Local\n";
+        private const string Goods = "id,base_price,volatility,heat_per_unit,supply,keep,sell_price\n" +
+                                     "food,4,0.25,0.00,Local,0,1\n" +
+                                     "timber,6,0.20,0.00,Local,0,1\n";
 
         private const string Buildings =
             "id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day\n" +

@@ -48,8 +48,10 @@ namespace RTS.Content.Registries
                     row.Int("base_price", min: 0),
                     row.Float("volatility", 0f, 1f),
                     row.Float("heat_per_unit", 0f, 1f),
-                    row.Enum<GoodSupply>("supply")),
-                "id", "base_price", "volatility", "heat_per_unit", "supply");
+                    row.Enum<GoodSupply>("supply"),
+                    row.Float("keep", 0f, 100000f),
+                    row.Int("sell_price", min: 0)),
+                "id", "base_price", "volatility", "heat_per_unit", "supply", "keep", "sell_price");
 
             ConfigRegistry<Building> buildingRegistry = ConfigRegistry<Building>.Load(buildings, report,
                 row => ReadBuilding(row, pending), "id", "upkeep_coin", "build_timber",
@@ -142,6 +144,24 @@ namespace RTS.Content.Registries
                     report.Add(GoodsFile, Goods.LineOf(good.Id),
                         $"nothing consumes '{good.Id}'. A good nobody wants is dead weight; " +
                         "give it a consumer, or mark it ImportOnly if it exists only to trade.");
+                }
+            }
+
+            foreach (Good good in Goods)
+            {
+                // True of the current model, not an economic law. With one static merchant and
+                // nobody funding the difference, an above-market price is money from nowhere and
+                // the bug would read as generous tuning.
+                //
+                // A rival power funding a buyer to overpay — absorbing the loss out of taxes to
+                // capture a market — is a real thing and a good one; it is parked in GDD
+                // Appendix A.0. When a price has an actor behind it, this rule is the first
+                // thing that changes.
+                if (good.SellPrice > good.BasePrice)
+                {
+                    report.Add(GoodsFile, Goods.LineOf(good.Id),
+                        $"'{good.Id}' sells for {good.SellPrice} but its base price is " +
+                        $"{good.BasePrice}. A merchant paying above the market is free money.");
                 }
             }
 

@@ -17,8 +17,8 @@ namespace RTS.Sim.Tests
     public class EconomySystemsTests
     {
         // A deliberately tiny economy: one good, one producer, one role.
-        private const string Goods = "id,base_price,volatility,heat_per_unit,supply\n" +
-                                     "food,4,0.25,0.00,Local\n";
+        private const string Goods = "id,base_price,volatility,heat_per_unit,supply,keep,sell_price\n" +
+                                     "food,4,0.25,0.00,Local,0,1\n";
 
         private const string Buildings = "id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day\n" +
                                          "farm,3,0,0,0,food,6\n" +
@@ -456,6 +456,70 @@ namespace RTS.Sim.Tests
 
             Assert.That(dayTwoOutput, Is.LessThan(afterDayOne),
                 "morale fell overnight, so the second day produced less than the first");
+        }
+
+        // ----------------------------------------------------------------- market
+
+        [Test]
+        public void Surplus_above_the_keep_threshold_is_sold()
+        {
+            var port = new Port();
+            port.AddTreasury(0);
+            port.AddFood(10f);          // keep is 0 in this fixture, sell_price 1
+
+            port.Run(new MarketSystem());
+
+            Assert.That(port.Coin, Is.EqualTo(10));
+            Assert.That(port.Food, Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(port.Emitted<GoodsSold>(), Is.True);
+        }
+
+        [Test]
+        public void Only_whole_units_are_sold()
+        {
+            // Coin is an integer and half a barrel is not a sale.
+            var port = new Port();
+            port.AddTreasury(0);
+            port.AddFood(3.7f);
+
+            port.Run(new MarketSystem());
+
+            Assert.That(port.Coin, Is.EqualTo(3));
+            Assert.That(port.Food, Is.EqualTo(0.7f).Within(1e-4f));
+        }
+
+        [Test]
+        public void Nothing_is_sold_when_there_is_no_surplus()
+        {
+            var port = new Port();
+            port.AddTreasury(5);
+            port.AddFood(0.5f);
+
+            port.Run(new MarketSystem());
+
+            Assert.That(port.Coin, Is.EqualTo(5));
+            Assert.That(port.Emitted<GoodsSold>(), Is.False);
+        }
+
+        [Test]
+        public void Income_does_not_service_arrears()
+        {
+            // Paying the backlog first would leave nothing for today's wages, so one missed
+            // payday would become permanent — and §5.2.3 says a single shock is always
+            // recoverable. Arrears is a record for Phase 2 grievance, not a debt that eats
+            // income.
+            var port = new Port();
+            port.AddTreasury(0);
+            port.AddCrew();
+            port.Run(new WagesSystem());          // unpaid: arrears 2
+
+            Assert.That(port.Arrears, Is.EqualTo(2));
+
+            port.AddFood(10f);
+            port.Run(new MarketSystem());
+
+            Assert.That(port.Coin, Is.EqualTo(10), "the coin is available for tomorrow's wages");
+            Assert.That(port.Arrears, Is.EqualTo(2), "what went unpaid is still on the record");
         }
     }
 }
