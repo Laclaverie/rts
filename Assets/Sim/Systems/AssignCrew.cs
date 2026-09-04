@@ -79,13 +79,21 @@ namespace RTS.Sim.Systems
             // somewhere else, and the caller should not have to know which.
             world.Set(assign.Crew, new Assignment { Building = assign.Building });
 
-            ctx.Events.Emit(new CrewAssigned { Crew = assign.Crew, Building = assign.Building });
+            ctx.Events.Emit(new CrewAssigned
+            {
+                Port = Port.OwnerOf(world, assign.Crew),
+                Crew = assign.Crew,
+                Building = assign.Building,
+            });
         }
     }
 
     /// <summary>Someone changed jobs.</summary>
     public struct CrewAssigned
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public EntityId Crew;
         public EntityId Building;
     }

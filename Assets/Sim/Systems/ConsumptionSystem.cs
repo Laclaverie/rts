@@ -1,3 +1,4 @@
+using System;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -48,12 +49,19 @@ namespace RTS.Sim.Systems
             int foodIndex = IndexOf(balance, "food");
             int rumIndex = IndexOf(balance, "rum");
 
-            FeedCrew(world, balance, foodIndex, rumIndex, ctx);
-            FeedCommoners(world, balance, foodIndex, ctx);
+            // Every port eats, the player's included. A neighbour is not a lighter model of a
+            // city (§5.2.2): it starves by the same rules, and that is what turns its crisis
+            // into the player's opportunity.
+            ReadOnlySpan<EntityId> ports = Port.All(world);
+            for (int i = 0; i < ports.Length; i++)
+            {
+                FeedCrew(world, ports[i], balance, foodIndex, rumIndex, ctx);
+                FeedCommoners(world, ports[i], balance, foodIndex, ctx);
+            }
         }
 
-        private static void FeedCrew(World world, BalanceTables balance, int foodIndex,
-            int rumIndex, in Context ctx)
+        private static void FeedCrew(World world, EntityId port, BalanceTables balance,
+            int foodIndex, int rumIndex, in Context ctx)
         {
             ComponentStore<CrewMember> crew = world.Store<CrewMember>();
             if (crew.Count == 0) return;
@@ -65,6 +73,8 @@ namespace RTS.Sim.Systems
             for (int i = 0; i < crew.Count; i++)
             {
                 EntityId member = crew.Ids[i];
+                if (!Port.BelongsTo(world, member, port)) continue;
+
                 ref CrewMember state = ref crew.GetRef(member);
 
                 CrewRole role = balance.CrewRoles[state.RoleIndex];
@@ -72,7 +82,7 @@ namespace RTS.Sim.Systems
                 if (role.FoodPerDay > 0f && foodIndex >= 0)
                 {
                     foodWanted += role.FoodPerDay;
-                    float eaten = Port.Take(world, foodIndex, role.FoodPerDay);
+                    float eaten = Port.Take(world, port, foodIndex, role.FoodPerDay);
                     foodEaten += eaten;
 
                     if (eaten < role.FoodPerDay)
@@ -88,7 +98,7 @@ namespace RTS.Sim.Systems
 
                 if (role.RumPerDay > 0f && rumIndex >= 0)
                 {
-                    float drunk = Port.Take(world, rumIndex, role.RumPerDay);
+                    float drunk = Port.Take(world, port, rumIndex, role.RumPerDay);
                     if (drunk < role.RumPerDay) state.Morale = Clamp01(state.Morale - DryMoralePenalty);
                 }
             }
@@ -97,6 +107,7 @@ namespace RTS.Sim.Systems
             {
                 ctx.Events.Emit(new FoodShortfall
                 {
+                    Port = port,
                     Wanted = foodWanted,
                     Eaten = foodEaten,
                     Crew = hungry,
@@ -114,8 +125,8 @@ namespace RTS.Sim.Systems
         /// famine a ratchet rather than a bad mood, because the workers who leave were producing
         /// the food.
         /// </remarks>
-        private static void FeedCommoners(World world, BalanceTables balance, int foodIndex,
-            in Context ctx)
+        private static void FeedCommoners(World world, EntityId port, BalanceTables balance,
+            int foodIndex, in Context ctx)
         {
             if (foodIndex < 0) return;
 
@@ -125,7 +136,13 @@ namespace RTS.Sim.Systems
             StratumRules rules = RulesFor(balance, Stratum.Commoners);
             if (rules == null || rules.FoodPerDay <= 0f) return;
 
-            ref Population population = ref populations.GetRef(populations.Ids[0]);
+            EntityId town = EntityId.None;
+            for (int i = 0; i < populations.Count; i++)
+                if (Port.BelongsTo(world, populations.Ids[i], port)) town = populations.Ids[i];
+
+            if (town.IsNone) return;
+
+            ref Population population = ref populations.GetRef(town);
             if (population.Commoners <= 0) return;
 
             int hungry = 0;
@@ -135,7 +152,7 @@ namespace RTS.Sim.Systems
             for (int i = 0; i < population.Commoners; i++)
             {
                 wanted += rules.FoodPerDay;
-                float got = Port.Take(world, foodIndex, rules.FoodPerDay);
+                float got = Port.Take(world, port, foodIndex, rules.FoodPerDay);
                 eaten += got;
                 if (got < rules.FoodPerDay) hungry++;
             }
@@ -145,6 +162,7 @@ namespace RTS.Sim.Systems
                 population.HungryDays++;
                 ctx.Events.Emit(new CommonersWentHungry
                 {
+                    Port = port,
                     Commoners = hungry,
                     Wanted = wanted,
                     Eaten = eaten,
@@ -158,7 +176,7 @@ namespace RTS.Sim.Systems
                 population.HungryDays = 0;
             }
 
-            LeaveIfStarving(ref population, rules, ctx);
+            LeaveIfStarving(ref population, port, rules, ctx);
         }
 
         /// <summary>
@@ -176,8 +194,8 @@ namespace RTS.Sim.Systems
         /// number can see how long they have.
         /// </para>
         /// </remarks>
-        private static void LeaveIfStarving(ref Population population, StratumRules rules,
-            in Context ctx)
+        private static void LeaveIfStarving(ref Population population, EntityId port,
+            StratumRules rules, in Context ctx)
         {
             if (rules.LeaveAfterDays <= 0) return;
             if (population.HungryDays < rules.LeaveAfterDays) return;
@@ -187,6 +205,7 @@ namespace RTS.Sim.Systems
 
             ctx.Events.Emit(new CommonersLeft
             {
+                Port = port,
                 Left = 1,
                 Remaining = population.Commoners,
                 HungryDays = population.HungryDays,
@@ -201,7 +220,7 @@ namespace RTS.Sim.Systems
             return null;
         }
 
-        internal static int IndexOf(BalanceTables balance, string goodId)
+        public static int IndexOf(BalanceTables balance, string goodId)
         {
             for (int i = 0; i < balance.Goods.Count; i++)
                 if (balance.Goods[i].Id == goodId) return i;

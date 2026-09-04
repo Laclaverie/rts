@@ -48,6 +48,7 @@ namespace RTS.Sim.Tests
         private BalanceTables _balance = null!;
         private EventQueue _events = null!;
         private EntityId _crew;
+        private EntityId _port;
 
         [SetUp]
         public void SetUp()
@@ -67,18 +68,22 @@ namespace RTS.Sim.Tests
 
             _world = new World();
             _events = new EventQueue();
+            _port = TestPort.Create(_world);
 
             for (int i = 0; i < _balance.Strata.Count; i++)
             {
                 EntityId entity = _world.CreateEntity();
                 _world.Add(entity, new Grievance { StratumIndex = i, Value = 0.85f, Baseline = 0f });
+                TestPort.Own(_world, entity, _port);
             }
 
             EntityId ladder = _world.CreateEntity();
             _world.Add(ladder, new RevolutionLadder { Rung = LadderRung.Riot });
+            TestPort.Own(_world, ladder, _port);
 
             _crew = _world.CreateEntity();
             _world.Add(_crew, new CrewMember { RoleIndex = 0, Morale = 1f, Loyalty = 1f });
+            TestPort.Own(_world, _crew, _port);
         }
 
         private Context Ctx() => new Context(1, 0f, _events, rng: null, balance: _balance);
@@ -195,13 +200,13 @@ namespace RTS.Sim.Tests
             float afterCrackdown = First.Value;
 
             // Four cowed days: the same pressure that drove the riot, landing on nobody.
-            for (int day = 0; day < 4; day++) RunUnrestDays(1, new WagesUnpaid { Crew = 5 });
+            for (int day = 0; day < 4; day++) RunUnrestDays(1, new WagesUnpaid { Port = _port, Crew = 5 });
 
             Assert.That(First.Value, Is.LessThan(afterCrackdown),
                 "a cowed port keeps cooling even while the cause is untouched");
 
             // The window closes and the grievance is still there, waiting.
-            RunUnrestDays(1, new WagesUnpaid { Crew = 5 });
+            RunUnrestDays(1, new WagesUnpaid { Port = _port, Crew = 5 });
 
             Assert.That(First.Value, Is.GreaterThan(First.Baseline),
                 "silence was not forgiveness");

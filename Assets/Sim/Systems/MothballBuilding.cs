@@ -81,6 +81,7 @@ namespace RTS.Sim.Systems
 
             ctx.Events.Emit(new BuildingMothballed
             {
+                Port = Port.OwnerOf(world, mothball.Building),
                 Building = mothball.Building,
                 Mothballed = mothball.Mothballed,
                 CrewReleased = released,
@@ -91,6 +92,9 @@ namespace RTS.Sim.Systems
     /// <summary>A building was shut down or reopened.</summary>
     public struct BuildingMothballed
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public EntityId Building;
         public bool Mothballed;
         public int CrewReleased;

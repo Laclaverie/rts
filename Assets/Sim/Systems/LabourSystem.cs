@@ -1,3 +1,4 @@
+using System;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -37,14 +38,24 @@ namespace RTS.Sim.Systems
             BalanceTables balance = ctx.Balance;
             if (balance == null) return;
 
+            ReadOnlySpan<EntityId> ports = Port.All(world);
+            for (int i = 0; i < ports.Length; i++) Allocate(world, ports[i], balance, ctx);
+        }
+
+        /// <summary>One city's labour. Its own people fill its own buildings.</summary>
+        private static void Allocate(World world, EntityId port, BalanceTables balance,
+            in Context ctx)
+        {
             ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
             if (buildings.Count == 0) return;
 
-            int available = CommonersIn(world);
+            int available = CommonersIn(world, port);
             int employed = 0;
 
             for (int i = 0; i < buildings.Count; i++)
             {
+                if (!Port.BelongsTo(world, buildings.Ids[i], port)) continue;
+
                 ref BuildingState state = ref buildings.GetRef(buildings.Ids[i]);
                 Building definition = balance.Buildings[state.DefinitionIndex];
 
@@ -59,24 +70,34 @@ namespace RTS.Sim.Systems
                 employed += given;
             }
 
-            ctx.Events.Emit(new LabourAllocated { Employed = employed, Unemployed = available });
+            ctx.Events.Emit(new LabourAllocated
+            {
+                Port = port, Employed = employed, Unemployed = available,
+            });
         }
 
-        /// <summary>How many commoners the port has, or zero if it has no population.</summary>
-        public static int CommonersIn(World world)
+        /// <summary>How many commoners a city has, or zero if it has no population.</summary>
+        public static int CommonersIn(World world, EntityId port)
         {
             ComponentStore<Population> population = world.Store<Population>();
-            return population.Count > 0 ? population.Values[0].Commoners : 0;
+
+            for (int i = 0; i < population.Count; i++)
+                if (Port.BelongsTo(world, population.Ids[i], port))
+                    return population.Values[i].Commoners;
+
+            return 0;
         }
 
-        /// <summary>Commoners with no building to work today.</summary>
-        public static int UnemployedIn(World world)
+        /// <summary>Commoners with no building to work today, in one city.</summary>
+        public static int UnemployedIn(World world, EntityId port)
         {
             ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
             int employed = 0;
-            for (int i = 0; i < buildings.Count; i++) employed += buildings.Values[i].Workers;
+            for (int i = 0; i < buildings.Count; i++)
+                if (Port.BelongsTo(world, buildings.Ids[i], port))
+                    employed += buildings.Values[i].Workers;
 
-            int idle = CommonersIn(world) - employed;
+            int idle = CommonersIn(world, port) - employed;
             return idle > 0 ? idle : 0;
         }
     }
@@ -84,6 +105,9 @@ namespace RTS.Sim.Systems
     /// <summary>Who found work today, and who did not.</summary>
     public struct LabourAllocated
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Employed;
         public int Unemployed;
     }

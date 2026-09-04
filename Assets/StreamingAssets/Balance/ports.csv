@@ -49,13 +49,26 @@
 # particular has no differential to offer, so nobody would ever run a route to it; being small
 # and poor is a difference worth having, being featureless is not.
 #
-# Distances are wide. Twelve to twenty units against a convoy that covers a few a day means a
-# round trip is measured in days, which is what §5.1 wants of a route: a commitment, not a
-# toggle.
+# Distances are deliberately UNEVEN, not merely wide. An earlier arrangement had every city
+# about fifteen units from Saltmarsh, which at five units a day rounded to three days for all of
+# them — so distance existed in the file and changed nothing in play. Near and far have to be a
+# decision.
+#
+# From Saltmarsh, at five units a day:
+#
+#   Fairhaven   6.4  -> 2 days   the close one. Cheap to run, and a poor differential.
+#   Millrace   13.0  -> 3 days
+#   Coldwater  16.8  -> 4 days
+#   Ironhold   22.8  -> 5 days   the iron is furthest away, which is the point: the good the
+#                                player cannot make at all costs the longest commitment and
+#                                gives a raider the most time.
+#
+# §5.1 wants a round trip measured in days — a commitment, not a toggle — so the nearest pair is
+# still two days there and two back.
 
 id,name,x,y,player,coin,commoners,crew,buildings,stock
 saltmarsh,Saltmarsh,0,0,true,150,12,laborer:4;sailor:2;guard:1,longhouse;farm;farm;sawmill;warehouse,food:20;timber:10;iron:5
-ironhold,Ironhold,14,5,false,180,10,laborer:3;sailor:2;guard:2,longhouse;mine;mine;farm;warehouse,food:12;timber:6;iron:20
+ironhold,Ironhold,21,9,false,180,10,laborer:3;sailor:2;guard:2,longhouse;mine;mine;farm;warehouse,food:12;timber:6;iron:20
 millrace,Millrace,7,-11,false,140,11,laborer:4;sailor:1;guard:1,longhouse;sawmill;sawmill;farm;warehouse,food:14;timber:22;iron:4
-fairhaven,Fairhaven,-9,-8,false,120,16,laborer:5;sailor:1;guard:1,longhouse;farm;farm;warehouse,food:26;timber:5;iron:3
-coldwater,Coldwater,-6,12,false,90,7,laborer:2;sailor:1;guard:1,longhouse;farm;farm;sawmill,food:9;timber:6;iron:2
+fairhaven,Fairhaven,-5,-4,false,120,16,laborer:5;sailor:1;guard:1,longhouse;farm;farm;warehouse,food:26;timber:5;iron:3
+coldwater,Coldwater,-5,16,false,90,7,laborer:2;sailor:1;guard:1,longhouse;farm;farm;sawmill,food:9;timber:6;iron:2

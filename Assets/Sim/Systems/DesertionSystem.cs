@@ -1,3 +1,4 @@
+using System;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -58,11 +59,15 @@ namespace RTS.Sim.Systems
                 EntityId leaving = crew.Ids[i];
                 int roleIndex = member.RoleIndex;
 
+                // Read before the entity is destroyed: afterwards there is nothing to ask.
+                EntityId port = Port.OwnerOf(world, leaving);
+
                 world.DestroyEntity(leaving);
                 gone++;
 
                 ctx.Events.Emit(new CrewDeserted
                 {
+                    Port = port,
                     RoleIndex = roleIndex,
                     Morale = member.Morale,
                     Loyalty = member.Loyalty,
@@ -79,6 +84,9 @@ namespace RTS.Sim.Systems
     /// <summary>Someone left. Their labour, and the output that depended on it, went with them.</summary>
     public struct CrewDeserted
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int RoleIndex;
         public float Morale;
         public float Loyalty;

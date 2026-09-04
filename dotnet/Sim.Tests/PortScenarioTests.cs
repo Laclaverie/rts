@@ -64,7 +64,7 @@ namespace RTS.Sim.Tests
             Assert.That(world.Store<Treasury>().Values[0].Coin, Is.EqualTo(50));
             Assert.That(world.Store<CrewMember>().Count, Is.EqualTo(3));
             Assert.That(world.Store<BuildingState>().Count, Is.EqualTo(2));
-            Assert.That(Port.UnitsOf(world, 0), Is.EqualTo(12f).Within(1e-4f));
+            Assert.That(Port.UnitsOf(world, Systems.Port.Player(world), 0), Is.EqualTo(12f).Within(1e-4f));
         }
 
         [Test]

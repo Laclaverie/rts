@@ -1,3 +1,4 @@
+using System;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -45,14 +46,29 @@ namespace RTS.Sim.Systems
             BalanceTables balance = ctx.Balance;
             if (balance == null || balance.Ladder.Count == 0) return;
 
+            ReadOnlySpan<EntityId> ports = Port.All(world);
+            for (int i = 0; i < ports.Length; i++) Climb(world, ports[i], balance, ctx);
+        }
+
+        /// <summary>
+        /// One city's rung. Every port has its own, and §5.2.2 says so explicitly: neighbours
+        /// revolt too, and their crises are the player's opportunities.
+        /// </summary>
+        private static void Climb(World world, EntityId port, BalanceTables balance,
+            in Context ctx)
+        {
             ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
-            if (ladders.Count == 0) return;
+
+            EntityId entity = EntityId.None;
+            for (int i = 0; i < ladders.Count; i++)
+                if (Port.BelongsTo(world, ladders.Ids[i], port)) entity = ladders.Ids[i];
+
+            if (entity.IsNone) return;
 
             float worst = 0f;
             int leading = 0;
-            FindAngriest(world, ref worst, ref leading);
+            FindAngriest(world, port, ref worst, ref leading);
 
-            EntityId entity = ladders.Ids[0];
             ref RevolutionLadder ladder = ref ladders.GetRef(entity);
 
             if (ladder.Rung == LadderRung.Deposition)
@@ -76,6 +92,7 @@ namespace RTS.Sim.Systems
 
                 ctx.Events.Emit(new LadderMoved
                 {
+                    Port = port,
                     From = from,
                     To = wanted,
                     Grievance = worst,
@@ -83,7 +100,7 @@ namespace RTS.Sim.Systems
                 });
             }
 
-            Apply(world, balance, ladder.Rung, ctx);
+            Apply(world, port, balance, ladder.Rung, ctx);
         }
 
         /// <summary>The rung one step towards where this grievance belongs.</summary>
@@ -114,12 +131,15 @@ namespace RTS.Sim.Systems
             return current;
         }
 
-        private static void FindAngriest(World world, ref float worst, ref int leading)
+        private static void FindAngriest(World world, EntityId port, ref float worst,
+            ref int leading)
         {
             ComponentStore<Grievance> grievances = world.Store<Grievance>();
 
             for (int i = 0; i < grievances.Count; i++)
             {
+                if (!Port.BelongsTo(world, grievances.Ids[i], port)) continue;
+
                 Grievance grievance = grievances.Values[i];
                 if (grievance.Value <= worst) continue;
 
@@ -129,7 +149,8 @@ namespace RTS.Sim.Systems
         }
 
         /// <summary>What being on this rung does to the port today.</summary>
-        private static void Apply(World world, BalanceTables balance, LadderRung rung, in Context ctx)
+        private static void Apply(World world, EntityId port, BalanceTables balance,
+            LadderRung rung, in Context ctx)
         {
             LadderStep step = balance.Ladder[(int)rung];
             if (step.ConditionDamage <= 0f) return;
@@ -139,6 +160,8 @@ namespace RTS.Sim.Systems
 
             for (int i = 0; i < buildings.Count; i++)
             {
+                if (!Port.BelongsTo(world, buildings.Ids[i], port)) continue;
+
                 ref BuildingState state = ref buildings.GetRef(buildings.Ids[i]);
                 if (state.Mothballed) continue;
 
@@ -147,13 +170,19 @@ namespace RTS.Sim.Systems
             }
 
             if (damaged > 0)
-                ctx.Events.Emit(new PropertyDamaged { Rung = rung, Buildings = damaged });
+                ctx.Events.Emit(new PropertyDamaged
+                {
+                    Port = port, Rung = rung, Buildings = damaged,
+                });
         }
     }
 
     /// <summary>The port changed rung. Up or down — both are worth reporting.</summary>
     public struct LadderMoved
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public LadderRung From;
         public LadderRung To;
         public float Grievance;
@@ -163,6 +192,9 @@ namespace RTS.Sim.Systems
     /// <summary>Buildings were damaged by unrest.</summary>
     public struct PropertyDamaged
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public LadderRung Rung;
         public int Buildings;
     }

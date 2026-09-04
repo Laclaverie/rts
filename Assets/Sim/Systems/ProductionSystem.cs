@@ -1,3 +1,4 @@
+using System;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -64,13 +65,19 @@ namespace RTS.Sim.Systems
             ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
             if (buildings.Count == 0) return;
 
-            float unrest = UnrestMultiplier(world, balance);
-
             for (int i = 0; i < buildings.Count; i++)
             {
                 EntityId building = buildings.Ids[i];
                 BuildingState state = buildings.Values[i];
                 if (state.Mothballed) continue;
+
+                // Each building produces into its own port's store, and is slowed by its own
+                // port's unrest. A city does not work worse because a neighbour is rioting —
+                // though once routes exist, it will certainly feel it.
+                EntityId port = Port.OwnerOf(world, building);
+                if (port.IsNone) continue;
+
+                float unrest = UnrestMultiplier(world, balance, port);
 
                 Building definition = balance.Buildings[state.DefinitionIndex];
                 if (!definition.IsProducer) continue;
@@ -86,7 +93,7 @@ namespace RTS.Sim.Systems
                                * (1f + bonus) * unrest;
                 if (output <= 0f) continue;
 
-                Port.Add(world, goodIndex, output);
+                Port.Add(world, port, goodIndex, output);
             }
         }
 
@@ -99,15 +106,23 @@ namespace RTS.Sim.Systems
         /// yesterday's rung. That lag is wanted: a port does not stop working the instant
         /// somebody becomes angry, and the player sees the rung before feeling it.
         /// </remarks>
-        public static float UnrestMultiplier(World world, BalanceTables balance)
+        public static float UnrestMultiplier(World world, BalanceTables balance, EntityId port)
         {
             if (balance.Ladder.Count == 0) return 1f;
 
             ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
-            if (ladders.Count == 0) return 1f;
 
-            int rung = (int)ladders.Values[0].Rung;
-            return rung >= 0 && rung < balance.Ladder.Count ? balance.Ladder[rung].OutputMultiplier : 1f;
+            for (int i = 0; i < ladders.Count; i++)
+            {
+                if (!Port.BelongsTo(world, ladders.Ids[i], port)) continue;
+
+                int rung = (int)ladders.Values[i].Rung;
+                return rung >= 0 && rung < balance.Ladder.Count
+                    ? balance.Ladder[rung].OutputMultiplier
+                    : 1f;
+            }
+
+            return 1f;
         }
 
         /// <summary>

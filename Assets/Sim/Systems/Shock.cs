@@ -37,13 +37,25 @@ namespace RTS.Sim.Systems
     /// </remarks>
     public sealed class Shock : ICommand
     {
-        public Shock(ShockKind kind, float magnitude)
+        public Shock(ShockKind kind, float magnitude, EntityId port = default)
         {
             Kind = kind;
             Magnitude = magnitude;
+            Port = port;
         }
 
         public ShockKind Kind { get; }
+
+        /// <summary>
+        /// Which city it lands on. <see cref="EntityId.None"/> means the player's.
+        /// </summary>
+        /// <remarks>
+        /// Defaulted rather than required, because a shock is overwhelmingly aimed at the port
+        /// being played and every recorded scenario names one implicitly. Neighbours can be
+        /// struck by naming them, which is what a raid on somebody else's harvest will be
+        /// (§5.2.1) and what makes their crisis the player's opportunity (§5.2.2).
+        /// </remarks>
+        public EntityId Port { get; }
 
         /// <summary>
         /// Meaning depends on the kind: units of food, condition lost per building, coin taken,
@@ -74,40 +86,50 @@ namespace RTS.Sim.Systems
         {
             var shock = (Shock)command;
 
+            // None means the player's port: a scenario that says "a storm" means the one being
+            // played, and every recorded run predates there being anywhere else to aim.
+            EntityId port = shock.Port.IsNone ? Port.Player(world) : shock.Port;
+
             switch (shock.Kind)
             {
                 case ShockKind.HarvestFailure:
-                    ApplyHarvestFailure(world, ctx.Balance, shock.Magnitude);
+                    ApplyHarvestFailure(world, port, ctx.Balance, shock.Magnitude);
                     break;
 
                 case ShockKind.Storm:
-                    ApplyStorm(world, shock.Magnitude);
+                    ApplyStorm(world, port, shock.Magnitude);
                     break;
 
                 case ShockKind.Theft:
-                    ApplyTheft(world, shock.Magnitude);
+                    ApplyTheft(world, port, shock.Magnitude);
                     break;
 
                 case ShockKind.Desertion:
-                    ApplyDesertion(world, shock.Magnitude);
+                    ApplyDesertion(world, port, shock.Magnitude);
                     break;
             }
 
-            ctx.Events.Emit(new ShockStruck { Kind = shock.Kind, Magnitude = shock.Magnitude });
+            ctx.Events.Emit(new ShockStruck
+            {
+                Port = port, Kind = shock.Kind, Magnitude = shock.Magnitude,
+            });
         }
 
-        private static void ApplyHarvestFailure(World world, BalanceTables balance, float units)
+        private static void ApplyHarvestFailure(World world, EntityId port,
+            BalanceTables balance, float units)
         {
             int food = ConsumptionSystem.IndexOf(balance, "food");
-            if (food >= 0) Port.Take(world, food, units);
+            if (food >= 0) Port.Take(world, port, food, units);
         }
 
-        private static void ApplyStorm(World world, float conditionLost)
+        private static void ApplyStorm(World world, EntityId port, float conditionLost)
         {
             ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
 
             for (int i = 0; i < buildings.Count; i++)
             {
+                if (!Port.BelongsTo(world, buildings.Ids[i], port)) continue;
+
                 ref BuildingState state = ref buildings.GetRef(buildings.Ids[i]);
                 if (state.Mothballed) continue;
 
@@ -115,31 +137,49 @@ namespace RTS.Sim.Systems
             }
         }
 
-        private static void ApplyTheft(World world, float coin)
+        private static void ApplyTheft(World world, EntityId port, float coin)
         {
-            if (!Port.HasTreasury(world)) return;
+            if (!Port.HasTreasury(world, port)) return;
 
-            ref Treasury treasury = ref Port.Treasury(world);
+            ref Treasury treasury = ref Port.Treasury(world, port);
             int taken = (int)coin;
 
             treasury.Coin -= taken <= treasury.Coin ? taken : treasury.Coin;
         }
 
-        private static void ApplyDesertion(World world, float count)
+        private static void ApplyDesertion(World world, EntityId port, float count)
         {
             ComponentStore<CrewMember> crew = world.Store<CrewMember>();
             int leaving = (int)count;
 
             // From the end, so the ids that remain are the ones that were there first — a
-            // deterministic choice, and the same one every replay makes.
-            for (int i = 0; i < leaving && crew.Count > 0; i++)
-                world.DestroyEntity(crew.Ids[crew.Count - 1]);
+            // deterministic choice, and the same one every replay makes. Only this port's
+            // crew leave: a neighbour's sailors are not the player's to lose.
+            for (int i = 0; i < leaving; i++)
+            {
+                EntityId going = EntityId.None;
+
+                for (int c = crew.Count - 1; c >= 0; c--)
+                {
+                    if (!Port.BelongsTo(world, crew.Ids[c], port)) continue;
+
+                    going = crew.Ids[c];
+                    break;
+                }
+
+                if (going.IsNone) return;
+
+                world.DestroyEntity(going);
+            }
         }
     }
 
     /// <summary>Something bad happened. What it was, and how hard.</summary>
     public struct ShockStruck
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public ShockKind Kind;
         public float Magnitude;
     }

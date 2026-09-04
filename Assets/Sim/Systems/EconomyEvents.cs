@@ -1,3 +1,5 @@
+using RTS.Sim.Engine.Entities;
+
 namespace RTS.Sim.Systems
 {
     /// <summary>
@@ -10,6 +12,9 @@ namespace RTS.Sim.Systems
     /// </remarks>
     public struct WagesPaid
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Coin;
         public int Crew;
     }
@@ -17,6 +22,9 @@ namespace RTS.Sim.Systems
     /// <summary>The first link in the cascade: reserves out, wages unpaid (§5.2.3).</summary>
     public struct WagesUnpaid
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Owed;
         public int Paid;
         public int Crew;
@@ -24,6 +32,9 @@ namespace RTS.Sim.Systems
 
     public struct UpkeepPaid
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Coin;
         public int Buildings;
     }
@@ -31,6 +42,9 @@ namespace RTS.Sim.Systems
     /// <summary>Upkeep unpayable, so buildings begin to decay and capacity falls.</summary>
     public struct UpkeepUnpaid
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Owed;
         public int Paid;
         public int Decayed;
@@ -39,6 +53,9 @@ namespace RTS.Sim.Systems
     /// <summary>Not enough food for everyone. Morale falls, and it is the morale floor (§5.3).</summary>
     public struct FoodShortfall
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public float Wanted;
         public float Eaten;
         public int Crew;
@@ -50,6 +67,9 @@ namespace RTS.Sim.Systems
     /// </summary>
     public struct CommonersWentHungry
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Commoners;
         public float Wanted;
         public float Eaten;
@@ -63,6 +83,9 @@ namespace RTS.Sim.Systems
     /// </summary>
     public struct CommonersLeft
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Left;
         public int Remaining;
         public int HungryDays;
@@ -74,6 +97,9 @@ namespace RTS.Sim.Systems
     /// </summary>
     public struct GoodsBought
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Coin;
         public int Units;
         public string Good;
@@ -82,6 +108,9 @@ namespace RTS.Sim.Systems
     /// <summary>Surplus sold to a passing merchant. The port's only income for now.</summary>
     public struct GoodsSold
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int Coin;
         public int Units;
     }
@@ -89,6 +118,9 @@ namespace RTS.Sim.Systems
     /// <summary>A building fell to zero condition and stopped producing.</summary>
     public struct BuildingDerelict
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public int DefinitionIndex;
     }
 }

@@ -37,6 +37,7 @@ namespace RTS.Sim.Tests
         private EventQueue _events = null!;
         private EntityId _farm;
         private EntityId _worker;
+        private EntityId _port;
 
         [SetUp]
         public void SetUp()
@@ -53,12 +54,15 @@ namespace RTS.Sim.Tests
 
             _world = new World();
             _events = new EventQueue();
+            _port = TestPort.Create(_world);
 
             _farm = _world.CreateEntity();
             _world.Add(_farm, new BuildingState { DefinitionIndex = 0, Condition = 1f });
+            TestPort.Own(_world, _farm, _port);
 
             _worker = _world.CreateEntity();
             _world.Add(_worker, new CrewMember { RoleIndex = 0, Morale = 1f, Loyalty = 1f });
+            TestPort.Own(_world, _worker, _port);
             _world.Add(_worker, new Assignment { Building = _farm });
         }
 
@@ -177,6 +181,7 @@ namespace RTS.Sim.Tests
             // this is the way out of it.
             EntityId treasury = _world.CreateEntity();
             _world.Add(treasury, new Treasury { Coin = 100 });
+            TestPort.Own(_world, treasury, _port);
 
             RunUpkeep();
             int afterOpenDay = _world.Store<Treasury>().GetRef(treasury).Coin;

@@ -60,6 +60,12 @@ namespace RTS.Sim.Session
 
         public World World => Run.World;
 
+        /// <summary>
+        /// The city the player runs. Everything the panel shows and every order it offers is
+        /// scoped to this one; the others live by the same rules, unwatched (§5.2.2).
+        /// </summary>
+        public EntityId PlayerPort => Port.Player(World);
+
         /// <summary>The in-game day. Starts at 1.</summary>
         public int Day => Run.Day;
 
@@ -352,7 +358,7 @@ namespace RTS.Sim.Session
             _readouts.Add(new Readout("Upkeep", UpkeepPerDay().ToString() + "/day"));
             _readouts.Add(new Readout("Crew", report.Crew.ToString()));
             _readouts.Add(new Readout("Town", Commoners().ToString()));
-            _readouts.Add(new Readout("Unemployed", LabourSystem.UnemployedIn(World).ToString()));
+            _readouts.Add(new Readout("Unemployed", LabourSystem.UnemployedIn(World, PlayerPort).ToString()));
             _readouts.Add(new Readout("Morale", Percent(report.AverageMorale)));
             _readouts.Add(new Readout("Condition", Percent(report.AverageCondition)));
 
@@ -389,7 +395,7 @@ namespace RTS.Sim.Session
             return total;
         }
 
-        public int Commoners() => LabourSystem.CommonersIn(World);
+        public int Commoners() => LabourSystem.CommonersIn(World, PlayerPort);
 
         private static string Percent(float value) => (value * 100f).ToString("0") + "%";
     }

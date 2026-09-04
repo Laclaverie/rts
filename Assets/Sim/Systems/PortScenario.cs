@@ -80,19 +80,54 @@ namespace RTS.Sim.Systems
         /// Builds the world. Unknown ids throw: a scenario naming a building that does not
         /// exist is a mistake in the scenario, not a port with one fewer building.
         /// </summary>
+        /// <summary>
+        /// Builds a world holding this one port, which the player runs.
+        /// </summary>
+        /// <remarks>
+        /// Kept for tests and for scenarios that describe a single city inline. A world of
+        /// several cities is <see cref="WorldScenario"/>, which reads ports.csv and calls
+        /// <see cref="BuildInto"/> once per row.
+        /// </remarks>
         public World Build(BalanceTables balance)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
 
             var world = new World();
+            BuildInto(world, balance, definitionIndex: 0, isPlayer: true);
+            return world;
+        }
+
+        /// <summary>
+        /// Adds this port to a world that may already hold others, and returns its entity.
+        /// </summary>
+        /// <remarks>
+        /// The port entity is created first so everything it owns can point at it. Creation
+        /// order decides every id in the world (§7.1), so ports are built one whole city at a
+        /// time rather than interleaved — a city's ids stay contiguous, and adding a sixth does
+        /// not renumber the first five.
+        /// </remarks>
+        public EntityId BuildInto(World world, BalanceTables balance, int definitionIndex,
+            bool isPlayer)
+        {
+            if (world == null) throw new ArgumentNullException(nameof(world));
+            if (balance == null) throw new ArgumentNullException(nameof(balance));
+
+            EntityId port = world.CreateEntity();
+            world.Add(port, new PortState
+            {
+                DefinitionIndex = definitionIndex,
+                IsPlayer = isPlayer,
+            });
 
             EntityId treasury = world.CreateEntity();
             world.Add(treasury, new Treasury { Coin = StartingCoin });
+            world.Add(treasury, new Owner { Port = port });
 
             // The town. Created before the crew so that a port always has a population even if
             // every named individual in it leaves — which is the whole point of it existing.
             EntityId town = world.CreateEntity();
             world.Add(town, new Population { Commoners = StartingCommoners, HungryDays = 0 });
+            world.Add(town, new Owner { Port = port });
 
             foreach (KeyValuePair<string, int> hire in Crew)
             {
@@ -107,6 +142,7 @@ namespace RTS.Sim.Systems
                         Morale = 1f,
                         Loyalty = 1f,
                     });
+                    world.Add(member, new Owner { Port = port });
                 }
             }
 
@@ -121,15 +157,16 @@ namespace RTS.Sim.Systems
                     Condition = 1f,
                     Mothballed = false,
                 });
+                world.Add(built, new Owner { Port = port });
             }
 
             foreach (KeyValuePair<string, float> pile in Stock)
             {
                 int goodIndex = IndexOf(balance.Goods, pile.Key, "good");
-                Port.Add(world, goodIndex, pile.Value);
+                Port.Add(world, port, goodIndex, pile.Value);
             }
 
-            Assign(world, balance);
+            Assign(world, port, balance);
 
             // One per stratum, in file order, so a port always has the same strata in the same
             // order regardless of what happens to it later.
@@ -137,6 +174,7 @@ namespace RTS.Sim.Systems
             {
                 EntityId stratum = world.CreateEntity();
                 world.Add(stratum, new Grievance { StratumIndex = i, Value = 0f, Baseline = 0f });
+                world.Add(stratum, new Owner { Port = port });
             }
 
             if (balance.Ladder.Count > 0)
@@ -148,9 +186,10 @@ namespace RTS.Sim.Systems
                     DaysAtRung = 0,
                     LeadingStratumIndex = 0,
                 });
+                world.Add(ladder, new Owner { Port = port });
             }
 
-            return world;
+            return port;
         }
 
         /// <summary>
@@ -167,29 +206,38 @@ namespace RTS.Sim.Systems
         /// <c>AssignCrew</c> command of §6, which does not exist yet.
         /// </para>
         /// </remarks>
-        private static void Assign(World world, BalanceTables balance)
+        private static void Assign(World world, EntityId port, BalanceTables balance)
         {
             ComponentStore<CrewMember> crew = world.Store<CrewMember>();
             ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
+
+            // This port's own people and its own buildings. A world of several cities has one
+            // crew store and one building store, so without the filter Ironhold's miners would
+            // be posted to Saltmarsh's farms.
+            var mine = new System.Collections.Generic.List<EntityId>();
+            for (int i = 0; i < crew.Count; i++)
+                if (Port.BelongsTo(world, crew.Ids[i], port)) mine.Add(crew.Ids[i]);
 
             int nextWorker = 0;
 
             for (int b = 0; b < buildings.Count; b++)
             {
+                if (!Port.BelongsTo(world, buildings.Ids[b], port)) continue;
+
                 Building definition = balance.Buildings[buildings.Values[b].DefinitionIndex];
                 if (!definition.IsProducer || definition.Staff <= 0) continue;
 
-                for (int slot = 0; slot < definition.Staff && nextWorker < crew.Count; slot++)
+                for (int slot = 0; slot < definition.Staff && nextWorker < mine.Count; slot++)
                 {
-                    world.Add(crew.Ids[nextWorker], new Assignment { Building = buildings.Ids[b] });
+                    world.Add(mine[nextWorker], new Assignment { Building = buildings.Ids[b] });
                     nextWorker++;
                 }
             }
 
             // Everyone else is idle, recorded explicitly rather than by absence so the digest
             // shows the whole crew and a later reassignment has something to overwrite.
-            for (int i = nextWorker; i < crew.Count; i++)
-                world.Add(crew.Ids[i], new Assignment { Building = EntityId.None });
+            for (int i = nextWorker; i < mine.Count; i++)
+                world.Add(mine[i], new Assignment { Building = EntityId.None });
         }
 
         private static int IndexOf<T>(ConfigRegistry<T> registry, string id, string what)

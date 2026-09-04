@@ -47,10 +47,23 @@ namespace RTS.Sim.Systems
             if (balance == null || balance.Repression.Count == 0) return CommandRejection.Unavailable;
             if (!balance.Repression.Contains(suppress.Harshness.ToString())) return CommandRejection.Unavailable;
 
-            ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
-            if (ladders.Count == 0) return CommandRejection.InvalidTarget;
+            // The player's own city. Putting down somebody else's riot is an intervention,
+            // not an order, and belongs with stances (§5.6) rather than here.
+            EntityId port = Port.Count(world) > 0 ? Port.Player(world) : EntityId.None;
 
-            LadderRung rung = ladders.Values[0].Rung;
+            ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
+            LadderRung rung = LadderRung.Calm;
+            bool found = false;
+
+            for (int i = 0; i < ladders.Count; i++)
+            {
+                if (!Port.BelongsTo(world, ladders.Ids[i], port)) continue;
+
+                rung = ladders.Values[i].Rung;
+                found = true;
+            }
+
+            if (!found) return CommandRejection.InvalidTarget;
 
             // There has to be a riot to put down. Suppressing a grumble is a different act with
             // different costs, and calling it this would let a player buy the permanent penalty
@@ -68,9 +81,13 @@ namespace RTS.Sim.Systems
             var suppress = (SuppressRiot)command;
             RepressionRules rules = ctx.Balance.Repression[suppress.Harshness.ToString()];
 
+            EntityId port = Port.Player(world);
+
             ComponentStore<Grievance> grievances = world.Store<Grievance>();
             for (int i = 0; i < grievances.Count; i++)
             {
+                if (!Port.BelongsTo(world, grievances.Ids[i], port)) continue;
+
                 ref Grievance grievance = ref grievances.GetRef(grievances.Ids[i]);
 
                 // The floor rises first, so relief can never take grievance below the new
@@ -90,18 +107,23 @@ namespace RTS.Sim.Systems
             }
 
             ComponentStore<CrewMember> crew = world.Store<CrewMember>();
+            int affected = 0;
             for (int i = 0; i < crew.Count; i++)
             {
+                if (!Port.BelongsTo(world, crew.Ids[i], port)) continue;
+
+                affected++;
                 ref CrewMember member = ref crew.GetRef(crew.Ids[i]);
                 member.Loyalty = ConsumptionSystem.Clamp01(member.Loyalty - rules.LoyaltyCost);
             }
 
             ctx.Events.Emit(new RiotSuppressed
             {
+                Port = port,
                 Harshness = suppress.Harshness,
                 Relief = rules.GrievanceRelief,
                 BaselineAdded = rules.BaselineIncrease,
-                Crew = crew.Count,
+                Crew = affected,
             });
         }
     }
@@ -109,6 +131,9 @@ namespace RTS.Sim.Systems
     /// <summary>A riot was put down. Everything about this is worth remembering.</summary>
     public struct RiotSuppressed
     {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
         public Harshness Harshness;
         public float Relief;
         public float BaselineAdded;
