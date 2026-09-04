@@ -148,7 +148,7 @@ internal static class Program
     private static ISystem[] EconomySystems() => new ISystem[]
     {
         new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
-        new DesertionSystem(), new ProductionSystem(), new MarketSystem(),
+        new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(),
     };
 
     /// <summary>
@@ -170,7 +170,8 @@ internal static class Program
             Read(directory, BalanceTables.GoodsFile),
             Read(directory, BalanceTables.BuildingsFile),
             Read(directory, BalanceTables.CrewRolesFile),
-            report);
+            report,
+            Read(directory, BalanceTables.StrataFile));
 
         // Loud, and before anything runs. A sim started on invalid content produces numbers
         // that look plausible and mean nothing (§5.3).

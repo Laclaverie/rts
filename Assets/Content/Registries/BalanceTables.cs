@@ -18,25 +18,33 @@ namespace RTS.Content.Registries
         public const string GoodsFile = "goods.csv";
         public const string BuildingsFile = "buildings.csv";
         public const string CrewRolesFile = "crew_roles.csv";
+        public const string StrataFile = "strata.csv";
+
+        /// <summary>The strata columns, used to stand in an empty table when none is supplied.</summary>
+        public const string StrataHeader =
+            "id,decay_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n";
 
         private BalanceTables(ConfigRegistry<Good> goods, ConfigRegistry<Building> buildings,
-            ConfigRegistry<CrewRole> crewRoles)
+            ConfigRegistry<CrewRole> crewRoles, ConfigRegistry<StratumRules> strata)
         {
             Goods = goods;
             Buildings = buildings;
             CrewRoles = crewRoles;
+            Strata = strata;
         }
 
         public ConfigRegistry<Good> Goods { get; }
         public ConfigRegistry<Building> Buildings { get; }
         public ConfigRegistry<CrewRole> CrewRoles { get; }
+        public ConfigRegistry<StratumRules> Strata { get; }
 
         /// <summary>
         /// Loads and validates every table. Collects problems rather than throwing, so one run
         /// reports everything wrong with the content.
         /// </summary>
         public static BalanceTables Load(
-            CsvTable goods, CsvTable buildings, CsvTable crewRoles, ValidationReport report)
+            CsvTable goods, CsvTable buildings, CsvTable crewRoles, ValidationReport report,
+            CsvTable strata = null)
         {
             if (report == null) throw new ArgumentNullException(nameof(report));
 
@@ -66,11 +74,34 @@ namespace RTS.Content.Registries
                     row.Float("rum_per_day", 0f, 100f)),
                 "id", "wage_coin", "work_rate", "food_per_day", "rum_per_day");
 
+            // Optional so that tests exercising the economy alone need not carry a strata table.
+            // A world with no strata simply has nothing to be aggrieved, which is a coherent
+            // state rather than a broken one.
+            ConfigRegistry<StratumRules> strataRegistry =
+                ConfigRegistry<StratumRules>.Load(
+                    strata ?? CsvTable.Parse(StrataHeader, StrataFile),
+                    report, ReadStratum,
+                    "id", "decay_per_day", "hunger_weight", "unpaid_weight", "desertion_weight",
+                    "idle_weight");
+
             ReferenceResolver.Resolve(report, pending, GoodsFile, goodRegistry);
 
-            var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry);
+            var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry, strataRegistry);
             tables.CrossCheck(report);
             return tables;
+        }
+
+        private static StratumRules ReadStratum(RowReader row)
+        {
+            string id = row.Id();
+            Stratum stratum = row.Enum<Stratum>("id");
+
+            return new StratumRules(id, stratum,
+                row.Float("decay_per_day", 0f, 1f),
+                row.Float("hunger_weight", 0f, 1f),
+                row.Float("unpaid_weight", 0f, 1f),
+                row.Float("desertion_weight", 0f, 1f),
+                row.Float("idle_weight", 0f, 1f));
         }
 
         private static Building ReadBuilding(RowReader row, ICollection<PendingReference> pending)

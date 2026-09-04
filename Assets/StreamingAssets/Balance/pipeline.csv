@@ -27,6 +27,11 @@
 #   Market after Production        — today's output is sold today, but the coin lands after
 #                                    today's wages were paid. Income always funds tomorrow,
 #                                    which is what makes reserves the real resource.
+#   Unrest last                    — it reads the events the earlier systems emitted today and
+#                                    turns them into grievance, so it must run after all of
+#                                    them and before the queue is drained. §4.2 already wanted
+#                                    Wages before Unrest so an unpaid wage feeds grievance the
+#                                    same day; this is that requirement made mechanical.
 #   Desertion after Wages,         — people leave because of what happened to them today, and
 #   before Production                what is left of the crew is what works today. This is the
 #                                    one irreversible step in the day: everything else recovers
@@ -43,3 +48,4 @@ DayBoundary,30,Upkeep,true
 DayBoundary,35,Desertion,true
 DayBoundary,40,Production,true
 DayBoundary,50,Market,true
+DayBoundary,70,Unrest,true
