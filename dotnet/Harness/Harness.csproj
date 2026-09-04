@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The console you tune against. Runs the sim headlessly and prints a table per day;
+       it decides nothing and contains no rules of its own. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>RTS.Harness</RootNamespace>
+    <AssemblyName>rts</AssemblyName>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Sim/Sim.csproj" />
+    <ProjectReference Include="../Content/Content.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,126 @@
+using System;
+using System.Collections.Generic;
+using RTS.Content.Registries;
+using RTS.Sim.Components;
+using RTS.Sim.Engine.Entities;
+
+namespace RTS.Sim.Systems
+{
+    /// <summary>
+    /// A starting port, described as data and built into a world.
+    /// </summary>
+    /// <remarks>
+    /// It lives in <c>Sim</c> rather than in the harness so that the console you tune against
+    /// and the tests that assert on the cascade build the <em>same</em> port. Two setups that
+    /// drift apart would mean tuning one thing and testing another, which is a slow and
+    /// confusing way to be wrong.
+    /// <para>
+    /// Everything is an ordered list, never a dictionary: entity creation order determines every
+    /// id in the world, and §7.1 forbids iteration that affects state over a collection whose
+    /// order is not deterministic.
+    /// </para>
+    /// </remarks>
+    public sealed class PortScenario
+    {
+        public int StartingCoin { get; set; } = 200;
+
+        /// <summary>Role id and how many, in the order they are hired.</summary>
+        public List<KeyValuePair<string, int>> Crew { get; } = new List<KeyValuePair<string, int>>();
+
+        /// <summary>Building ids, in the order they are built.</summary>
+        public List<string> Buildings { get; } = new List<string>();
+
+        /// <summary>Good id and starting units, in file order.</summary>
+        public List<KeyValuePair<string, float>> Stock { get; } = new List<KeyValuePair<string, float>>();
+
+        /// <summary>
+        /// A small port that works: enough crew to run its producers, enough food to survive
+        /// the first day before anything is produced, and reserves to pay for a while.
+        /// </summary>
+        /// <remarks>
+        /// These numbers are the starting point for the Phase 1 gate, not a balanced game. The
+        /// gate's question is what happens when they are disturbed.
+        /// </remarks>
+        public static PortScenario Default()
+        {
+            var scenario = new PortScenario { StartingCoin = 200 };
+
+            scenario.Crew.Add(new KeyValuePair<string, int>("laborer", 4));
+            scenario.Crew.Add(new KeyValuePair<string, int>("sailor", 2));
+            scenario.Crew.Add(new KeyValuePair<string, int>("guard", 1));
+
+            scenario.Buildings.Add("longhouse");
+            scenario.Buildings.Add("farm");
+            scenario.Buildings.Add("farm");
+            scenario.Buildings.Add("sawmill");
+            scenario.Buildings.Add("mine");
+            scenario.Buildings.Add("warehouse");
+
+            scenario.Stock.Add(new KeyValuePair<string, float>("food", 20f));
+            scenario.Stock.Add(new KeyValuePair<string, float>("timber", 10f));
+            scenario.Stock.Add(new KeyValuePair<string, float>("iron", 5f));
+
+            return scenario;
+        }
+
+        /// <summary>
+        /// Builds the world. Unknown ids throw: a scenario naming a building that does not
+        /// exist is a mistake in the scenario, not a port with one fewer building.
+        /// </summary>
+        public World Build(BalanceTables balance)
+        {
+            if (balance == null) throw new ArgumentNullException(nameof(balance));
+
+            var world = new World();
+
+            EntityId treasury = world.CreateEntity();
+            world.Add(treasury, new Treasury { Coin = StartingCoin });
+
+            foreach (KeyValuePair<string, int> hire in Crew)
+            {
+                int roleIndex = IndexOf(balance.CrewRoles, hire.Key, "crew role");
+
+                for (int i = 0; i < hire.Value; i++)
+                {
+                    EntityId member = world.CreateEntity();
+                    world.Add(member, new CrewMember
+                    {
+                        RoleIndex = roleIndex,
+                        Morale = 1f,
+                        Loyalty = 1f,
+                    });
+                }
+            }
+
+            foreach (string id in Buildings)
+            {
+                int definition = IndexOf(balance.Buildings, id, "building");
+
+                EntityId built = world.CreateEntity();
+                world.Add(built, new BuildingState
+                {
+                    DefinitionIndex = definition,
+                    Condition = 1f,
+                    Mothballed = false,
+                });
+            }
+
+            foreach (KeyValuePair<string, float> pile in Stock)
+            {
+                int goodIndex = IndexOf(balance.Goods, pile.Key, "good");
+                Port.Add(world, goodIndex, pile.Value);
+            }
+
+            return world;
+        }
+
+        private static int IndexOf<T>(ConfigRegistry<T> registry, string id, string what)
+            where T : IHasId
+        {
+            for (int i = 0; i < registry.Count; i++)
+                if (registry[i].Id == id) return i;
+
+            throw new ArgumentException($"No {what} named '{id}' in {registry.SourceName}.", nameof(id));
+        }
+    }
+}
