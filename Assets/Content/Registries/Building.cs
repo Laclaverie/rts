@@ -11,8 +11,9 @@ namespace RTS.Content.Registries
     public sealed class Building : IHasId
     {
         public Building(string id, int upkeepCoin, int buildTimber, int buildIron,
-            int capacity, string produces, float outputPerDay)
+            int capacity, string produces, float outputPerDay, int staff)
         {
+            Staff = staff;
             Id = id;
             UpkeepCoin = upkeepCoin;
             BuildTimber = buildTimber;
@@ -39,6 +40,12 @@ namespace RTS.Content.Registries
 
         /// <summary>Units of <see cref="Produces"/> per day at full staffing.</summary>
         public float OutputPerDay { get; }
+
+        /// <summary>
+        /// Worker-equivalents wanted. A producer at half its staff makes half its output, so
+        /// this is what turns a lost crew member into lost income (§5.2.3).
+        /// </summary>
+        public int Staff { get; }
 
         public bool IsProducer => !string.IsNullOrEmpty(Produces);
 

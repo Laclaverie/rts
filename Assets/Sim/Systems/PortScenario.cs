@@ -119,7 +119,47 @@ namespace RTS.Sim.Systems
                 Port.Add(world, goodIndex, pile.Value);
             }
 
+            Assign(world, balance);
             return world;
+        }
+
+        /// <summary>
+        /// Puts the crew to work, filling each producer to its staff requirement in build order
+        /// before moving to the next.
+        /// </summary>
+        /// <remarks>
+        /// Deterministic and dull on purpose: creation order in, creation order out, so a
+        /// scenario assigns the same people to the same buildings in every replay. Anyone left
+        /// over is idle — still fed, still paid, producing nothing — which is the honest cost of
+        /// hiring more crew than there is work for.
+        /// <para>
+        /// This is a starting arrangement, not a policy. Changing it during play is the
+        /// <c>AssignCrew</c> command of §6, which does not exist yet.
+        /// </para>
+        /// </remarks>
+        private static void Assign(World world, BalanceTables balance)
+        {
+            ComponentStore<CrewMember> crew = world.Store<CrewMember>();
+            ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
+
+            int nextWorker = 0;
+
+            for (int b = 0; b < buildings.Count; b++)
+            {
+                Building definition = balance.Buildings[buildings.Values[b].DefinitionIndex];
+                if (!definition.IsProducer || definition.Staff <= 0) continue;
+
+                for (int slot = 0; slot < definition.Staff && nextWorker < crew.Count; slot++)
+                {
+                    world.Add(crew.Ids[nextWorker], new Assignment { Building = buildings.Ids[b] });
+                    nextWorker++;
+                }
+            }
+
+            // Everyone else is idle, recorded explicitly rather than by absence so the digest
+            // shows the whole crew and a later reassignment has something to overwrite.
+            for (int i = nextWorker; i < crew.Count; i++)
+                world.Add(crew.Ids[i], new Assignment { Building = EntityId.None });
         }
 
         private static int IndexOf<T>(ConfigRegistry<T> registry, string id, string what)

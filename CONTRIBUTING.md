@@ -60,6 +60,7 @@ Assets/
       Compat/                 language/runtime shims
     Components/               game component structs      (Phase 1+)
     Systems/                  game systems                (Phase 1+)
+    Scenarios/                recorded runs: a seed, a command log, a digest (§8.2)
   Content/                    Content.asmdef    — no UnityEngine reference
     Loading/                  CSV and JSON readers
     Registries/               typed registries the sim reads

@@ -20,9 +20,9 @@ namespace RTS.Sim.Tests
         private const string Goods = "id,base_price,volatility,heat_per_unit,supply,keep,sell_price\n" +
                                      "food,4,0.25,0.00,Local,0,1\n";
 
-        private const string Buildings = "id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day\n" +
-                                         "farm,3,0,0,0,food,6\n" +
-                                         "longhouse,2,0,0,8,,0\n";
+        private const string Buildings = "id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day,staff\n" +
+                                         "farm,3,0,0,0,food,6,1\n" +
+                                         "longhouse,2,0,0,8,,0,0\n";
 
         private const string Crew = "id,wage_coin,work_rate,food_per_day,rum_per_day\n" +
                                     "laborer,2,1.00,1.0,0.00\n";
@@ -63,6 +63,10 @@ namespace RTS.Sim.Tests
                 World.Add(e, new CrewMember { RoleIndex = roleIndex, Morale = morale, Loyalty = loyalty });
                 return e;
             }
+
+            /// <summary>Puts a crew member to work at a building.</summary>
+            public void Assign(EntityId member, EntityId building) =>
+                World.Add(member, new Assignment { Building = building });
 
             public EntityId AddBuilding(string id, float condition = 1f, bool mothballed = false)
             {
@@ -285,8 +289,8 @@ namespace RTS.Sim.Tests
         public void A_producer_adds_its_output()
         {
             var port = new Port();
-            port.AddBuilding("farm");
-            port.AddCrew();
+            EntityId farm = port.AddBuilding("farm");
+            port.Assign(port.AddCrew(), farm);
 
             port.Run(new ProductionSystem());
 
@@ -297,8 +301,8 @@ namespace RTS.Sim.Tests
         public void Output_scales_with_condition()
         {
             var port = new Port();
-            port.AddBuilding("farm", condition: 0.5f);
-            port.AddCrew();
+            EntityId farm = port.AddBuilding("farm", condition: 0.5f);
+            port.Assign(port.AddCrew(), farm);
 
             port.Run(new ProductionSystem());
 
@@ -320,8 +324,8 @@ namespace RTS.Sim.Tests
         public void A_mothballed_producer_produces_nothing()
         {
             var port = new Port();
-            port.AddBuilding("farm", mothballed: true);
-            port.AddCrew();
+            EntityId farm = port.AddBuilding("farm", mothballed: true);
+            port.Assign(port.AddCrew(), farm);
 
             port.Run(new ProductionSystem());
 
@@ -334,13 +338,11 @@ namespace RTS.Sim.Tests
             // The link that gives the cascade its teeth: unpaid crew produce less, so income
             // falls, so wages get harder to pay (§5.2.3).
             var eager = new Port();
-            eager.AddBuilding("farm");
-            eager.AddCrew(morale: 1f);
+            eager.Assign(eager.AddCrew(morale: 1f), eager.AddBuilding("farm"));
             eager.Run(new ProductionSystem());
 
             var resentful = new Port();
-            resentful.AddBuilding("farm");
-            resentful.AddCrew(morale: 0f);
+            resentful.Assign(resentful.AddCrew(morale: 0f), resentful.AddBuilding("farm"));
             resentful.Run(new ProductionSystem());
 
             Assert.That(resentful.Food, Is.LessThan(eager.Food));
@@ -349,17 +351,30 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void Two_producers_and_one_worker_split_the_labour()
+        public void An_unstaffed_producer_produces_nothing()
         {
+            // Under the old pool model this building would still have drawn on the port's
+            // labour. Nobody works here, so nothing comes out of it.
             var port = new Port();
             port.AddBuilding("farm");
-            port.AddBuilding("farm");
-            port.AddCrew();
+            port.AddCrew();      // hired, but assigned nowhere
 
             port.Run(new ProductionSystem());
 
-            // One worker across two producers: each runs at half staffing, 6 * 0.5 twice.
-            Assert.That(port.Food, Is.EqualTo(6f).Within(1e-4f));
+            Assert.That(port.Food, Is.EqualTo(0f).Within(1e-4f));
+        }
+
+        [Test]
+        public void Crew_assigned_elsewhere_do_not_staff_this_building()
+        {
+            var port = new Port();
+            EntityId worked = port.AddBuilding("farm");
+            port.AddBuilding("farm");                       // idle second farm
+            port.Assign(port.AddCrew(), worked);
+
+            port.Run(new ProductionSystem());
+
+            Assert.That(port.Food, Is.EqualTo(6f).Within(1e-4f), "one farm's worth, not two");
         }
 
         // ------------------------------------------------------------ a whole day
@@ -398,6 +413,7 @@ namespace RTS.Sim.Tests
             port.AddTreasury(500);
             EntityId member = port.AddCrew();
             EntityId farm = port.AddBuilding("farm");
+            port.Assign(member, farm);
             port.AddFood(20f);
 
             RunDays(port, days: 10);
@@ -417,6 +433,7 @@ namespace RTS.Sim.Tests
             port.AddTreasury(0);
             EntityId member = port.AddCrew();
             EntityId farm = port.AddBuilding("farm");
+            port.Assign(member, farm);
 
             RunDays(port, days: 5);
 
@@ -439,8 +456,8 @@ namespace RTS.Sim.Tests
             // The loop, over two days: unpaid on day one, so day two produces less than day one.
             var port = new Port();
             port.AddTreasury(0);
-            port.AddCrew(morale: 1f);
-            port.AddBuilding("farm");
+            EntityId worker = port.AddCrew(morale: 1f);
+            port.Assign(worker, port.AddBuilding("farm"));
 
             Pipeline pipeline = DayBoundary();
 
