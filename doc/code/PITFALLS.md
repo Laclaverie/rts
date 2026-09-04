@@ -117,10 +117,17 @@ everything.
 
 - `unity cmd recompile` answers `up_to_date` while the editor has not built new files. Force
   with `CompilationPipeline.RequestScriptCompilation(CleanBuildCache)`, then poll.
+- Polling immediately after requesting a compile reads the *previous* run's `completed` and
+  exits at once. Wait for the editor to pick the request up before polling.
 - `unity cmd eval` returns `400 ... Main thread operation timed out after 5000ms` for slow
   calls **but the call still applies**. Re-query before assuming failure.
 
 → Confirm editor-side changes via `Library/ScriptAssemblies/*.dll` timestamps or a type probe.
+
+**`File.ReadAllText` cannot read a file that is still being written.** It opens with
+`FileShare.Read`, which forbids a concurrent writer, so it fails with a sharing violation
+against a live log. The *reader* must share `ReadWrite`, not just the writer. A tail tool
+follows a log with `FileStream(path, Open, Read, FileShare.ReadWrite)`.
 
 **Do not generate C# through shell heredocs or string surgery.** A heredoc carrying 200 lines
 died with `unexpected EOF` and silently skipped an earlier file in the same command. Inline

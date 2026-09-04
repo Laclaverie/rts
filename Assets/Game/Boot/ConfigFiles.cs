@@ -3,18 +3,20 @@ using RTS.Content.Loading;
 namespace RTS.Game.Boot
 {
     /// <summary>
-    /// The designer-facing numbers: <c>StreamingAssets/Balance/</c> (ARCHITECTURE §5.2).
+    /// Developer settings: <c>StreamingAssets/Config/</c>, currently <c>logging.csv</c>.
     /// </summary>
     /// <remarks>
-    /// A named entry point rather than callers passing "Balance" as a string, so the two
-    /// folders stay distinguishable at every call site: balance is tuned by a designer,
-    /// <see cref="ConfigFiles"/> is set by a developer. See <see cref="StreamingFiles"/> for why
-    /// they live under StreamingAssets at all.
+    /// Kept apart from <see cref="BalanceFiles"/> because the two are edited by different
+    /// people for different reasons. Balance is game design and belongs in a save's content
+    /// hash (§6.1); config is how the machinery is instrumented and must not affect the sim at
+    /// all — a run with logging turned up has to reach the same state as one without.
     /// </remarks>
-    public static class BalanceFiles
+    public static class ConfigFiles
     {
         /// <summary>Folder name under StreamingAssets.</summary>
-        public const string FolderName = "Balance";
+        public const string FolderName = "Config";
+
+        public const string LoggingFile = "logging.csv";
 
         public static string Directory => StreamingFiles.DirectoryFor(FolderName);
 
