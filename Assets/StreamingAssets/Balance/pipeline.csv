@@ -16,6 +16,21 @@
 # one, for when these systems exist: Wages must precede Unrest, so an unpaid wage feeds
 # grievance the same day rather than the next (GDD §5.2.3).
 #
-# No rows yet — Phase 0 implements no systems. Phase 1 adds them as they land.
+# Order here is the order in ARCHITECTURE §4.2, and it is load-bearing:
+#
+#   Consumption before Production  — the crew eat yesterday's stock, not today's output. That
+#                                    one-day lag is what makes reserves matter.
+#   Wages before Upkeep            — people are paid before buildings are maintained.
+#   Wages before Unrest            — an unpaid wage must feed grievance the same day rather
+#                                    than the next (GDD §5.2.3). Unrest arrives in Phase 2;
+#                                    leave room before it.
+#
+# CommandDrain is not here yet: nothing constructs a dispatcher until there is something to
+# command. When it lands, its position decides when input takes effect relative to all of
+# this, which is a design decision and belongs in this file.
 
 phase,order,system,enabled
+DayBoundary,10,Consumption,true
+DayBoundary,20,Wages,true
+DayBoundary,30,Upkeep,true
+DayBoundary,40,Production,true

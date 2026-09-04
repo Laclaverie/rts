@@ -1,3 +1,4 @@
+using RTS.Content.Registries;
 using RTS.Sim.Engine.Events;
 using RTS.Sim.Engine.Randomness;
 
@@ -8,8 +9,9 @@ namespace RTS.Sim.Engine.Pipeline
     /// (ARCHITECTURE §4).
     /// </summary>
     /// <remarks>
-    /// §4 also lists Config. That type does not exist yet — it is a later Phase 0 bullet —
-    /// and it is added here when it lands rather than stubbed now.
+    /// §4's `Config` is <see cref="Balance"/>: the loaded, cross-checked balance tables. It is
+    /// nullable because most of the engine's own tests have no content to load, and a system
+    /// that needs it will fail loudly on the first access rather than silently on a default.
     /// <para>
     /// A ref struct on purpose: it cannot be captured in a field, a closure, an iterator or
     /// an async method, so the compiler enforces §7.2's ban on coroutines and async holding
@@ -18,12 +20,13 @@ namespace RTS.Sim.Engine.Pipeline
     /// </remarks>
     public readonly ref struct Context
     {
-        public Context(int day, float dt, EventQueue events, Rng rng = null)
+        public Context(int day, float dt, EventQueue events, Rng rng = null, BalanceTables balance = null)
         {
             Day = day;
             Dt = dt;
             Events = events;
             Rng = rng;
+            Balance = balance;
         }
 
         /// <summary>The in-game day. Advances at the DayBoundary phase.</summary>
@@ -42,6 +45,12 @@ namespace RTS.Sim.Engine.Pipeline
         /// flaking a test.
         /// </summary>
         public readonly Rng Rng;
+
+        /// <summary>
+        /// All tuned numbers (§5). Immutable and swapped whole on hot reload (§5.4), never
+        /// mutated, so a system reading it mid-day cannot see a half-updated table.
+        /// </summary>
+        public readonly BalanceTables Balance;
 
         /// <summary>
         /// What is currently being attributed as the cause of emitted events (§6.2). Read-only
