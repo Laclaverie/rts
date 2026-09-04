@@ -292,6 +292,24 @@ Rules:
 - A command is validated then applied by its handler; handlers are small (C9)
 - **Nothing else mutates the world.** Presentation and input never write
 
+Three details the rules above leave open, settled when the dispatcher was built:
+
+- **A command enqueued during a drain waits for the next drain.** Applying it re-entrantly
+  would make order depend on call depth and could recurse without bound; §7 drains events at
+  defined boundaries rather than re-entrantly, and commands follow the same rule. The cost is
+  a one-drain delay, which is deterministic and bounded.
+- **A command with no handler throws at submission**, not at drain, so the stack trace names
+  whoever submitted it. Accepting input that silently does nothing is the failure §4.2
+  refuses for systems missing from `pipeline.csv`.
+- **Rejected commands are logged too**, with the reason. They are inputs like any other and
+  replay re-runs validation to the same verdict; dropping them would make the log a record of
+  outcomes rather than of what happened, and a bug report replaying "what the player did"
+  would omit everything the player tried and was refused.
+
+**The drain is an ordinary system** (`CommandDrainSystem`, id `CommandDrain`), so *when*
+input takes effect relative to production, wages and unrest is declared in `pipeline.csv`
+like every other ordering decision (§4.2) rather than buried in a game loop.
+
 This is what makes the campaign layer safe: a script issuing `SuppressRiot` is
 indistinguishable from a player doing it, so scripted and emergent content interleave
 without a second code path (`GDD` §6.3).
