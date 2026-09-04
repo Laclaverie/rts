@@ -149,8 +149,14 @@ namespace RTS.Content.Registries
 
             foreach (Good good in Goods)
             {
-                // A merchant who pays more than the market is a free money press, and the bug
-                // would look like generous tuning rather than an error.
+                // True of the current model, not an economic law. With one static merchant and
+                // nobody funding the difference, an above-market price is money from nowhere and
+                // the bug would read as generous tuning.
+                //
+                // A rival power funding a buyer to overpay — absorbing the loss out of taxes to
+                // capture a market — is a real thing and a good one; it is parked in GDD
+                // Appendix A.0. When a price has an actor behind it, this rule is the first
+                // thing that changes.
                 if (good.SellPrice > good.BasePrice)
                 {
                     report.Add(GoodsFile, Goods.LineOf(good.Id),
