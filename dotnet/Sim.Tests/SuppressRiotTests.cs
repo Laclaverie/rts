@@ -28,21 +28,21 @@ namespace RTS.Sim.Tests
                                     "laborer,2,1.00,1.0,0.00\n";
 
         private const string Strata =
-            "id,decay_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
-            "Commoners,0.04,0.10,0.02,0.03,0.02\n" +
-            "NamedCrew,0.05,0.03,0.12,0.08,0.00\n" +
-            "Merchants,0.06,0.00,0.00,0.00,0.00\n";
+            "id,decay_per_day,relief_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
+            "Commoners,0.04,0.12,0.10,0.02,0.03,0.02\n" +
+            "NamedCrew,0.05,0.15,0.03,0.12,0.08,0.00\n" +
+            "Merchants,0.06,0.18,0.00,0.00,0.00,0.00\n";
 
         private const string Ladder =
-            "rung,climb_at,fall_below,output_multiplier,condition_damage\n" +
-            "Calm,0.00,0.00,1.00,0.00\nGrumbling,0.35,0.25,1.00,0.00\n" +
-            "Slowdown,0.50,0.40,0.75,0.00\nAgitator,0.65,0.55,0.60,0.00\n" +
-            "Riot,0.80,0.70,0.35,0.05\nUprising,0.92,0.85,0.10,0.10\n" +
-            "Deposition,0.99,0.00,0.00,0.00\n";
+            "rung,climb_at,fall_below,days_to_climb,output_multiplier,condition_damage\n" +
+            "Calm,0.00,0.00,1,1.00,0.00\nGrumbling,0.35,0.25,1,1.00,0.00\n" +
+            "Slowdown,0.50,0.40,1,0.75,0.00\nAgitator,0.65,0.55,1,0.60,0.00\n" +
+            "Riot,0.80,0.70,1,0.35,0.05\nUprising,0.92,0.85,1,0.10,0.10\n" +
+            "Deposition,0.99,0.00,1,0.00,0.00\n";
 
         private const string Repression =
-            "id,grievance_relief,baseline_increase,loyalty_cost\n" +
-            "Restrained,0.15,0.03,0.05\nFirm,0.30,0.08,0.12\nBrutal,0.50,0.18,0.25\n";
+            "id,grievance_relief,cowed_days,baseline_increase,loyalty_cost\n" +
+            "Restrained,0.15,2,0.03,0.05\nFirm,0.30,4,0.08,0.12\nBrutal,0.50,7,0.18,0.25\n";
 
         private World _world = null!;
         private BalanceTables _balance = null!;
@@ -104,11 +104,12 @@ namespace RTS.Sim.Tests
 
         private Grievance First => _world.Store<Grievance>().Values[0];
 
-        private void RunUnrestDays(int days)
+        private void RunUnrestDays(int days, params WagesUnpaid[] pressure)
         {
             for (int i = 0; i < days; i++)
             {
                 _events.BeginCause(CauseId.Root, 1);
+                foreach (WagesUnpaid unpaid in pressure) _events.Emit(unpaid);
                 Context ctx = Ctx();
                 new UnrestSystem().Run(_world, in ctx);
                 _events.EndCause();
@@ -177,6 +178,61 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
+        public void Suppression_buys_a_window_not_just_a_subtraction()
+        {
+            // The relief alone was worthless. Grievance is capped at 1.00 and a rioting port is
+            // already there, so the next day's hunger put back everything the crackdown took —
+            // measured at twelve days to leave a riot whether or not force was used, which made
+            // the permanent floor a pure loss. What force actually buys is silence, and what
+            // silence buys is time to fix the cause.
+            Suppress(Harshness.Firm);
+            _events.Drain();
+
+            float afterCrackdown = First.Value;
+
+            // Four cowed days: the same pressure that drove the riot, landing on nobody.
+            for (int day = 0; day < 4; day++) RunUnrestDays(1, new WagesUnpaid { Crew = 5 });
+
+            Assert.That(First.Value, Is.LessThan(afterCrackdown),
+                "a cowed port keeps cooling even while the cause is untouched");
+
+            // The window closes and the grievance is still there, waiting.
+            RunUnrestDays(1, new WagesUnpaid { Crew = 5 });
+
+            Assert.That(First.Value, Is.GreaterThan(First.Baseline),
+                "silence was not forgiveness");
+        }
+
+        [Test]
+        public void A_cowed_port_cools_slowly_because_silence_is_not_contentment()
+        {
+            // It gets decay_per_day, not relief_per_day. People with their heads down are not
+            // a port that is visibly working, and paying the second rate for the first would
+            // make force strictly better than fixing anything.
+            Suppress(Harshness.Firm);
+            _events.Drain();
+
+            float before = First.Value;
+            RunUnrestDays(1);
+
+            StratumRules rules = _balance.Strata[0];
+            Assert.That(before - First.Value, Is.EqualTo(rules.DecayPerDay).Within(1e-4f));
+            Assert.That(rules.ReliefPerDay, Is.GreaterThan(rules.DecayPerDay));
+        }
+
+        [Test]
+        public void The_longer_window_wins_when_a_port_is_crushed_twice()
+        {
+            // A second, milder crackdown does not make people bolder than the first left them.
+            Suppress(Harshness.Brutal);
+            SetRung(LadderRung.Riot);
+            Suppress(Harshness.Restrained);
+
+            Assert.That(_world.Store<Grievance>().Values[0].CowedDays,
+                Is.EqualTo(_balance.Repression["Brutal"].CowedDays));
+        }
+
+        [Test]
         public void Repeated_repression_stacks_the_floor()
         {
             // A port ruled by force gets harder to rule, which is the whole argument against
@@ -237,7 +293,7 @@ namespace RTS.Sim.Tests
                 CsvTable.Parse(Goods, "goods.csv"), CsvTable.Parse(Buildings, "buildings.csv"),
                 CsvTable.Parse(Crew, "crew_roles.csv"), report,
                 CsvTable.Parse(Strata, "strata.csv"), CsvTable.Parse(Ladder, "ladder.csv"),
-                CsvTable.Parse(Repression.Replace("Firm,0.30,0.08", "Firm,0.30,0.40"), "repression.csv"));
+                CsvTable.Parse(Repression.Replace("Firm,0.30,4,0.08", "Firm,0.30,4,0.40"), "repression.csv"));
 
             Assert.That(report.Problems.Any(p => p.Contains("worse the same day")), Is.True,
                 string.Join("; ", report.Problems));

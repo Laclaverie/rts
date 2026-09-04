@@ -24,15 +24,15 @@ namespace RTS.Content.Registries
 
         /// <summary>The strata columns, used to stand in an empty table when none is supplied.</summary>
         public const string StrataHeader =
-            "id,decay_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n";
+            "id,decay_per_day,relief_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n";
 
         /// <summary>The ladder columns, used to stand in an empty table when none is supplied.</summary>
         public const string LadderHeader =
-            "rung,climb_at,fall_below,output_multiplier,condition_damage\n";
+            "rung,climb_at,fall_below,days_to_climb,output_multiplier,condition_damage\n";
 
         /// <summary>The repression columns, used to stand in an empty table when none is supplied.</summary>
         public const string RepressionHeader =
-            "id,grievance_relief,baseline_increase,loyalty_cost\n";
+            "id,grievance_relief,cowed_days,baseline_increase,loyalty_cost\n";
 
         private BalanceTables(ConfigRegistry<Good> goods, ConfigRegistry<Building> buildings,
             ConfigRegistry<CrewRole> crewRoles, ConfigRegistry<StratumRules> strata,
@@ -96,8 +96,8 @@ namespace RTS.Content.Registries
                 ConfigRegistry<StratumRules>.Load(
                     strata ?? CsvTable.Parse(StrataHeader, StrataFile),
                     report, ReadStratum,
-                    "id", "decay_per_day", "hunger_weight", "unpaid_weight", "desertion_weight",
-                    "idle_weight");
+                    "id", "decay_per_day", "relief_per_day", "hunger_weight", "unpaid_weight",
+                    "desertion_weight", "idle_weight");
 
             ReferenceResolver.Resolve(report, pending, GoodsFile, goodRegistry);
 
@@ -105,13 +105,14 @@ namespace RTS.Content.Registries
                 ConfigRegistry<LadderStep>.Load(
                     ladder ?? CsvTable.Parse(LadderHeader, LadderFile),
                     report, ReadLadderStep,
-                    "rung", "climb_at", "fall_below", "output_multiplier", "condition_damage");
+                    "rung", "climb_at", "fall_below", "days_to_climb", "output_multiplier",
+                    "condition_damage");
 
             ConfigRegistry<RepressionRules> repressionRegistry =
                 ConfigRegistry<RepressionRules>.Load(
                     repression ?? CsvTable.Parse(RepressionHeader, RepressionFile),
                     report, ReadRepression,
-                    "id", "grievance_relief", "baseline_increase", "loyalty_cost");
+                    "id", "grievance_relief", "cowed_days", "baseline_increase", "loyalty_cost");
 
             var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry,
                 strataRegistry, ladderRegistry, repressionRegistry);
@@ -126,6 +127,7 @@ namespace RTS.Content.Registries
 
             return new RepressionRules(id, harshness,
                 row.Float("grievance_relief", 0f, 1f),
+                row.Int("cowed_days", 0, 365),
                 row.Float("baseline_increase", 0f, 1f),
                 row.Float("loyalty_cost", 0f, 1f));
         }
@@ -138,6 +140,7 @@ namespace RTS.Content.Registries
             return new LadderStep(id, rung,
                 row.Float("climb_at", 0f, 1f),
                 row.Float("fall_below", 0f, 1f),
+                row.Int("days_to_climb", 1, 365),
                 row.Float("output_multiplier", 0f, 1f),
                 row.Float("condition_damage", 0f, 1f));
         }
@@ -149,6 +152,7 @@ namespace RTS.Content.Registries
 
             return new StratumRules(id, stratum,
                 row.Float("decay_per_day", 0f, 1f),
+                row.Float("relief_per_day", 0f, 1f),
                 row.Float("hunger_weight", 0f, 1f),
                 row.Float("unpaid_weight", 0f, 1f),
                 row.Float("desertion_weight", 0f, 1f),
@@ -334,6 +338,42 @@ namespace RTS.Content.Registries
                     report.Add(LadderFile, Ladder.LineOf(step.Id),
                         $"'{step.Id}' climbs at {step.ClimbAt}, no higher than '{Ladder[i - 1].Id}' " +
                         $"at {Ladder[i - 1].ClimbAt}, so one of them is unreachable.");
+                }
+            }
+
+            CheckLadderPacing(report);
+        }
+
+        /// <summary>
+        /// Checks the ladder does not get quicker as it gets worse.
+        /// </summary>
+        /// <remarks>
+        /// <c>days_to_climb</c> is what gives a player time to act, and the time needed grows
+        /// with the stakes: losing a day at Grumbling costs a grumble, losing one at Uprising
+        /// costs the port. A ladder that accelerated towards its own failure state would take
+        /// the most time to escalate where it matters least and the least where it matters most,
+        /// which inverts the design.
+        /// <para>
+        /// Whether the top of the ladder is actually escapable is not decided here — it depends
+        /// on the decay rates in strata.csv and on the order systems run in, so it is asserted
+        /// against the running simulation in the Phase 2 gate rather than guessed at from one
+        /// table.
+        /// </para>
+        /// </remarks>
+        private void CheckLadderPacing(ValidationReport report)
+        {
+            for (int i = 2; i < Ladder.Count; i++)
+            {
+                LadderStep step = Ladder[i];
+                LadderStep below = Ladder[i - 1];
+                if (below.Rung == LadderRung.Calm) continue;
+
+                if (step.DaysToClimb < below.DaysToClimb)
+                {
+                    report.Add(LadderFile, Ladder.LineOf(step.Id),
+                        $"'{step.Id}' climbs after {step.DaysToClimb} days but the milder " +
+                        $"'{below.Id}' takes {below.DaysToClimb}. The ladder would speed up as it " +
+                        "got worse, leaving least time to act where it matters most.");
                 }
             }
         }

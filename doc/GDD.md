@@ -205,9 +205,38 @@ every rung has an exit:
 5. **Uprising** — a mob. Named crew choose sides *individually*, by loyalty
 6. **Deposition** — failure state
 
+**Every rung is held before the next is earned.** `days_to_climb` in `ladder.csv` says how
+long the rung below must stand before the port moves up, and the higher rungs ask for
+longer. Without it the ladder failed its own gate: grievance saturates in a day and decays
+in fortieths, so a port pinned at 1.00 climbed every single day and one that reached Riot
+was deposed three days later whatever the player did. The exits below only exist if there
+is time to reach them. Falling is not paced — a port whose cause is fixed comes down as
+soon as the numbers say so.
+
 **Repression is available and honest about its cost.** Crushing a riot lowers Unrest
 immediately, raises baseline grievance permanently, and costs loyalty with every crew
 member who disagreed. A viable strategy, not a free one.
+
+What it actually buys is a *window*, not a subtraction. Grievance is capped, and a rioting
+port is already at the cap, so the relief alone was undone by the next day's hunger —
+measured at twelve days to leave a riot whether or not force was used, which made the
+permanent floor a pure loss. `cowed_days` is the number of days the day's pressures land on
+nobody: people are still hungry and still unpaid, and they say nothing. That window is time
+to fix the cause. A player who spends it on nothing has bought a worse port for no reason,
+which is the honest version of the trade.
+
+**Anger fades faster when the port is visibly working.** Two rates, not one: `decay_per_day`
+for a day that merely was not worse, and `relief_per_day` — roughly triple — for a day this
+stratum had nothing at all to resent. Asked per stratum, so one group's complaint cannot
+deny another its recovery. Without the second rate, fixing the economy was not a lever: it
+took twenty-five clear days to unwind a saturated grievance, which the ladder outran, and
+repression became the only exit rather than one option among them.
+
+**Where the economic exit runs out.** A rioting port produces 35% of its output. Two farms
+at six a day become four, seven crew eat seven, and coin does not buy food — so past Riot,
+money cannot save a port that has stopped working. That is the point at which repression
+stops being one option and becomes the option, and it is a deliberate shape rather than an
+oversight: the lower rungs are fixed by good management, the upper ones are paid for.
 
 **Rung 5 is where the bounded crowd tech is spent** (§6.4) — and it is the *only* place
 it is spent. A mob is hundreds of anonymous bodies with a handful of named faces inside
@@ -507,7 +536,33 @@ Written down so they stop leaking into scope. Not rejected — deferred, with a 
 | Ships as directly controlled units | Evaluate after routes prove fun |
 | Labour market: hiring away from rival ports | After neighbouring ports exist |
 | Subsidised buyers (below) | After trade and routes exist |
+| **Strata populations** (below) | Next; the Phase 2 gate found it |
 | **Decision Timeline** (below) | After the game is playable and fun |
+
+### A.-1 Strata populations — the gap the Phase 2 gate found
+
+§5.2.2 says "population is not one number: three groups, each with its own grievance". Only
+the crew are modelled. Every pressure `UnrestSystem` reads — hungry, unpaid, deserted, idle —
+is a count of crew, so Commoners and Merchants are today just different weightings of the
+same crew events.
+
+The consequence is visible in play. Rob a port every day and it riots on day 9; by day 12
+every crew member has deserted; grievance then loses its source, all three strata go quiet
+together, and the ladder walks back down to Calm. The port is a ruin with nobody in it and
+the flagship system reports that all is well. **Deposition is currently unreachable from
+play** for the same reason: the top two rungs need to be held for nine days between them,
+and the population that would depose you leaves before that.
+
+Everything else on the ladder works — the climb, both ways down, hysteresis, repression's
+price. This is the one thing that does not, and it is a missing model rather than a number
+to tune. It is recorded as a passing test (`RevoltGateTests.An_emptied_port_reads_as_calm_and_is_never_deposed`)
+that asserts the wrong behaviour on purpose, so that fixing it breaks the test rather than
+being forgotten.
+
+Fixing it means commoners and merchants existing as counts in their own right, with their
+own pressures: unemployment and food price for commoners, tariffs and lost convoys for
+merchants. That also unblocks the labour market above, and it is what makes a neighbour
+port's revolt legible from outside.
 
 ### A.0 Subsidised buyers — a price that is not a market
 

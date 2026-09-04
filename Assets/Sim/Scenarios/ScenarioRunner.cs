@@ -58,7 +58,11 @@ namespace RTS.Sim.Scenarios
 
             ReplayRun run = ReplayRun.Start(
                 scenario.Seed,
-                new ICommandHandler[] { new ShockHandler(), new SuppressRiotHandler() },
+                new ICommandHandler[]
+                {
+                    new ShockHandler(), new SuppressRiotHandler(),
+                    new AssignCrewHandler(), new MothballBuildingHandler(),
+                },
                 dispatcher => BuildPipeline(pipelineCsv, dispatcher),
                 port.Build(balance),
                 balance);

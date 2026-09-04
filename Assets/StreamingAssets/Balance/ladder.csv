@@ -1,10 +1,11 @@
 # The revolution ladder (GDD §5.2.2). One row per rung, in order.
 #
-# The port sits on the rung the angriest stratum has earned. Escalation moves one rung a day
-# at most, in either direction, so every rung is visible and a player has a day to act on it.
+# The port sits on the rung the angriest stratum has earned. Escalation moves one rung at a
+# time, in either direction, so every rung is visible and a player has time to act on it.
 #
 # climb_at              grievance at or above which the port moves up to this rung
 # fall_below            grievance below which it drops out of this rung
+# days_to_climb         days the rung below must be held before the port moves up to this one
 # output_multiplier     what production is worth at this rung
 # condition_damage      condition lost per building per day at this rung
 #
@@ -12,17 +13,32 @@
 # it a port on the boundary would flicker between rungs every day, which would be unreadable
 # and would make "pull it back out" meaningless.
 #
+# days_to_climb is the other half of that, and it is not flavour. Grievance saturates far
+# faster than it decays: a day of total mismanagement can add most of it, while decay_per_day
+# in strata.csv gives it back in fortieths. With no dwell time the ladder climbed every single
+# day once grievance was pinned at 1.00, so a port that reached Riot was deposed three days
+# later no matter what the player did — the exits §5.2.2 promises were unreachable for the top
+# half of the ladder. The numbers below give a port at Riot nine days before Deposition, which
+# is enough for grievance to fall back under Uprising's climb_at if the cause is fixed. The
+# rungs also get slower as they get worse, because a mob is not the natural sequel to a late
+# shipment.
+#
+# Only climbing is paced. Falling is immediate: a port whose cause has been fixed should be
+# rewarded promptly, and the hysteresis already stops it flickering.
+#
 # Falling is as real as climbing. §5.2.2 says every rung has an exit, and the Phase 2 gate is
 # that a port can be driven into revolt AND pulled back out by playing the numbers. A ladder
 # that only climbs is a timer wearing a costume.
 #
 # Deposition never falls: fall_below is 0 because it is the failure state, not a bad mood.
+# Calm's days_to_climb is unused — nothing climbs to Calm — but the column is required so a
+# row is never quietly half-read.
 
-rung,climb_at,fall_below,output_multiplier,condition_damage
-Calm,0.00,0.00,1.00,0.00
-Grumbling,0.35,0.25,1.00,0.00
-Slowdown,0.50,0.40,0.75,0.00
-Agitator,0.65,0.55,0.60,0.00
-Riot,0.80,0.70,0.35,0.05
-Uprising,0.92,0.85,0.10,0.10
-Deposition,0.99,0.00,0.00,0.00
+rung,climb_at,fall_below,days_to_climb,output_multiplier,condition_damage
+Calm,0.00,0.00,1,1.00,0.00
+Grumbling,0.35,0.25,1,1.00,0.00
+Slowdown,0.50,0.40,2,0.75,0.00
+Agitator,0.65,0.55,3,0.60,0.00
+Riot,0.80,0.70,3,0.35,0.05
+Uprising,0.92,0.85,4,0.10,0.10
+Deposition,0.99,0.00,5,0.00,0.00

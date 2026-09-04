@@ -81,6 +81,12 @@ namespace RTS.Sim.Systems
                 float relieved = grievance.Value - rules.GrievanceRelief;
                 grievance.Value = ConsumptionSystem.Clamp01(
                     relieved < grievance.Baseline ? grievance.Baseline : relieved);
+
+                // The window, not the subtraction, is what force buys. Relief alone is undone
+                // by the next day's hunger, because grievance is capped and a rioting port is
+                // already at the cap. Longest window wins if a port is crushed twice: the
+                // second crackdown does not make people bolder.
+                if (rules.CowedDays > grievance.CowedDays) grievance.CowedDays = rules.CowedDays;
             }
 
             ComponentStore<CrewMember> crew = world.Store<CrewMember>();

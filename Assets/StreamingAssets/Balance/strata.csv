@@ -1,25 +1,32 @@
-# Grievance per stratum (GDD §5.2.2). One row per group, one column per thing that angers it.
+# The three strata (GDD §5.2.2). One row per group, in ladder-reading order.
 #
-# Grievance is 0..1. Each day it decays, then rises by whatever happened that day times the
-# weight below. A weight of 0 means that stratum does not care about that thing.
+# "Population is not one number. Three groups, each with its own grievance."
 #
-# decay_per_day       how fast anger fades when nothing new happens. Slower than it rises, or
-#                     nothing ever compounds.
-# hunger_weight       per crew member who went unfed today
-# unpaid_weight       per crew member whose wage went unpaid today
-# desertion_weight    per crew member who left today
-# idle_weight         per crew member with no work, per day
+# decay_per_day     how fast anger fades on a day that merely was not worse
+# relief_per_day    how fast it fades on a day when nothing at all went wrong: nobody hungry,
+#                   nobody unpaid, nobody idle, nobody gone
+# hunger_weight     added per crew member who went unfed today
+# unpaid_weight     added per crew member whose wage went unpaid today
+# desertion_weight  added per crew member who left today
+# idle_weight       added per crew member with no work, per day
 #
-# Merchants have every weight at zero, and that is honest rather than an oversight: what
-# angers them — tariffs, blockades, lost convoys, seizures — needs trade, routes and
-# neighbours, none of which exist yet. The stratum is here because the ladder reads all three
-# and adding it later would mean re-tuning the other two. Its weights arrive with trade.
+# The two rates are the difference between a port that has stopped getting worse and one that is
+# visibly working, and having only the slow one is what made the Phase 2 gate fail. Grievance is
+# capped at 1.00, so a port in a spiral sits at the cap; at 0.04 a day it needs twenty-five clear
+# days to reach zero, which the ladder's dwell times outrun no matter what the player does. That
+# left repression as the only exit, turning §5.2.2's "a viable strategy, not a free one" into the
+# only strategy. relief_per_day is what makes fixing the cause a real lever instead of a slower
+# way of waiting.
 #
-# Commoners care about hunger far more than crew do: crew signed up for hard weather, and a
-# commoner who cannot feed a family did not. Crew care about pay, which commoners do not
-# receive at all.
+# Merchants forget fastest and are angered by none of these yet: tariffs, blockades and lost
+# convoys are theirs (§5.2.2) and none of them exist. The row is here so the stratum is present
+# and ordered from the start rather than appearing later and shifting every index.
+#
+# Named crew care about pay far more than food; commoners the reverse. That asymmetry is the
+# whole reason the ladder reads the angriest stratum rather than an average: a port can be
+# feeding everyone and still be one missed payday from a riot.
 
-id,decay_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight
-Commoners,0.04,0.10,0.02,0.03,0.02
-NamedCrew,0.05,0.03,0.12,0.08,0.00
-Merchants,0.06,0.00,0.00,0.00,0.00
+id,decay_per_day,relief_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight
+Commoners,0.04,0.12,0.10,0.02,0.03,0.02
+NamedCrew,0.05,0.15,0.03,0.12,0.08,0.00
+Merchants,0.06,0.18,0.00,0.00,0.00,0.00

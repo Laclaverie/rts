@@ -89,6 +89,22 @@ Still no Unity.
 **Gate: you can drive a port into revolt, and pull it back out, by playing the numbers.**
 Both directions must work. A ladder that only ever climbs is a timer wearing a costume.
 
+**Passed** — `Sim.Tests/RevoltGateTests.cs`, 11 tests against the shipped content through the
+full pipeline. The climb worked immediately. Getting the second direction to work needed three
+mechanics the gate exposed as missing, each written up in `doc/design/ECONOMY_FINDINGS.md`:
+
+- `days_to_climb` per rung, because the ladder climbed faster than grievance could fall and no
+  action could change the outcome once a port was pinned at 1.00
+- `cowed_days` on repression, because a one-day relief was re-added by the same day's hunger and
+  force ended a riot no faster than patience
+- `relief_per_day` per stratum, because at 0.04/day fixing the economy was not a lever at all and
+  repression was the only exit rather than one of two
+
+**One thing the gate could not make work**, recorded rather than hidden: Deposition is currently
+unreachable from play, and an emptied port reads as Calm. Strata have no populations of their
+own, so when the last crew member deserts all three go quiet at once. Written up in `GDD`
+Appendix A.-1, and pinned by a deliberately-wrong-on-purpose test so the fix breaks it.
+
 **Not now:** the mob as a visual thing — rung 5 is a state, not a scene, until Phase 5.
 
 ---

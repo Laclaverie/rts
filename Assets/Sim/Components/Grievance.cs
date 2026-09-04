@@ -26,11 +26,29 @@ namespace RTS.Sim.Components
         /// </summary>
         public float Baseline;
 
+        /// <summary>
+        /// Days left in which this stratum keeps its head down after being put down by force.
+        /// </summary>
+        /// <remarks>
+        /// Repression needs a window, not a single subtraction. Grievance is capped at 1.00, so
+        /// a port in a spiral re-saturates the day after it is crushed and the relief buys
+        /// nothing at all — measured at twelve days to leave a riot either way, which makes the
+        /// permanent floor a pure loss and repression a trap. §5.2.2 wants it viable.
+        /// <para>
+        /// While this is above zero the day's pressures do not land: people are still hungry and
+        /// still unpaid, and they still say nothing. Decay continues, so the port genuinely
+        /// calms — and when the window closes the grievance comes back on top of a floor that
+        /// never leaves.
+        /// </para>
+        /// </remarks>
+        public int CowedDays;
+
         public void Write(IStateWriter writer)
         {
             writer.Write("stratum", StratumIndex);
             writer.Write("value", Value);
             writer.Write("baseline", Baseline);
+            writer.Write("cowed", CowedDays);
         }
     }
 }

@@ -18,15 +18,23 @@
 # These deliberately include the Phase 1 gate's own scenarios. The gate asserts the *shape*
 # (survived, collapsed); this asserts the exact arithmetic, so tuning that keeps the shape but
 # moves the numbers still shows up.
+#
+# All ten digests moved with the Phase 2 gate, which added three things to the ladder: a dwell
+# time per rung (days_to_climb), a window in which a crushed port stays quiet (cowed_days), and
+# a faster cooling rate for a day with nothing to resent (relief_per_day). Every one of them
+# changes grievance arithmetic on ordinary days, so every run's digest changes. Worth noting in
+# the shape column: three-correlated used to end at Deposition and now ends Collapsed but Calm —
+# the port is a ruin with no crew left, and with nobody to be angry the ladder walks back down.
+# That is a known gap in the population model, recorded in RevoltGateTests and §A.
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,806e114ac995fa44
-one-storm,1,150,40,10:Storm:0.30,97d5687233a34f55
-one-theft,1,150,40,10:Theft:100,d557e6b34592c873
-one-harvest-failure,1,150,40,10:HarvestFailure:8,d3eaa309cdd04177
-one-desertion,1,150,40,10:Desertion:2,522bdc4a41373d2d
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c196cc26f6e9c10c
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,3defb7c483867a88
-lean-start,1,90,30,,466488b43f6aa5e6
-long-quiet-run,7,150,120,,33549e514aca9022
-late-storm,3,150,60,50:Storm:0.40,9d545da710872d6e
+undisturbed,1,150,40,,ad4a6c2ebfe09390
+one-storm,1,150,40,10:Storm:0.30,9749ee5768a3d899
+one-theft,1,150,40,10:Theft:100,fb897b6211bd1517
+one-harvest-failure,1,150,40,10:HarvestFailure:8,0229eea2d5595ab3
+one-desertion,1,150,40,10:Desertion:2,447e5ce0f776e7f1
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,691a9ab3c15ee05d
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,dd75a0179fe8cf16
+lean-start,1,90,30,,03ebd30a6b1e54ba
+long-quiet-run,7,150,120,,387d25e2b09184dc
+late-storm,3,150,60,50:Storm:0.40,f05a1f822454a1d2
