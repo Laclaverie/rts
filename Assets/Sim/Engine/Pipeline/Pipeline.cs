@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using RTS.Content.Loading;
 using RTS.Sim.Engine.Entities;
+using RTS.Sim.Engine.Events;
 
 namespace RTS.Sim.Engine.Pipeline
 {
@@ -28,13 +29,37 @@ namespace RTS.Sim.Engine.Pipeline
         /// <summary>Enabled systems for the phase, in the order the file declares.</summary>
         public IReadOnlyList<ISystem> Systems(Phase phase) => Resolve(phase);
 
+        /// <summary>
+        /// Runs the phase's enabled systems in declared order, inside a cause scope rooted at
+        /// the phase itself.
+        /// </summary>
+        /// <remarks>
+        /// The scope is what lets a system call <c>ctx.Events.Emit(...)</c> without knowing
+        /// anything about causes (§6.2). A system acting because the day turned has
+        /// <see cref="CauseId.Root"/> as its cause — that is an answer, not a gap. The command
+        /// dispatcher opens a narrower scope inside this one when it applies a command, and
+        /// the innermost wins.
+        /// </remarks>
         public void Run(Phase phase, World world, in Context ctx)
         {
             ISystem[] systems = Resolve(phase);
+            if (systems.Length == 0) return;
 
-            // Indexed rather than foreach: the order of this loop is the whole point of the type.
-            for (int i = 0; i < systems.Length; i++)
-                systems[i].Run(world, in ctx);
+            EventQueue events = ctx.Events;
+            events?.BeginCause(CauseId.Root, ctx.Day);
+
+            try
+            {
+                // Indexed rather than foreach: the order of this loop is the whole point of the type.
+                for (int i = 0; i < systems.Length; i++)
+                    systems[i].Run(world, in ctx);
+            }
+            finally
+            {
+                // A system that throws must not leave the stack unbalanced; the next phase
+                // would then attribute its events to a cause that already finished.
+                events?.EndCause();
+            }
         }
 
         private ISystem[] Resolve(Phase phase) =>

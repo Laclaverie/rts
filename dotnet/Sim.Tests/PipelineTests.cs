@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using RTS.Content.Loading;
 using RTS.Sim.Engine.Entities;
+using RTS.Sim.Engine.Events;
 using RTS.Sim.Engine.Pipeline;
 
 namespace RTS.Sim.Tests
@@ -32,7 +34,8 @@ namespace RTS.Sim.Tests
         private static CsvTable Table(string body) =>
             CsvTable.Parse("phase,order,system,enabled\n" + body, "pipeline.csv");
 
-        private static Context AnyContext() => new Context(day: 1, dt: 0f);
+        private static Context AnyContext() =>
+            new Context(day: 1, dt: 0f, events: new EventQueue());
 
         [Test]
         public void Runs_systems_in_declared_order_not_registration_order()
@@ -217,6 +220,57 @@ namespace RTS.Sim.Tests
             var table = Table("  Tick  ,10,Movement,true\n");
 
             Assert.DoesNotThrow(() => Pipeline.Build(table, new ISystem[] { new Spy("Movement", log) }));
+        }
+
+        /// <summary>A system that reports something, which is what systems do (§7).</summary>
+        private sealed class Emitter : ISystem
+        {
+            private readonly bool _throws;
+
+            public Emitter(string id, bool throws = false)
+            {
+                Id = id;
+                _throws = throws;
+            }
+
+            public string Id { get; }
+
+            public void Run(World world, in Context ctx)
+            {
+                ctx.Events.Emit(new Reported { By = 1 });
+                if (_throws) throw new InvalidOperationException("system blew up");
+            }
+        }
+
+        private struct Reported { public int By; }
+
+        [Test]
+        public void A_system_can_emit_without_knowing_anything_about_causes()
+        {
+            var events = new EventQueue();
+            Pipeline pipeline = Pipeline.Build(Table("DayBoundary,10,Wages,true\n"),
+                new ISystem[] { new Emitter("Wages") });
+
+            pipeline.Run(Phase.DayBoundary, new World(), new Context(day: 4, dt: 0f, events: events));
+
+            Assert.That(events.PendingCount, Is.EqualTo(1));
+            Assert.That(events.Pending[0].Cause.IsRoot, Is.True, "the phase itself is the cause");
+            Assert.That(events.Pending[0].Day, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void The_cause_scope_is_closed_even_when_a_system_throws()
+        {
+            // An unbalanced stack would attribute the next phase's events to a finished cause.
+            var events = new EventQueue();
+            Pipeline pipeline = Pipeline.Build(Table("Tick,10,Boom,true\n"),
+                new ISystem[] { new Emitter("Boom", throws: true) });
+
+            Assert.Throws<InvalidOperationException>(
+                () => pipeline.Run(Phase.Tick, new World(), new Context(1, 0f, events)));
+
+            Assert.That(events.ScopeDepth, Is.EqualTo(0));
+            Assert.That(events.InScope, Is.False);
         }
 
         [Test]

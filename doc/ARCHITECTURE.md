@@ -369,10 +369,42 @@ system.** So the hook goes in now, even though nothing consumes it for months.
 Every event carries the cause that produced it:
 
 ```csharp
-public readonly record struct CauseId(int Value);   // a command, or a prior event
+public readonly struct CauseId { public readonly int Value; }   // a command, or a prior event
 
-public readonly record struct Envelope<T>(EventId Id, CauseId Cause, int Day, T Payload);
+public readonly struct Envelope
+{
+    public readonly EventId Id;
+    public readonly CauseId Cause;
+    public readonly int     Day;
+    // payload, read back with TryGet<T> / Get<T>
+}
 ```
+
+Three notes on the shapes above, each of which the sketch left open:
+
+- **One int is enough for `CauseId` because commands and events share one node-id space.**
+  Two separate spaces behind a single value would collide, and the DAG would quietly link
+  the wrong parent. `EventQueue.AllocateId()` exists so the dispatcher draws command ids
+  from the same counter.
+- **`Envelope` is not generic.** One queue holds many payload types in a single
+  insertion-ordered list, and that ordering *is* the log (§7.1). The payload is boxed;
+  events are reports at input and day-boundary rate, so the allocation is irrelevant and
+  the ordering guarantee is not.
+- **`CauseId.Root` means the phase itself acted.** It is an answer, not a missing value —
+  the day boundary arriving is a real reason for consumption to happen.
+
+#### Scopes nest
+
+`BeginCause`/`EndCause` are a stack, because the architecture nests: the dispatcher is
+drained at a pipeline position (§6), so applying a command happens *inside* a phase that
+already has a cause. The innermost scope wins, which attributes an event to the command
+that triggered it rather than to the phase that contained it. `Pipeline.Run` opens the
+phase's root scope and closes it in a `finally`, so a system that throws cannot leave the
+next phase attributing its events to a cause that already finished.
+
+Emitting with no scope open **throws**. Defaulting it to `Root` would turn a forgotten
+scope in the dispatcher into events silently misattributed to the phase, which is exactly
+the kind of quiet wrongness this section exists to prevent.
 
 `Context` (§4) carries a `CurrentCause`, set by the command dispatcher when it applies a
 command and by the event drain when a subscriber reacts. **`ctx.Events.Emit(payload)`
