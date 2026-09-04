@@ -31,5 +31,10 @@ namespace RTS.Content.Registries
 
         /// <summary>Optional. Null loads an empty table from <see cref="BalanceTables.RepressionHeader"/>.</summary>
         public CsvTable Repression { get; set; }
+
+        /// <summary>
+        /// The cities. Optional: a test exercising one port's economy needs no world around it.
+        /// </summary>
+        public CsvTable Ports { get; set; }
     }
 }
