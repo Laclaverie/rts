@@ -196,6 +196,92 @@ namespace RTS.Sim.Tests
                 "the stamp is the day that just ran, not the one about to");
         }
 
+        [Test]
+        public void Turning_the_logs_up_does_not_change_the_run()
+        {
+            // The whole justification for shipping Pipeline and Commands at Debug. Logging is
+            // instrumentation, and instrumentation that changed the thing it measured would be
+            // worse than none — a bug hunted with the logs up would not reproduce with them
+            // down. §7.1: a run with logging turned up must reach the same state.
+            string loud = DigestOfRunWith(Engine.Diagnostics.LogLevel.Trace);
+            string quiet = DigestOfRunWith(Engine.Diagnostics.LogLevel.Off);
+
+            Assert.That(loud, Is.EqualTo(quiet));
+        }
+
+        [Test]
+        public void The_kill_switch_silences_everything()
+        {
+            // For when logging itself is the performance problem. One boolean read, and no
+            // formatting or dispatch happens at all.
+            var sink = new Engine.Diagnostics.CaptureLogSink();
+            Engine.Diagnostics.Log.AddSink(sink);
+            Engine.Diagnostics.Log.Enabled = false;
+            try
+            {
+                Session().Advance(50f);
+            }
+            finally
+            {
+                Engine.Diagnostics.Log.Enabled = true;
+                Engine.Diagnostics.Log.RemoveSink(sink);
+            }
+
+            Assert.That(sink.Snapshot(), Is.Empty);
+        }
+
+        [Test]
+        public void The_engine_says_what_it_is_doing()
+        {
+            // What the log is for: which systems ran, in which order, and what the player asked
+            // for. Reading a run should not require guessing.
+            var sink = new Engine.Diagnostics.CaptureLogSink();
+            Engine.Diagnostics.LogLevel before =
+                Engine.Diagnostics.Log.LevelOf(Engine.Diagnostics.LogChannel.Pipeline);
+
+            Engine.Diagnostics.Log.AddSink(sink);
+            Engine.Diagnostics.Log.SetLevel(
+                Engine.Diagnostics.LogChannel.Pipeline, Engine.Diagnostics.LogLevel.Debug);
+            Engine.Diagnostics.Log.SetLevel(
+                Engine.Diagnostics.LogChannel.Commands, Engine.Diagnostics.LogLevel.Debug);
+            try
+            {
+                GameSession session = Session();
+                session.Submit(new Shock(ShockKind.Theft, 40f));
+                session.Step();
+            }
+            finally
+            {
+                Engine.Diagnostics.Log.SetLevel(Engine.Diagnostics.LogChannel.Pipeline, before);
+                Engine.Diagnostics.Log.RemoveSink(sink);
+            }
+
+            string all = string.Join(" | ", sink.Snapshot().Select(r => r.Message));
+
+            Assert.That(all, Does.Contain("DayBoundary begins"));
+            Assert.That(all, Does.Contain(ConsumptionSystem.SystemId));
+            Assert.That(all, Does.Contain(RevolutionLadderSystem.SystemId));
+            Assert.That(all, Does.Contain("queued"));
+            Assert.That(all, Does.Contain("applied"));
+        }
+
+        private static string DigestOfRunWith(Engine.Diagnostics.LogLevel level)
+        {
+            Engine.Diagnostics.LogLevel before = Engine.Diagnostics.Log.DefaultLevel;
+            Engine.Diagnostics.Log.DefaultLevel = level;
+            try
+            {
+                GameSession session = Session();
+                session.Submit(new Shock(ShockKind.Theft, 40f));
+                session.Advance(200f);
+                return Digest(session);
+            }
+            finally
+            {
+                Engine.Diagnostics.Log.DefaultLevel = before;
+            }
+        }
+
         // -------------------------------------------------------------- readouts
 
         [Test]

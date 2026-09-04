@@ -63,7 +63,8 @@ namespace RTS.Game.Tests
             Clock clock = Clock.Load(ConfigFiles.ReadCsv(ConfigFiles.ClockFile), report);
 
             Assert.That(report.IsValid, Is.True, string.Join("; ", report.Problems));
-            Assert.That(clock.SecondsPerDay, Is.EqualTo(1200f).Within(1e-4f));
+            Assert.That(clock.SecondsPerDay, Is.GreaterThan(0f),
+                "not pinned: the file exists so a playtest can retune it without a rebuild");
         }
 
         [Test]
