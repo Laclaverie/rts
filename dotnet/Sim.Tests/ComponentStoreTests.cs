@@ -82,6 +82,51 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
+        public void Set_adds_when_the_component_is_absent()
+        {
+            var store = new ComponentStore<Hp>();
+            store.Set(Id(1), new Hp { Value = 5 });
+
+            Assert.That(store.TryGet(Id(1), out Hp hp), Is.True);
+            Assert.That(hp.Value, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void Set_overwrites_in_place_and_keeps_position()
+        {
+            // Reordering on write would change the order systems iterate in, and §7.1 makes
+            // that order part of determinism.
+            var store = new ComponentStore<Hp>();
+            store.Add(Id(1), new Hp { Value = 1 });
+            store.Add(Id(2), new Hp { Value = 2 });
+
+            store.Set(Id(1), new Hp { Value = 99 });
+
+            Assert.That(store.Count, Is.EqualTo(2));
+            Assert.That(store.Ids.ToArray(), Is.EqualTo(new[] { Id(1), Id(2) }));
+            Assert.That(store.Values[0].Value, Is.EqualTo(99));
+        }
+
+        [Test]
+        public void Set_still_refuses_None()
+        {
+            var store = new ComponentStore<Hp>();
+
+            Assert.Throws<ArgumentException>(() => store.Set(EntityId.None, new Hp()));
+        }
+
+        [Test]
+        public void Add_is_still_strict_after_Set_exists()
+        {
+            // Set is for callers that mean "ensure". Add stays for callers that mean "attach",
+            // where a second attach is two systems believing they own the component.
+            var store = new ComponentStore<Hp>();
+            store.Set(Id(1), new Hp { Value = 1 });
+
+            Assert.Throws<InvalidOperationException>(() => store.Add(Id(1), new Hp { Value = 2 }));
+        }
+
+        [Test]
         public void Remove_from_the_middle_preserves_order_of_the_rest()
         {
             var store = new ComponentStore<Hp>();

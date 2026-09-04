@@ -96,6 +96,15 @@ namespace RTS.Sim.Engine.Entities
 
         public ref T GetRef<T>(EntityId id) where T : struct, IComponentData => ref Store<T>().GetRef(id);
 
+        /// <summary>Adds the component, or overwrites it if the entity already has one.</summary>
+        public void Set<T>(EntityId id, in T value) where T : struct, IComponentData
+        {
+            if (!IsAlive(id))
+                throw new ArgumentException($"{id} is not alive.", nameof(id));
+
+            Store<T>().Set(id, value);
+        }
+
         public bool Remove<T>(EntityId id) where T : struct, IComponentData => Store<T>().Remove(id);
 
         public bool Has<T>(EntityId id) where T : struct, IComponentData => Store<T>().Has(id);

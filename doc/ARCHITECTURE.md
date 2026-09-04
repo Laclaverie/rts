@@ -119,9 +119,10 @@ public sealed class World
 > component twice almost always means two systems each believe they own it, so it throws
 > rather than overwriting; updating an existing component is `GetRef`. An upsert — *ensure
 > this component equals this value* — is the natural shape for idempotent command handlers
-> and for recomputed derived components, and a `Set` can be added next to the first caller
-> that genuinely needs one. Deliberately in that order: loosening this later breaks no
-> existing code, whereas tightening it later would.
+> and for recomputed derived components. `Set` was added when that caller appeared — `AssignCrew`
+> means "this person now works here", and it is the same command whether they were idle or
+> working somewhere else — and `Add` stayed strict. Deliberately in that order: loosening later
+> broke no existing code, whereas tightening later would have.
 
 > **Every component implements `IComponentData`, which writes its own fields.** The
 > replay-determinism gate compares end states and §6.1's snapshots serialise them, so a
