@@ -36,7 +36,11 @@ param(
     [switch]$Unity,
     [switch]$All,
     [switch]$Launch,
-    [int]$UnityTimeoutSeconds = 600
+    [int]$UnityTimeoutSeconds = 600,
+
+    # When set, each headless run writes a .trx there. CI uploads it, so a failure is a file
+    # you can open rather than a wall of scrollback.
+    [string]$ResultsDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -88,7 +92,13 @@ function Invoke-Headless($category, [switch]$AllowEmpty) {
         return
     }
 
-    & dotnet test $Solution --nologo --filter "TestCategory=$category"
+    $arguments = @('test', $Solution, '--nologo', '--filter', "TestCategory=$category")
+    if ($ResultsDirectory) {
+        $arguments += @('--logger', "trx;LogFileName=$category.trx",
+            '--results-directory', $ResultsDirectory)
+    }
+
+    & dotnet @arguments
 
     # For a gating category, a filter that matches nothing exits 1 and that is a real failure:
     # it means the category was renamed or every fixture in it lost its tag.

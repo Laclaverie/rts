@@ -16,7 +16,7 @@ namespace RTS.Sim.Tests
 
         private sealed class Thing : IHasId
         {
-            public string Id { get; set; }
+            public string Id { get; set; } = string.Empty;
             public int Weight { get; set; }
             public float Volatility { get; set; }
             public bool Tradable { get; set; }
@@ -25,8 +25,8 @@ namespace RTS.Sim.Tests
 
         private sealed class Holder : IHasId
         {
-            public string Id { get; set; }
-            public string Holds { get; set; }
+            public string Id { get; set; } = string.Empty;
+            public string Holds { get; set; } = string.Empty;
         }
 
         private const string ThingColumns = "id,weight,volatility,tradable,kind\n";

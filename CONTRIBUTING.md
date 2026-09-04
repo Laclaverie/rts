@@ -103,7 +103,16 @@ unit tests should not carry: replay corpora, long timeouts, saved sessions.
 **Running them: `tools	est`** (double-click `tools	est.cmd`, or run it from a terminal).
 With no switches it runs both kinds headlessly, because a complete fast loop is worth more
 than a marginally faster one. `-Unit` or `-Functional` runs one kind alone. `tools	est -All`
-adds the Unity suite and is what CI calls; `-Unity -Launch` starts the editor first. It exits
+adds the Unity suite; `-Unity -Launch` starts the editor first.
+
+**CI runs the same script**, so it cannot drift from what you run locally: `.github/workflows/ci.yml`
+calls `tools/Run-Tests.ps1` with no switches — on **Ubuntu for pull requests, and Ubuntu plus
+Windows for pushes to `main`**. Keeping a Windows thread is deliberate: saves are a seed plus a
+command log (§6.1), so cross-runtime determinism is a correctness property, and the `Rng`
+golden vectors get asserted on Linux .NET, on Windows .NET and inside Unity's runtime. Keeping
+it off pull requests is also deliberate: this repo is private, so minutes are metered and
+Windows bills at twice the Linux rate for a job that takes about twice as long. The Unity EditMode suite is *not* in CI: it needs a licensed Unity
+runner, which today would buy four tests. Revisit when the Unity side is load-bearing. It exits
 non-zero if anything fails, and a Unity editor that is not running counts as a failure rather
 than a silent skip — skipping would report green on an untested half.
 
