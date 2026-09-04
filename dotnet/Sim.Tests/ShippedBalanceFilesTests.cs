@@ -9,6 +9,7 @@ namespace RTS.Sim.Tests
     /// and a typo in one is a launch failure, so it is worth catching in CI instead
     /// (ARCHITECTURE §5.3, §8.3).
     /// </summary>
+    [Category(TestCategories.Functional)]
     public class ShippedBalanceFilesTests
     {
         private static string PathTo(string file) =>

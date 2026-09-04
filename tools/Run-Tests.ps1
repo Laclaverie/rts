@@ -3,22 +3,32 @@
     Runs the project's tests and returns a non-zero exit code if any fail.
 
 .DESCRIPTION
-    Two suites answer two different questions (CONTRIBUTING §2):
+    Two axes, and they are independent.
 
-      dotnet/RTS.Headless.slnx   Sim and Content, outside Unity, ~100ms. The working loop.
-      Assets/Game/Tests/EditMode Only what needs to be inside the editor. Seconds, and
-                                 requires a running Unity.
+    WHERE a test runs (CONTRIBUTING §2):
+      dotnet/RTS.Headless.slnx    Sim and Content, outside Unity. The working loop.
+      Assets/Game/Tests/EditMode  Only what needs to be inside the editor. Needs Unity running.
 
-    Headless runs by default because it is the one worth running constantly. -Unity adds
-    the editor suite; -All runs both and is what CI should call.
+    WHAT KIND it is (ARCHITECTURE §8.1, §8.2):
+      Unit         no I/O, no clock, no environment. Red means the code is wrong.
+      Functional   touches the filesystem, a shipped balance file, later a replay corpus.
+                   Red usually means the code is fine and the world around it changed.
+
+    With no switches both kinds run headlessly, because both are milliseconds today and a
+    complete fast loop is worth more than a marginally faster one. Name a kind to run it
+    alone; that is the point of the split.
 
 .EXAMPLE
-    .\Run-Tests.ps1                 # headless only
-    .\Run-Tests.ps1 -All            # both suites
-    .\Run-Tests.ps1 -Unity -Launch  # editor suite, starting Unity if it is closed
+    .\Run-Tests.ps1                  # both kinds, headless
+    .\Run-Tests.ps1 -Unit            # unit only
+    .\Run-Tests.ps1 -Functional      # functional only
+    .\Run-Tests.ps1 -All             # both kinds, plus the Unity suite
+    .\Run-Tests.ps1 -Unity -Launch   # editor suite, starting Unity if it is closed
 #>
 [CmdletBinding()]
 param(
+    [switch]$Unit,
+    [switch]$Functional,
     [switch]$Unity,
     [switch]$All,
     [switch]$Launch,
@@ -30,7 +40,10 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path $PSScriptRoot -Parent
 $Solution = Join-Path $RepoRoot 'dotnet/RTS.Headless.slnx'
 
-$runHeadless = -not $Unity -or $All
+# A kind named explicitly narrows the run; naming none runs both.
+$kindNamed = $Unit -or $Functional
+$runUnit = $All -or -not $kindNamed -or $Unit
+$runFunctional = $All -or -not $kindNamed -or $Functional
 $runUnity = $Unity -or $All
 
 $failures = @()
@@ -51,16 +64,22 @@ function Resolve-UnityCli {
     return $null
 }
 
-# ---------------------------------------------------------------- headless
+function Invoke-Headless($category) {
+    Write-Section "Headless - $category"
 
-if ($runHeadless) {
-    Write-Section 'Headless (Sim, Content)'
+    & dotnet test $Solution --nologo --filter "TestCategory=$category"
 
-    & dotnet test $Solution --nologo
-    if ($LASTEXITCODE -ne 0) { $failures += 'headless' }
+    # A filter that matches nothing exits 1 with "no test matched". That is a real failure:
+    # it means a category was renamed or every fixture in it lost its tag.
+    if ($LASTEXITCODE -ne 0) { $script:failures += $category.ToLowerInvariant() }
 }
 
-# ------------------------------------------------------------------- unity
+# --------------------------------------------------------------- headless
+
+if ($runUnit) { Invoke-Headless 'Unit' }
+if ($runFunctional) { Invoke-Headless 'Functional' }
+
+# ------------------------------------------------------------------ unity
 
 if ($runUnity) {
     Write-Section 'Unity EditMode'
