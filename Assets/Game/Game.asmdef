@@ -3,7 +3,8 @@
     "rootNamespace": "RTS.Game",
     "references": [
         "Sim",
-        "Content"
+        "Content",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

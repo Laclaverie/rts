@@ -16,7 +16,7 @@ any future decision that violates one is a scope change to be argued explicitly.
 | **C2** | **Composition over inheritance** wherever possible. |
 | **C3** | Clear **separation of concerns**. |
 | **C4** | **Reusable modules** — except the glue, which is allowed to be project-specific. |
-| **C5** | **Minimal Unity-specific types.** Defining our own equivalents is preferred. |
+| **C5** | **Minimal Unity-specific types.** Defining our own equivalents is preferred. The engine is a renderer, not a host — see §2.2. |
 | **C6** | **Explicit control over which system runs in which order.** |
 | **C7** | **Tests ship with the feature.** Unit tests now; functional tests once the core loop works. |
 | **C8** | **Data-driven. Nothing hardcoded** that could be data. |
@@ -72,6 +72,42 @@ Keep these in an `Engine/` namespace with no reference to ports, crew, or goods.
 
 Explicitly **not** reusable and fine that way: the Composition Root, the Unity scene
 bootstrap, the presentation binders.
+
+### 2.2 The engine is a renderer, not a host
+
+**Everything that took thought lives outside Unity, and the parts inside it are small enough
+to rewrite in an afternoon.** This is a stated goal, not a side effect of the layering.
+
+The reason is ordinary risk management. An engine is a dependency upgraded on somebody else's
+schedule — a security fix, a dropped platform, a licence change, a version that breaks a
+package. When that day comes, the cost should be proportional to how much of the game lives
+inside the engine, and here that is:
+
+| Inside Unity | Why it has to be |
+|---|---|
+| `GameBoot` | Only Unity knows where StreamingAssets is, and only Unity has a frame |
+| `PortPanel` | Something has to draw |
+| Log sinks | The editor console is Unity's |
+
+Everything else — the world, the systems, the pipeline, commands, events, the RNG, the clock,
+and `GameSession`, which is the game as a driveable object — is plain C# compiled and tested by
+`dotnet test` with no editor anywhere near it. `Sim.asmdef` and `Content.asmdef` set
+`noEngineReferences`, so a stray `using UnityEngine` is a compile error rather than something to
+be disciplined about.
+
+**The test for whether the line is holding:** a front end needs to advance time, read state,
+issue commands and see what happened. All four are on `GameSession`. If a fifth thing appears
+that a renderer must reach around it to do, the line has moved and something has leaked.
+
+Two consequences worth stating, because they look like inconvenience until the reason is
+remembered:
+
+- **Real time converts to whole days at exactly one call.** `GameBoot.Update` hands
+  `Time.deltaTime` to the session and gets back an integer. A frame rate is not deterministic
+  and a player's machine is not the developer's, so nothing below that call may see either
+  (§7.1).
+- **What a readout says is decided in `Sim`, not in the panel.** A console harness and a Unity
+  panel show the same words in the same order, and the wording has a headless test behind it.
 
 ---
 

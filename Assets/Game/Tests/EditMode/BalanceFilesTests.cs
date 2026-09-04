@@ -3,6 +3,7 @@ using NUnit.Framework;
 using RTS.Content.Loading;
 using RTS.Game.Boot;
 using RTS.Sim.Engine.Pipeline;
+using RTS.Sim.Scenarios;
 
 namespace RTS.Game.Tests
 {
@@ -59,12 +60,18 @@ namespace RTS.Game.Tests
                 Pipeline.PhaseColumn, Pipeline.OrderColumn, Pipeline.SystemColumn, Pipeline.EnabledColumn,
             }));
 
-            // Phase 0 implements no systems, so the shipped file must declare none. The day the
-            // first system lands, this fails until its row is added.
-            Pipeline pipeline = Pipeline.Build(table, new ISystem[0]);
+            // Bound against the real system list, which is the only thing this can usefully
+            // assert from inside Unity: that the file the editor resolves is the file the game
+            // runs. What the order should be is asserted headlessly, where it belongs.
+            //
+            // This spent three phases asserting that the pipeline declared no systems at all —
+            // true in Phase 0, false from Phase 1 — and stayed red without anyone noticing,
+            // because EditMode tests only run when the editor happens to be open. Worth
+            // remembering before putting anything load-bearing on this side of the line.
+            Pipeline pipeline = Pipeline.Build(table, ScenarioRunner.AllSystems());
 
-            Assert.That(pipeline.Systems(Phase.Tick), Is.Empty);
-            Assert.That(pipeline.Systems(Phase.DayBoundary), Is.Empty);
+            Assert.That(pipeline.Systems(Phase.Tick), Is.Empty, "nothing runs per-tick yet");
+            Assert.That(pipeline.Systems(Phase.DayBoundary), Is.Not.Empty);
         }
     }
 }
