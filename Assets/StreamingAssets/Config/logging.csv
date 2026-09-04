@@ -1,0 +1,25 @@
+# Log channel thresholds. Edit and relaunch; no rebuild.
+#
+# A channel logs at its level and everything more severe. Off silences it entirely.
+# Levels: Trace, Debug, Info, Warn, Error, Off
+#
+#   Trace   firehose: per-entity, per-tick. Off unless something is being hunted.
+#   Debug   how the machinery ran: what loaded, what was skipped, timings.
+#   Info    milestones worth seeing while scanning the file.
+#   Warn    wrong but survivable: a default substituted, a file missing.
+#   Error   broken.
+#
+# The '*' row is the threshold for any channel not listed below, including ones declared by
+# classes that have not run yet.
+#
+# A typo in a level name is a load failure, not a silently disabled channel — a channel that
+# quietly stops logging is the logging equivalent of a system missing from pipeline.csv.
+#
+# None of this is the kill switch. Log.Enabled turns everything off in one boolean read, for
+# when logging itself is the performance problem.
+
+channel,level
+*,Info
+Content,Info
+Pipeline,Info
+Boot,Info

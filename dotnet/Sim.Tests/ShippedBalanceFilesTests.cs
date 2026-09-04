@@ -1,5 +1,7 @@
 using System.IO;
 using RTS.Content.Loading;
+using RTS.Content.Validation;
+using RTS.Sim.Engine.Diagnostics;
 using RTS.Sim.Engine.Pipeline;
 
 namespace RTS.Sim.Tests
@@ -14,6 +16,9 @@ namespace RTS.Sim.Tests
     {
         private static string PathTo(string file) =>
             Path.Combine(TestContext.CurrentContext.TestDirectory, "Balance", file);
+
+        private static string ConfigPathTo(string file) =>
+            Path.Combine(TestContext.CurrentContext.TestDirectory, "Config", file);
 
         [Test]
         public void Pipeline_csv_is_present_and_parses()
@@ -41,6 +46,21 @@ namespace RTS.Sim.Tests
 
             Assert.That(pipeline.Systems(Phase.Tick), Is.Empty);
             Assert.That(pipeline.Systems(Phase.DayBoundary), Is.Empty);
+        }
+
+        [Test]
+        public void Logging_csv_is_present_and_parses()
+        {
+            string path = ConfigPathTo("logging.csv");
+            Assert.That(File.Exists(path), Is.True, path + " was not copied to the test output.");
+
+            var report = new ValidationReport();
+            LogSettings settings = LogSettings.Load(
+                CsvTable.Parse(File.ReadAllText(path), "logging.csv"), report);
+
+            Assert.That(report.IsValid, Is.True, string.Join("; ", report.Problems));
+            Assert.That(settings.Levels.Count, Is.GreaterThan(0),
+                "the shipped file should configure at least one channel");
         }
     }
 }
