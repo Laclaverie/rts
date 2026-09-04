@@ -177,7 +177,12 @@ namespace RTS.Sim.Engine.Pipeline
 
                 declaredAt.Add(id, row.Line);
                 slots.Add(slot, id);
-                entries.Add(new Entry(phase, order, id, enabled, row.Line));
+                entries.Add(new Entry(
+                    phase: phase,
+                    order: order,
+                    id: id,
+                    enabled: enabled,
+                    line: row.Line));
             }
 
             return entries;

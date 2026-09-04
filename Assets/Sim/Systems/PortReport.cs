@@ -91,12 +91,22 @@ namespace RTS.Sim.Systems
                     grievance[entry.StratumIndex] = entry.Value;
             }
 
+            // Named, because eight of the eleven are int or float and the three averages are
+            // interchangeable to the compiler. A report that swapped morale and loyalty would
+            // be wrong in the one way nobody would notice: it would still print plausible
+            // numbers, in the right columns, every day.
             return new PortReport(
-                day, coin, arrears,
-                crew.Count > 0 ? morale / crew.Count : 0f,
-                crew.Count > 0 ? loyalty / crew.Count : 0f,
-                buildings.Count > 0 ? condition / buildings.Count : 0f,
-                crew.Count, buildings.Count, stock, rung, grievance);
+                day: day,
+                coin: coin,
+                arrears: arrears,
+                averageMorale: crew.Count > 0 ? morale / crew.Count : 0f,
+                averageLoyalty: crew.Count > 0 ? loyalty / crew.Count : 0f,
+                averageCondition: buildings.Count > 0 ? condition / buildings.Count : 0f,
+                crew: crew.Count,
+                buildings: buildings.Count,
+                stock: stock,
+                rung: rung,
+                grievance: grievance);
         }
 
         /// <summary>The header matching <see cref="ToRow"/>. Fixed width, so columns line up.</summary>

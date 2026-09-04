@@ -42,9 +42,12 @@ namespace RTS.Sim.Tests
         public void SetUp()
         {
             var report = new ValidationReport();
-            _balance = BalanceTables.Load(
-                CsvTable.Parse(Goods, "goods.csv"), CsvTable.Parse(Buildings, "buildings.csv"),
-                CsvTable.Parse(Crew, "crew_roles.csv"), report);
+            _balance = BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(Goods, "goods.csv"),
+                Buildings = CsvTable.Parse(Buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(Crew, "crew_roles.csv"),
+            }, report);
 
             Assert.That(report.IsValid, Is.True, string.Join("; ", report.Problems));
 

@@ -20,6 +20,9 @@ namespace RTS.Sim.Tests
         private static string PathTo(string file) =>
             Path.Combine(TestContext.CurrentContext.TestDirectory, "Balance", file);
 
+        private static CsvTable Table(string file) =>
+            CsvTable.Parse(File.ReadAllText(PathTo(file)), file);
+
         private static string ConfigPathTo(string file) =>
             Path.Combine(TestContext.CurrentContext.TestDirectory, "Config", file);
 
@@ -98,14 +101,15 @@ namespace RTS.Sim.Tests
             // something, everything consumed by something, every `produces` resolving.
             var report = new ValidationReport();
 
-            BalanceTables tables = BalanceTables.Load(
-                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.GoodsFile)), BalanceTables.GoodsFile),
-                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.BuildingsFile)), BalanceTables.BuildingsFile),
-                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.CrewRolesFile)), BalanceTables.CrewRolesFile),
-                report,
-                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.StrataFile)), BalanceTables.StrataFile),
-                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.LadderFile)), BalanceTables.LadderFile),
-                CsvTable.Parse(File.ReadAllText(PathTo(BalanceTables.RepressionFile)), BalanceTables.RepressionFile));
+            BalanceTables tables = BalanceTables.Load(new BalanceSources
+            {
+                Goods = Table(BalanceTables.GoodsFile),
+                Buildings = Table(BalanceTables.BuildingsFile),
+                CrewRoles = Table(BalanceTables.CrewRolesFile),
+                Strata = Table(BalanceTables.StrataFile),
+                Ladder = Table(BalanceTables.LadderFile),
+                Repression = Table(BalanceTables.RepressionFile),
+            }, report);
 
             Assert.That(report.IsValid, Is.True,
                 "shipped balance content is invalid:" + System.Environment.NewLine +

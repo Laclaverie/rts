@@ -24,11 +24,12 @@ namespace RTS.Sim.Tests
             out ValidationReport report)
         {
             report = new ValidationReport();
-            return BalanceTables.Load(
-                CsvTable.Parse(GoodsHeader + goods, "goods.csv"),
-                CsvTable.Parse(BuildingsHeader + buildings, "buildings.csv"),
-                CsvTable.Parse(CrewHeader + crew, "crew_roles.csv"),
-                report);
+            return BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(GoodsHeader + goods, "goods.csv"),
+                Buildings = CsvTable.Parse(BuildingsHeader + buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(CrewHeader + crew, "crew_roles.csv"),
+            }, report);
         }
 
         /// <summary>A minimal consistent set: food is produced by a farm and eaten by a laborer.</summary>

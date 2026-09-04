@@ -53,11 +53,15 @@ namespace RTS.Sim.Tests
         public void SetUp()
         {
             var report = new ValidationReport();
-            _balance = BalanceTables.Load(
-                CsvTable.Parse(Goods, "goods.csv"), CsvTable.Parse(Buildings, "buildings.csv"),
-                CsvTable.Parse(Crew, "crew_roles.csv"), report,
-                CsvTable.Parse(Strata, "strata.csv"), CsvTable.Parse(Ladder, "ladder.csv"),
-                CsvTable.Parse(Repression, "repression.csv"));
+            _balance = BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(Goods, "goods.csv"),
+                Buildings = CsvTable.Parse(Buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(Crew, "crew_roles.csv"),
+                Strata = CsvTable.Parse(Strata, "strata.csv"),
+                Ladder = CsvTable.Parse(Ladder, "ladder.csv"),
+                Repression = CsvTable.Parse(Repression, "repression.csv"),
+            }, report);
 
             Assert.That(report.IsValid, Is.True, string.Join("; ", report.Problems));
 
@@ -289,11 +293,16 @@ namespace RTS.Sim.Tests
             // A trap rather than a decision: the player punished for taking the option the game
             // offered, with no way to see it coming.
             var report = new ValidationReport();
-            BalanceTables.Load(
-                CsvTable.Parse(Goods, "goods.csv"), CsvTable.Parse(Buildings, "buildings.csv"),
-                CsvTable.Parse(Crew, "crew_roles.csv"), report,
-                CsvTable.Parse(Strata, "strata.csv"), CsvTable.Parse(Ladder, "ladder.csv"),
-                CsvTable.Parse(Repression.Replace("Firm,0.30,4,0.08", "Firm,0.30,4,0.40"), "repression.csv"));
+            BalanceTables.Load(new BalanceSources
+            {
+                Goods = CsvTable.Parse(Goods, "goods.csv"),
+                Buildings = CsvTable.Parse(Buildings, "buildings.csv"),
+                CrewRoles = CsvTable.Parse(Crew, "crew_roles.csv"),
+                Strata = CsvTable.Parse(Strata, "strata.csv"),
+                Ladder = CsvTable.Parse(Ladder, "ladder.csv"),
+                Repression = CsvTable.Parse(
+                    Repression.Replace("Firm,0.30,4,0.08", "Firm,0.30,4,0.40"), "repression.csv"),
+            }, report);
 
             Assert.That(report.Problems.Any(p => p.Contains("worse the same day")), Is.True,
                 string.Join("; ", report.Problems));

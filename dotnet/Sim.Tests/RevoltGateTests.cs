@@ -43,11 +43,15 @@ namespace RTS.Sim.Tests
         private static BalanceTables Balance()
         {
             var report = new ValidationReport();
-            BalanceTables tables = BalanceTables.Load(
-                Table(BalanceTables.GoodsFile), Table(BalanceTables.BuildingsFile),
-                Table(BalanceTables.CrewRolesFile), report,
-                Table(BalanceTables.StrataFile), Table(BalanceTables.LadderFile),
-                Table(BalanceTables.RepressionFile));
+            BalanceTables tables = BalanceTables.Load(new BalanceSources
+            {
+                Goods = Table(BalanceTables.GoodsFile),
+                Buildings = Table(BalanceTables.BuildingsFile),
+                CrewRoles = Table(BalanceTables.CrewRolesFile),
+                Strata = Table(BalanceTables.StrataFile),
+                Ladder = Table(BalanceTables.LadderFile),
+                Repression = Table(BalanceTables.RepressionFile),
+            }, report);
 
             report.ThrowIfInvalid();
             return tables;

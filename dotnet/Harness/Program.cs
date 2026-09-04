@@ -166,14 +166,15 @@ internal static class Program
     {
         var report = new ValidationReport();
 
-        BalanceTables tables = BalanceTables.Load(
-            Read(directory, BalanceTables.GoodsFile),
-            Read(directory, BalanceTables.BuildingsFile),
-            Read(directory, BalanceTables.CrewRolesFile),
-            report,
-            Read(directory, BalanceTables.StrataFile),
-            Read(directory, BalanceTables.LadderFile),
-            Read(directory, BalanceTables.RepressionFile));
+        BalanceTables tables = BalanceTables.Load(new BalanceSources
+        {
+            Goods = Read(directory, BalanceTables.GoodsFile),
+            Buildings = Read(directory, BalanceTables.BuildingsFile),
+            CrewRoles = Read(directory, BalanceTables.CrewRolesFile),
+            Strata = Read(directory, BalanceTables.StrataFile),
+            Ladder = Read(directory, BalanceTables.LadderFile),
+            Repression = Read(directory, BalanceTables.RepressionFile),
+        }, report);
 
         // Loud, and before anything runs. A sim started on invalid content produces numbers
         // that look plausible and mean nothing (§5.3).
