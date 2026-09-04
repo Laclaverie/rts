@@ -128,9 +128,13 @@ First Unity work. Deliberately ugly — lists, labels, buttons.
 
 **Gate: a person who is not you can play a session and describe what happened.**
 
-**Pause, speed, the readouts and the event feed are in.** Still to do before the gate can be
-tried on someone: buttons for the commands that already exist (`AssignCrew`,
-`MothballBuilding`, `SuppressRiot`).
+**Everything Phase 3 asked for is in**, minus the two commands that do not exist yet: there is
+no tax and nothing can be built, so "set tax" and "build" wait for the systems behind them.
+Pause and speed, the readouts, the event feed, and orders for `AssignCrew`, `MothballBuilding`
+and `SuppressRiot`.
+
+**Ready to hand to someone.** The gate is that a person who is not you can play a session and
+describe what happened, and it has not been tried yet.
 
 The feed is the first thing to consume the causal DAG, which `ARCHITECTURE` §6.2 built months
 early on the grounds that it could not be reconstructed afterwards. That turned out to be

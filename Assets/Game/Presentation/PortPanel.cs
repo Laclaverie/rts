@@ -27,6 +27,7 @@ namespace RTS.Game.Presentation
         private readonly VisualElement _readouts = new VisualElement();
         private readonly VisualElement _feed = new VisualElement();
         private readonly ScrollView _feedScroll = new ScrollView();
+        private readonly VisualElement _orders = new VisualElement();
         private readonly List<Button> _speedButtons = new List<Button>();
         private Button _pause;
 
@@ -49,6 +50,7 @@ namespace RTS.Game.Presentation
 
             Root.Add(Controls());
             Root.Add(_readouts);
+            Root.Add(Orders());
             Root.Add(Feed());
 
             Refresh();
@@ -111,7 +113,101 @@ namespace RTS.Game.Presentation
             _readouts.Clear();
             foreach (Readout readout in readouts) _readouts.Add(RowFor(readout));
 
+            RefreshOrders();
             RefreshFeed();
+        }
+
+        /// <summary>
+        /// The orders section: everything the player can do, grouped as the game groups it.
+        /// </summary>
+        /// <remarks>
+        /// The panel decides nothing about what appears here. It draws
+        /// <see cref="GameSession.Actions"/>, and clicking submits the command that action
+        /// carries — so a button cannot offer something the game would refuse.
+        /// </remarks>
+        private VisualElement Orders()
+        {
+            var section = new VisualElement();
+            section.style.marginTop = 8;
+            section.style.borderTopWidth = 1;
+            section.style.borderTopColor = new Color(1f, 1f, 1f, 0.2f);
+            section.style.paddingTop = 4;
+
+            var heading = new Label("orders");
+            heading.style.color = new Color(0.6f, 0.6f, 0.6f);
+            heading.style.marginBottom = 2;
+            section.Add(heading);
+
+            section.Add(_orders);
+            return section;
+        }
+
+        private void RefreshOrders()
+        {
+            _orders.Clear();
+
+            string group = null;
+
+            foreach (PlayerAction action in _session.Actions())
+            {
+                if (action.Group != group)
+                {
+                    group = action.Group;
+                    _orders.Add(GroupHeading(group));
+                }
+
+                _orders.Add(ButtonFor(action));
+            }
+        }
+
+        private static Label GroupHeading(string text)
+        {
+            var label = new Label(text);
+            label.style.color = new Color(0.55f, 0.55f, 0.55f);
+            label.style.fontSize = 10;
+            label.style.marginTop = 4;
+            return label;
+        }
+
+        /// <summary>
+        /// One order. Disabled ones stay on screen, greyed, with the reason as a tooltip.
+        /// </summary>
+        /// <remarks>
+        /// A control that is grey for no stated reason teaches the player that the game is
+        /// arbitrary, which is the opposite of what §3.2 wants from a game that expects
+        /// thought. The reason comes from the handler that would refuse it.
+        /// </remarks>
+        private VisualElement ButtonFor(PlayerAction action)
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+
+            var button = new Button(() =>
+            {
+                _session.Submit(action.Command);
+                Refresh();
+            })
+            {
+                text = action.Label,
+                tooltip = action.Enabled ? action.Detail : action.Reason,
+            };
+
+            button.SetEnabled(action.Enabled);
+            button.style.minWidth = 140;
+            button.style.marginRight = 4;
+            row.Add(button);
+
+            var detail = new Label(action.Enabled ? action.Detail : action.Reason);
+            detail.style.color = action.Enabled
+                ? new Color(0.7f, 0.7f, 0.7f)
+                : new Color(0.5f, 0.4f, 0.4f);
+            detail.style.fontSize = 10;
+            detail.style.whiteSpace = WhiteSpace.Normal;
+            detail.style.flexShrink = 1;
+            row.Add(detail);
+
+            return row;
         }
 
         /// <summary>The feed's own section: what happened, most recent last.</summary>
