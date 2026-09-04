@@ -73,7 +73,7 @@ namespace RTS.Sim.Engine.Diagnostics
                 .Append("][")
                 .Append(Abbreviate(record.Level))
                 .Append("][")
-                .Append(Pad(record.Channel ?? "?", ChannelWidth))
+                .Append(Pad(record.Channel.ToString(), ChannelWidth))
                 .Append("] ")
                 .Append(record.Message ?? string.Empty);
 

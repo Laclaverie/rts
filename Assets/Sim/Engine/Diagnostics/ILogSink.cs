@@ -8,7 +8,7 @@ namespace RTS.Sim.Engine.Diagnostics
     /// </remarks>
     public readonly struct LogRecord
     {
-        public LogRecord(LogLevel level, string channel, int day, string message)
+        public LogRecord(LogLevel level, LogChannel channel, int day, string message)
         {
             Level = level;
             Channel = channel;
@@ -17,7 +17,7 @@ namespace RTS.Sim.Engine.Diagnostics
         }
 
         public readonly LogLevel Level;
-        public readonly string Channel;
+        public readonly LogChannel Channel;
         public readonly int Day;
         public readonly string Message;
     }

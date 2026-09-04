@@ -11,12 +11,16 @@ namespace RTS.Sim.Engine.Diagnostics
     /// </summary>
     /// <remarks>
     /// Uses the §5.3 validation harness rather than a second config mechanism: same reader,
-    /// same loud failure, same file-and-line problems. A typo in a level name is reported, not
-    /// silently treated as "off" — a channel that quietly stops logging is the logging
-    /// equivalent of a system missing from pipeline.csv.
+    /// same loud failure, same file-and-line problems.
+    /// <para>
+    /// Because <see cref="LogChannel"/> is an enum, a misspelled channel name is a load failure
+    /// naming the valid ones — not a phantom channel configured while the real one silently
+    /// keeps its default. That is the whole reason the set is closed.
+    /// </para>
     /// <para>
     /// It lives in <c>Sim</c> rather than <c>Content</c> because it produces
-    /// <see cref="LogLevel"/>, and the dependency arrow runs Sim → Content, never back.
+    /// <see cref="LogLevel"/> and <see cref="LogChannel"/>, and the dependency arrow runs
+    /// Sim → Content, never back.
     /// </para>
     /// </remarks>
     public sealed class LogSettings
@@ -27,13 +31,13 @@ namespace RTS.Sim.Engine.Diagnostics
         /// <summary>The channel name that sets the default for everything not listed.</summary>
         public const string DefaultChannelName = "*";
 
-        private readonly List<KeyValuePair<string, LogLevel>> _levels =
-            new List<KeyValuePair<string, LogLevel>>();
+        private readonly List<KeyValuePair<LogChannel, LogLevel>> _levels =
+            new List<KeyValuePair<LogChannel, LogLevel>>();
 
         public LogLevel DefaultLevel { get; private set; } = LogLevel.Info;
 
         /// <summary>Channel thresholds in file order.</summary>
-        public IReadOnlyList<KeyValuePair<string, LogLevel>> Levels => _levels;
+        public IReadOnlyList<KeyValuePair<LogChannel, LogLevel>> Levels => _levels;
 
         public static LogSettings Load(CsvTable table, ValidationReport report)
         {
@@ -44,15 +48,34 @@ namespace RTS.Sim.Engine.Diagnostics
 
             if (!report.RequireColumns(table, ChannelColumn, LevelColumn)) return settings;
 
-            var seen = new Dictionary<string, int>(StringComparer.Ordinal);
+            var seen = new Dictionary<LogChannel, int>();
+            bool defaultSeen = false;
 
             foreach (CsvRow row in table.Rows)
             {
                 var reader = new RowReader(row, report, table.SourceName);
 
-                string channel = reader.Text(ChannelColumn, required: true);
-                LogLevel level = reader.Enum<LogLevel>(LevelColumn);
+                string channelText = reader.Text(ChannelColumn, required: true);
+                if (reader.HasProblems) continue;
 
+                if (channelText == DefaultChannelName)
+                {
+                    LogLevel defaultLevel = reader.Enum<LogLevel>(LevelColumn);
+                    if (reader.HasProblems) continue;
+
+                    if (defaultSeen)
+                    {
+                        report.Add(table.SourceName, row.Line, "the default '*' is set more than once.");
+                        continue;
+                    }
+
+                    defaultSeen = true;
+                    settings.DefaultLevel = defaultLevel;
+                    continue;
+                }
+
+                LogChannel channel = reader.Enum<LogChannel>(ChannelColumn);
+                LogLevel level = reader.Enum<LogLevel>(LevelColumn);
                 if (reader.HasProblems) continue;
 
                 if (seen.TryGetValue(channel, out int firstLine))
@@ -63,17 +86,15 @@ namespace RTS.Sim.Engine.Diagnostics
                 }
 
                 seen.Add(channel, row.Line);
-
-                if (channel == DefaultChannelName) settings.DefaultLevel = level;
-                else settings._levels.Add(new KeyValuePair<string, LogLevel>(channel, level));
+                settings._levels.Add(new KeyValuePair<LogChannel, LogLevel>(channel, level));
             }
 
             return settings;
         }
 
         /// <summary>
-        /// Applies these thresholds to <see cref="Log"/>. The default is set first, so a
-        /// channel declared later by a class that has not run yet inherits it.
+        /// Applies these thresholds. The default goes first, because setting it re-levels every
+        /// channel — including the ones this file names.
         /// </summary>
         public void Apply()
         {

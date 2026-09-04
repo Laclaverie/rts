@@ -15,7 +15,7 @@ namespace RTS.Sim.Engine.Diagnostics
     /// a ready string, so <c>Log.Debug(ch, $"x = {x}")</c> builds that string whether or not
     /// the channel is on. In a Tick-phase system, guard it:</para>
     /// <code>
-    /// if (Log.On(Combat, LogLevel.Debug)) Log.Debug(Combat, $"resolved {count} attacks");
+    /// if (Log.On(LogChannel.Commands, LogLevel.Debug)) Log.Debug(LogChannel.Commands, $"{n} applied");
     /// </code>
     ///
     /// <para><strong>It is outside the determinism contract, and must stay that way.</strong>
@@ -23,9 +23,9 @@ namespace RTS.Sim.Engine.Diagnostics
     /// because a logger threaded through every call signature would not be used. The rule that
     /// makes it safe: <em>logging may not influence sim state.</em> Every write method returns
     /// void so there is nothing to read back, and <see cref="On"/> is the one hazard — a system
-    /// could do state-changing work inside the guard. Do not. `LogDoesNotAffectDeterminism`
-    /// replays the same seed and command log with logging on and off and asserts the digests
-    /// match, which is what would catch it.</para>
+    /// could do state-changing work inside the guard. Do not. `LogDeterminismTests` replays the
+    /// same seed and command log with logging off, on at Error and on at Trace, and asserts the
+    /// digests match, which is what would catch it.</para>
     ///
     /// <para>Sinks are registered by the composition root, which is Unity-side and knows where
     /// a file belongs. With no sinks registered, every call is a no-op after the first check —
@@ -34,9 +34,15 @@ namespace RTS.Sim.Engine.Diagnostics
     public static class Log
     {
         private static readonly object Gate = new object();
-        private static readonly LogChannelTable Channels = new LogChannelTable();
+
+        private static readonly LogLevel[] Levels = NewLevelTable(LogLevel.Info);
 
         private static ILogSink[] _sinks = Array.Empty<ILogSink>();
+        private static LogLevel _defaultLevel = LogLevel.Info;
+
+        /// <summary>Every channel, in declaration order. For config dumps and reader tools.</summary>
+        public static readonly LogChannel[] AllChannels =
+            (LogChannel[])Enum.GetValues(typeof(LogChannel));
 
         /// <summary>
         /// The kill switch. False means every call returns after one boolean read: no
@@ -50,37 +56,45 @@ namespace RTS.Sim.Engine.Diagnostics
         /// </summary>
         public static int Day { get; set; }
 
-        /// <summary>The threshold for channels nobody has configured.</summary>
+        /// <summary>
+        /// The threshold applied to every channel that has not been set individually. Assigning
+        /// it re-levels every channel, so apply it before per-channel settings.
+        /// </summary>
         public static LogLevel DefaultLevel
         {
-            get => Channels.DefaultLevel;
-            set => Channels.DefaultLevel = value;
+            get => _defaultLevel;
+            set
+            {
+                lock (Gate)
+                {
+                    _defaultLevel = value;
+                    for (int i = 0; i < Levels.Length; i++) Levels[i] = value;
+                }
+            }
         }
-
-        /// <summary>
-        /// Declares or looks up a channel. Hold the result in a <c>static readonly</c> field:
-        /// this takes a lock, and the returned handle makes every later check an array read.
-        /// </summary>
-        public static LogChannel Channel(string name) => Channels.Resolve(name);
 
         /// <summary>
         /// Whether anything would come of logging at this level. Guard expensive message
         /// building with it.
         /// </summary>
-        public static bool On(in LogChannel channel, LogLevel level) =>
-            Enabled && _sinks.Length > 0 && level >= Channels.LevelOf(channel);
+        public static bool On(LogChannel channel, LogLevel level) =>
+            Enabled && _sinks.Length > 0 && level >= LevelOf(channel);
 
-        public static void SetLevel(in LogChannel channel, LogLevel level) =>
-            Channels.SetLevel(channel, level);
+        public static LogLevel LevelOf(LogChannel channel)
+        {
+            int index = (int)channel;
+            return index >= 0 && index < Levels.Length ? Levels[index] : _defaultLevel;
+        }
 
-        public static void SetLevel(string channel, LogLevel level) =>
-            Channels.SetLevel(channel, level);
+        public static void SetLevel(LogChannel channel, LogLevel level)
+        {
+            int index = (int)channel;
+            if (index < 0 || index >= Levels.Length) return;
 
-        /// <summary>Every declared channel and its threshold, for a config dump or a reader.</summary>
-        public static IReadOnlyList<KeyValuePair<string, LogLevel>> Channels_Snapshot() =>
-            Channels.Snapshot();
+            lock (Gate) Levels[index] = level;
+        }
 
-        public static void SetAllLevels(LogLevel level) => Channels.ResetLevels(level);
+        public static void SetAllLevels(LogLevel level) => DefaultLevel = level;
 
         public static void AddSink(ILogSink sink)
         {
@@ -120,15 +134,25 @@ namespace RTS.Sim.Engine.Diagnostics
 
         public static int SinkCount => _sinks.Length;
 
-        public static void Trace(in LogChannel channel, string message) => Write(channel, LogLevel.Trace, message);
+        /// <summary>Every channel and its current threshold, in declaration order.</summary>
+        public static IReadOnlyList<KeyValuePair<LogChannel, LogLevel>> Snapshot()
+        {
+            var result = new List<KeyValuePair<LogChannel, LogLevel>>(AllChannels.Length);
+            for (int i = 0; i < AllChannels.Length; i++)
+                result.Add(new KeyValuePair<LogChannel, LogLevel>(AllChannels[i], LevelOf(AllChannels[i])));
 
-        public static void Debug(in LogChannel channel, string message) => Write(channel, LogLevel.Debug, message);
+            return result;
+        }
 
-        public static void Info(in LogChannel channel, string message) => Write(channel, LogLevel.Info, message);
+        public static void Trace(LogChannel channel, string message) => Write(channel, LogLevel.Trace, message);
 
-        public static void Warn(in LogChannel channel, string message) => Write(channel, LogLevel.Warn, message);
+        public static void Debug(LogChannel channel, string message) => Write(channel, LogLevel.Debug, message);
 
-        public static void Error(in LogChannel channel, string message) => Write(channel, LogLevel.Error, message);
+        public static void Info(LogChannel channel, string message) => Write(channel, LogLevel.Info, message);
+
+        public static void Warn(LogChannel channel, string message) => Write(channel, LogLevel.Warn, message);
+
+        public static void Error(LogChannel channel, string message) => Write(channel, LogLevel.Error, message);
 
         public static void Flush()
         {
@@ -136,7 +160,20 @@ namespace RTS.Sim.Engine.Diagnostics
             for (int i = 0; i < sinks.Length; i++) Safely(sinks[i], s => s.Flush());
         }
 
-        private static void Write(in LogChannel channel, LogLevel level, string message)
+        private static LogLevel[] NewLevelTable(LogLevel level)
+        {
+            var values = (LogChannel[])Enum.GetValues(typeof(LogChannel));
+
+            int highest = 0;
+            for (int i = 0; i < values.Length; i++)
+                if ((int)values[i] > highest) highest = (int)values[i];
+
+            var table = new LogLevel[highest + 1];
+            for (int i = 0; i < table.Length; i++) table[i] = level;
+            return table;
+        }
+
+        private static void Write(LogChannel channel, LogLevel level, string message)
         {
             // Cheapest check first: the kill switch, then whether anyone is listening at all.
             if (!Enabled) return;
@@ -144,9 +181,9 @@ namespace RTS.Sim.Engine.Diagnostics
             ILogSink[] sinks = _sinks;
             if (sinks.Length == 0) return;
 
-            if (level < Channels.LevelOf(channel)) return;
+            if (level < LevelOf(channel)) return;
 
-            var record = new LogRecord(level, channel.Name, Day, message);
+            var record = new LogRecord(level, channel, Day, message);
             for (int i = 0; i < sinks.Length; i++)
             {
                 ILogSink sink = sinks[i];

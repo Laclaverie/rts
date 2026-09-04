@@ -25,7 +25,7 @@ namespace RTS.Sim.Tests
     [NonParallelizable]
     public class LogDeterminismTests
     {
-        private static readonly LogChannel Channel = Log.Channel("Determinism");
+        private const LogChannel Channel = LogChannel.Commands;
 
         private struct Ledger : IComponentData
         {

@@ -41,14 +41,12 @@ namespace RTS.Sim.Tests
             Log.Day = 0;
         }
 
-        private static LogChannel Ch(string name) => Log.Channel(name);
-
         // ------------------------------------------------------------- kill switch
 
         [Test]
         public void Disabling_silences_everything()
         {
-            LogChannel channel = Ch("KillSwitch");
+            LogChannel channel = LogChannel.Boot;
             Log.Enabled = false;
 
             Log.Error(channel, "should not appear");
@@ -61,7 +59,7 @@ namespace RTS.Sim.Tests
         [Test]
         public void Re_enabling_resumes_without_losing_configuration()
         {
-            LogChannel channel = Ch("Resume");
+            LogChannel channel = LogChannel.Boot;
             Log.SetLevel(channel, LogLevel.Warn);
 
             Log.Enabled = false;
@@ -78,7 +76,7 @@ namespace RTS.Sim.Tests
         [Test]
         public void A_channel_logs_at_its_level_and_above()
         {
-            LogChannel channel = Ch("Levels");
+            LogChannel channel = LogChannel.Content;
             Log.SetLevel(channel, LogLevel.Warn);
 
             Log.Trace(channel, "no");
@@ -93,21 +91,21 @@ namespace RTS.Sim.Tests
         [Test]
         public void Off_silences_one_channel_and_leaves_the_others()
         {
-            LogChannel quiet = Ch("Quiet");
-            LogChannel loud = Ch("Loud");
+            LogChannel quiet = LogChannel.Content;
+            LogChannel loud = LogChannel.Pipeline;
             Log.SetLevel(quiet, LogLevel.Off);
 
             Log.Error(quiet, "silenced");
             Log.Info(loud, "heard");
 
-            Assert.That(_sink.Snapshot().Select(r => r.Channel), Is.EqualTo(new[] { "Loud" }));
+            Assert.That(_sink.Snapshot().Select(r => r.Channel), Is.EqualTo(new[] { LogChannel.Pipeline }));
         }
 
         [Test]
         public void An_unconfigured_channel_takes_the_default()
         {
             Log.DefaultLevel = LogLevel.Warn;
-            LogChannel fresh = Ch("NeverConfigured");
+            LogChannel fresh = LogChannel.Misc;
 
             Log.Info(fresh, "below");
             Log.Error(fresh, "above");
@@ -121,44 +119,38 @@ namespace RTS.Sim.Tests
             // Nothing to format for. A headless run with no sinks should cost nothing.
             Log.ClearSinks();
 
-            Assert.That(Log.On(Ch("Nobody"), LogLevel.Error), Is.False);
+            Assert.That(Log.On(LogChannel.Misc, LogLevel.Error), Is.False);
         }
 
         // ---------------------------------------------------------------- channels
 
         [Test]
-        public void The_same_name_resolves_to_the_same_channel()
+        public void Every_channel_has_a_level_slot()
         {
-            LogChannel first = Ch("Repeat");
-            LogChannel again = Ch("Repeat");
-
-            Assert.That(again, Is.EqualTo(first));
-            Assert.That(Ch("Different"), Is.Not.EqualTo(first));
+            // The level table is indexed by the enum value, so a non-contiguous or negative
+            // member would silently fall back to the default instead of being configurable.
+            foreach (LogChannel channel in Log.AllChannels)
+            {
+                Log.SetLevel(channel, LogLevel.Error);
+                Assert.That(Log.LevelOf(channel), Is.EqualTo(LogLevel.Error), channel.ToString());
+            }
         }
 
         [Test]
-        public void Channel_names_are_case_sensitive()
+        public void The_snapshot_covers_every_declared_channel()
         {
-            Assert.That(Ch("Case"), Is.Not.EqualTo(Ch("case")));
-        }
-
-        [Test]
-        public void A_nameless_channel_is_refused()
-        {
-            Assert.Throws<ArgumentException>(() => Log.Channel(""));
-            Assert.Throws<ArgumentException>(() => Log.Channel("   "));
-            Assert.Throws<ArgumentException>(() => Log.Channel(null));
+            Assert.That(Log.Snapshot().Count, Is.EqualTo(Log.AllChannels.Length));
         }
 
         [Test]
         public void Records_carry_the_channel_level_and_day()
         {
             Log.Day = 12;
-            Log.Warn(Ch("Content"), "goods.csv(31): out of range");
+            Log.Warn(LogChannel.Content, "goods.csv(31): out of range");
 
             LogRecord record = _sink.Snapshot().Single();
 
-            Assert.That(record.Channel, Is.EqualTo("Content"));
+            Assert.That(record.Channel, Is.EqualTo(LogChannel.Content));
             Assert.That(record.Level, Is.EqualTo(LogLevel.Warn));
             Assert.That(record.Day, Is.EqualTo(12));
         }
@@ -171,7 +163,7 @@ namespace RTS.Sim.Tests
             var second = new CaptureLogSink();
             Log.AddSink(second);
 
-            Log.Info(Ch("Fanout"), "one");
+            Log.Info(LogChannel.Events, "one");
 
             Assert.That(_sink.Count, Is.EqualTo(1));
             Assert.That(second.Count, Is.EqualTo(1));
@@ -182,10 +174,10 @@ namespace RTS.Sim.Tests
         {
             Log.AddSink(new ThrowingSink());
 
-            Assert.DoesNotThrow(() => Log.Info(Ch("Throwing"), "first"));
+            Assert.DoesNotThrow(() => Log.Info(LogChannel.Events, "first"));
 
             Assert.That(Log.SinkCount, Is.EqualTo(1), "the throwing sink is gone");
-            Assert.DoesNotThrow(() => Log.Info(Ch("Throwing"), "second"));
+            Assert.DoesNotThrow(() => Log.Info(LogChannel.Events, "second"));
             Assert.That(_sink.Count, Is.EqualTo(2), "the healthy sink kept working");
         }
 
@@ -194,7 +186,7 @@ namespace RTS.Sim.Tests
         {
             Assert.That(Log.RemoveSink(_sink), Is.True);
 
-            Log.Error(Ch("Removed"), "nobody home");
+            Log.Error(LogChannel.State, "nobody home");
 
             Assert.That(_sink.Count, Is.EqualTo(0));
             Assert.That(Log.RemoveSink(_sink), Is.False);
@@ -207,7 +199,7 @@ namespace RTS.Sim.Tests
             var small = new CaptureLogSink(capacity: 3);
             Log.AddSink(small);
 
-            LogChannel channel = Ch("Bounded");
+            LogChannel channel = LogChannel.State;
             for (int i = 0; i < 5; i++) Log.Info(channel, i.ToString());
 
             Assert.That(small.Count, Is.EqualTo(3));
@@ -222,7 +214,7 @@ namespace RTS.Sim.Tests
         {
             // A reader filters on these columns, so they must not move.
             string line = TextWriterLogSink.Format(
-                new LogRecord(LogLevel.Warn, "Content", 12, "goods.csv(31): out of range"), 42.7d);
+                new LogRecord(LogLevel.Warn, LogChannel.Content, 12, "goods.csv(31): out of range"), 42.7d);
 
             Assert.That(line, Is.EqualTo("[00042.7][Day   12][WARN ][Content ] goods.csv(31): out of range"));
         }
@@ -234,28 +226,28 @@ namespace RTS.Sim.Tests
         [TestCase(LogLevel.Error, "ERROR")]
         public void Every_level_abbreviates_to_five_characters(LogLevel level, string expected)
         {
-            string line = TextWriterLogSink.Format(new LogRecord(level, "X", 1, "m"), 0d);
+            string line = TextWriterLogSink.Format(new LogRecord(level, LogChannel.Misc, 1, "m"), 0d);
 
             Assert.That(line, Does.Contain("[" + expected + "]"));
             Assert.That(expected.Length, Is.EqualTo(5));
         }
 
         [Test]
-        public void A_long_channel_name_is_not_truncated_even_though_it_widens_the_column()
+        public void A_channel_name_longer_than_the_column_is_not_truncated()
         {
             // Losing the name would be worse than losing the alignment: a filter needs the
             // whole name to match on.
             string line = TextWriterLogSink.Format(
-                new LogRecord(LogLevel.Info, "AVeryLongChannelName", 1, "m"), 0d);
+                new LogRecord(LogLevel.Info, LogChannel.Commands, 1, "m"), 0d);
 
-            Assert.That(line, Does.Contain("[AVeryLongChannelName]"));
+            Assert.That(line, Does.Contain("[Commands]"));
         }
 
         [Test]
         public void The_elapsed_stamp_is_invariant_of_machine_locale()
         {
             // A decimal comma would break every reader that splits on the fields.
-            string line = TextWriterLogSink.Format(new LogRecord(LogLevel.Info, "X", 0, "m"), 1234.5d);
+            string line = TextWriterLogSink.Format(new LogRecord(LogLevel.Info, LogChannel.Misc, 0, "m"), 1234.5d);
 
             Assert.That(line, Does.StartWith("[01234.5]"));
         }
@@ -266,8 +258,8 @@ namespace RTS.Sim.Tests
             var text = new StringWriter();
             var sink = new TextWriterLogSink(text, () => 1.0d);
 
-            sink.Write(new LogRecord(LogLevel.Info, "A", 1, "first"));
-            sink.Write(new LogRecord(LogLevel.Error, "B", 2, "second"));
+            sink.Write(new LogRecord(LogLevel.Info, LogChannel.Boot, 1, "first"));
+            sink.Write(new LogRecord(LogLevel.Error, LogChannel.Game, 2, "second"));
             sink.Flush();
 
             string[] lines = text.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -298,11 +290,11 @@ namespace RTS.Sim.Tests
         [Test]
         public void Applying_settings_changes_what_is_logged()
         {
-            LogSettings settings = LoadSettings("*,Error\nApplied,Debug\n", out ValidationReport _);
+            LogSettings settings = LoadSettings("*,Error\nCommands,Debug\n", out ValidationReport _);
             settings.Apply();
 
-            LogChannel applied = Ch("Applied");
-            LogChannel other = Ch("SomethingElse");
+            LogChannel applied = LogChannel.Commands;
+            LogChannel other = LogChannel.Game;
 
             Log.Debug(applied, "configured channel");
             Log.Info(other, "below the new default");
@@ -320,6 +312,26 @@ namespace RTS.Sim.Tests
             Assert.That(report.Count, Is.EqualTo(1));
             Assert.That(report.Problems.Single(), Does.Contain("Expected one of"));
             Assert.That(report.Problems.Single(), Does.Contain("logging.csv(2)"));
+        }
+
+        [Test]
+        public void An_unknown_channel_is_a_load_failure_not_a_phantom()
+        {
+            // The reason the channel set is closed: with free-form names, "Contnet" would
+            // configure a channel nobody logs to while Content silently kept its default.
+            LoadSettings("Contnet,Debug\n", out ValidationReport report);
+
+            Assert.That(report.Count, Is.EqualTo(1));
+            Assert.That(report.Problems.Single(), Does.Contain("Expected one of"));
+            Assert.That(report.Problems.Single(), Does.Contain("Content"));
+        }
+
+        [Test]
+        public void The_default_cannot_be_set_twice()
+        {
+            LoadSettings("*,Info\n*,Debug\n", out ValidationReport report);
+
+            Assert.That(report.Problems.Single(), Does.Contain("set more than once"));
         }
 
         [Test]

@@ -9,17 +9,24 @@
 #   Warn    wrong but survivable: a default substituted, a file missing.
 #   Error   broken.
 #
-# The '*' row is the threshold for any channel not listed below, including ones declared by
-# classes that have not run yet.
+# The '*' row is the threshold for every channel, applied before the rows below, so a channel
+# omitted here still gets a sensible level.
 #
-# A typo in a level name is a load failure, not a silently disabled channel — a channel that
-# quietly stops logging is the logging equivalent of a system missing from pipeline.csv.
+# Channel names are the LogChannel enum, so a typo is a load failure naming the valid ones —
+# never a phantom channel configured while the real one silently keeps its default. Same rule
+# for level names. A channel that quietly stops logging is the logging equivalent of a system
+# missing from pipeline.csv.
 #
 # None of this is the kill switch. Log.Enabled turns everything off in one boolean read, for
 # when logging itself is the performance problem.
 
 channel,level
 *,Info
+Boot,Info
 Content,Info
 Pipeline,Info
-Boot,Info
+Commands,Info
+Events,Info
+State,Info
+Game,Info
+Misc,Info
