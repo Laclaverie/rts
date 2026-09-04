@@ -26,14 +26,21 @@ jobs:
     name: Headless (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
-    # Two runtimes on purpose. This project's saves are a seed plus a command log (§6.1), so
-    # determinism across runtimes is a correctness property, not a portability nicety — the
-    # Rng golden vectors are asserted here on Linux .NET as well as on the developer's Windows
-    # machine and inside Unity's runtime. Three independent checks of the same table, free.
+    # Ubuntu on pull requests; both on pushes to main.
+    #
+    # Determinism across runtimes is a correctness property here, not portability hygiene —
+    # saves are a seed plus a command log (§6.1) — so Windows keeps a thread in CI. But it is
+    # the expensive thread: this repo is private, so minutes are metered and Windows bills at
+    # twice the Linux rate, for a job that also takes about twice as long. Paying that on every
+    # push to a branch buys little, since the Windows suite already runs locally on every
+    # change and Linux is the *stricter* environment anyway — case-sensitive paths, LF endings.
+    #
+    # So PRs get fast feedback, and main gets the cross-runtime check on the commits that
+    # actually become history.
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "windows-latest"]') }}
 
     steps:
       - uses: actions/checkout@v7
