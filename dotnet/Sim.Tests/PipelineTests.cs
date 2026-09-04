@@ -7,6 +7,7 @@ using RTS.Sim.Engine.Pipeline;
 
 namespace RTS.Sim.Tests
 {
+    [Category(TestCategories.Unit)]
     public class PipelineTests
     {
         /// <summary>Records the order in which it ran, which is all these tests need.</summary>

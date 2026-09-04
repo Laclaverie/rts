@@ -584,6 +584,12 @@ on the end state. Uses:
   causes collapse"* (`GDD` §5.2.3) is a testable property. Generate single-shock
   scenarios, assert recovery. The design rule becomes an executable check.
 
+> **The two are tagged and run separately.** Every fixture carries one NUnit category —
+> `Unit` or `Functional` — and `tools	est -Unit` / `-Functional` runs one alone. The reason
+> is not speed; it is that a red unit test and a red functional test are different jobs. The
+> first says the code is wrong, the second usually says the code is fine and a balance file,
+> a path or a schema moved underneath it.
+
 ### 8.3 Balance validation
 
 §5.3 runs in CI as a test over the shipped `Balance/` folder.

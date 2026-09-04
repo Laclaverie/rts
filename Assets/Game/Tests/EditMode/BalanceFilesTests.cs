@@ -16,6 +16,7 @@ namespace RTS.Game.Tests
     /// not prove the build copy — that needs a real player build, and there is no game to
     /// build yet. Known gap, deliberately left open.
     /// </remarks>
+    [Category("Functional")]
     public class BalanceFilesTests
     {
         private const string PipelineCsv = "pipeline.csv";

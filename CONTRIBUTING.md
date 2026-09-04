@@ -72,8 +72,29 @@ The one exception is `Engine/Compat/`, which holds shims the compiler requires b
 name — `IsExternalInit` must be in `System.Runtime.CompilerServices` or it does nothing.
 Compiler-mandated namespaces win; nothing else gets an exception.
 
+**Two kinds of test, and they run separately** (ARCHITECTURE §8.1, §8.2). Every fixture
+carries exactly one `[Category]`:
+
+| | `TestCategories.Unit` | `TestCategories.Functional` |
+|---|---|---|
+| Touches | nothing outside the code under test | filesystem, shipped balance files, later replay corpora |
+| A red test means | **the code is wrong** | usually the code is fine and **the world around it changed** |
+
+The split is not about speed — both are milliseconds today. It is about what a failure
+tells you, so a red build is not ambiguous. `tools	est -Unit` and `tools	est -Functional`
+run them alone.
+
+**A fixture with no category runs in neither suite** — it does not fail, it disappears. A
+convention test reflects over the assembly and fails if any fixture has no category, more
+than one, or an unknown one. Do not delete it.
+
+Use NUnit categories rather than separate projects, because Unity's test runner reads the
+same attribute. Split into its own project when functional tests need infrastructure the
+unit tests should not carry: replay corpora, long timeouts, saved sessions.
+
 **Running them: `tools	est`** (double-click `tools	est.cmd`, or run it from a terminal).
-Headless only by default, because that is the one worth running constantly. `tools	est -All`
+With no switches it runs both kinds headlessly, because a complete fast loop is worth more
+than a marginally faster one. `-Unit` or `-Functional` runs one kind alone. `tools	est -All`
 adds the Unity suite and is what CI calls; `-Unity -Launch` starts the editor first. It exits
 non-zero if anything fails, and a Unity editor that is not running counts as a failure rather
 than a silent skip — skipping would report green on an untested half.

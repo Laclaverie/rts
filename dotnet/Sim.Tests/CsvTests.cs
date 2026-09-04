@@ -2,6 +2,7 @@ using RTS.Content.Loading;
 
 namespace RTS.Sim.Tests
 {
+    [Category(TestCategories.Unit)]
     public class CsvTests
     {
         private static CsvTable Parse(string text) => CsvTable.Parse(text, "test.csv");

@@ -2,6 +2,7 @@ using RTS.Sim.Engine.Entities;
 
 namespace RTS.Sim.Tests
 {
+    [Category(TestCategories.Unit)]
     public class EntityIdTests
     {
         [Test]
