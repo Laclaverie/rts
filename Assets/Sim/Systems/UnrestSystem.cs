@@ -51,22 +51,44 @@ namespace RTS.Sim.Systems
 
                 StratumRules rules = balance.Strata[grievance.StratumIndex];
 
-                // Decay first, towards the baseline rather than towards zero. A port that has
-                // been put down by force never returns to calm, which is the cost §5.2.2 says
-                // repression carries.
+                // What today gave this stratum to resent. Asked per stratum rather than for the
+                // port as a whole: named crew do not care that a labourer has no work, and a
+                // port-wide test would let one group's complaint deny another its relief. The
+                // shipped port has more crew than places to put them, so a port-wide clean day
+                // would in fact never happen at all.
+                float added =
+                    tally.Hungry * rules.HungerWeight +
+                    tally.Unpaid * rules.UnpaidWeight +
+                    tally.Deserted * rules.DesertionWeight +
+                    tally.Idle * rules.IdleWeight;
+
+                // A stratum recently put down by force says nothing about today. The hunger and
+                // the unpaid wages are still real and will be resented the moment the window
+                // closes — this buys the player time to fix them, not absolution. Silence is not
+                // contentment either, so a cowed stratum cools at the slow rate.
+                bool cowed = grievance.CowedDays > 0;
+                if (cowed)
+                {
+                    grievance.CowedDays--;
+                    added = 0f;
+                }
+
+                // Decay towards the baseline rather than towards zero. A port that has been put
+                // down by force never returns to calm, which is the cost §5.2.2 says repression
+                // carries.
+                //
+                // A day this stratum had nothing to complain about is worth more than a day that
+                // merely was not worse: the port is visibly working, not just no longer bleeding.
+                // That gap is what makes fixing the cause a lever the player can pull rather than
+                // a slower way of waiting.
                 float value = grievance.Value;
                 if (value > grievance.Baseline)
                 {
-                    value -= rules.DecayPerDay;
+                    value -= added <= 0f && !cowed ? rules.ReliefPerDay : rules.DecayPerDay;
                     if (value < grievance.Baseline) value = grievance.Baseline;
                 }
 
-                value += tally.Hungry * rules.HungerWeight;
-                value += tally.Unpaid * rules.UnpaidWeight;
-                value += tally.Deserted * rules.DesertionWeight;
-                value += tally.Idle * rules.IdleWeight;
-
-                grievance.Value = ConsumptionSystem.Clamp01(value);
+                grievance.Value = ConsumptionSystem.Clamp01(value + added);
             }
         }
 

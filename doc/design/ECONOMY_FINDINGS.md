@@ -239,3 +239,76 @@ casual-but-deep target of §3.2 rather than a difficulty spike.
 
 Until a price has an actor behind it, the loader rejects a sell price above base price. That
 rule is a property of the current single-merchant model, not an economic law.
+
+---
+
+## Phase 2: what the revolution gate measured
+
+The gate is "drive a port into revolt and pull it back out, both directions". The first
+direction worked on the first run. The second did not, three times over, and each failure was
+a different missing mechanic rather than a number needing a nudge.
+
+### The ladder climbed faster than grievance could fall
+
+Grievance saturates in a day and decays in fortieths. With the ladder climbing one rung per
+day, a port pinned at 1.00 went Calm to Deposition in **six days**, and there was no window in
+which any player action could change the outcome. Every exit §5.2.2 promises for the upper
+rungs was unreachable.
+
+`days_to_climb` per rung fixed it: 1, 2, 3, 3, 4, 5 from Grumbling upward, so total theft now
+takes **nine days** to reach Riot instead of four. Falling is deliberately not paced — the
+hysteresis already prevents flicker, and slowing the way down would undo the point of it.
+
+The loader rejects a ladder that speeds up as it gets worse, which would leave least time to
+act where it mattered most.
+
+### Repression bought a permanent penalty and nothing else
+
+Grievance is capped at 1.00 and a rioting port is already there, so Brutal's −0.50 was re-added
+by the same day's hunger: 1.00 → 0.50 → 0.91 → 1.00. Measured end to end, force and patience
+both took **12 days** to leave a riot. The permanent floor was a pure loss and repression was a
+trap, not a decision.
+
+`cowed_days` (Restrained 2, Firm 4, Brutal 7) is the fix: the day's pressures land on nobody
+while the window is open. A cowed stratum still cools at the *slow* rate, because silence is
+not contentment — paying the fast rate for it would make force strictly better than fixing
+anything. After Brutal: out of Riot on day 1, Calm by day 7, floor 0.18 forever.
+
+### Fixing the economy was not actually a lever
+
+At 0.04/day, unwinding a saturated grievance takes 25 clear days, which the ladder outruns. So
+even with the pacing above, the only working exit was repression — turning "a viable strategy,
+not a free one" into the only strategy.
+
+`relief_per_day` (0.12 / 0.15 / 0.18 against decay 0.04 / 0.05 / 0.06) applies on a day the
+stratum had **nothing** to resent, as opposed to a day that merely was not worse. Asked per
+stratum, not port-wide: named crew do not care that a labourer is idle, and — decisively — the
+default port has 7 crew for 6 work slots, so a port-wide clean day would never have happened at
+all.
+
+Measured: from Slowdown, funding the port reaches Calm in **6 days with all 7 crew intact**.
+
+### Where the economic exit stops working, and why that is right
+
+A rioting port produces 35% of output. Two farms at 6/day become 4.2; seven crew eat 7. Coin
+does not buy food, so **past Riot, money cannot save a port that has stopped working** — the
+crew starve out however deep the treasury. Verified: 100,000 coin at Riot still ends with zero
+crew.
+
+This is a good shape rather than a hole. The lower rungs are fixed by management; the upper ones
+are paid for in loyalty and a permanent floor. It is what makes repression a decision.
+
+### The recovery test was passing for the wrong reason
+
+Worth recording as a method note. The first version of "fixing it pulls the port back out"
+passed — while the port emptied completely. A ruin with nobody left in it also reads as Calm.
+
+Any test asserting a system has calmed down must also assert that the thing being measured is
+still there. The gate now checks crew count on both sides of every recovery.
+
+### Corpus impact
+
+All ten scenario digests moved, which is expected: three changes to grievance arithmetic that
+apply on ordinary days. Shape change worth noting — `three-correlated` used to end at
+Deposition and now ends Collapsed but Calm, which is the population gap in Appendix A.-1
+showing through the corpus.

@@ -27,10 +27,10 @@ namespace RTS.Sim.Tests
                                     "laborer,2,1.00,1.0,0.00\n";
 
         private const string Strata =
-            "id,decay_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
-            "Commoners,0.04,0.10,0.02,0.03,0.02\n" +
-            "NamedCrew,0.05,0.03,0.12,0.08,0.00\n" +
-            "Merchants,0.06,0.00,0.00,0.00,0.00\n";
+            "id,decay_per_day,relief_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
+            "Commoners,0.04,0.12,0.10,0.02,0.03,0.02\n" +
+            "NamedCrew,0.05,0.15,0.03,0.12,0.08,0.00\n" +
+            "Merchants,0.06,0.18,0.00,0.00,0.00,0.00\n";
 
         private World _world = null!;
         private BalanceTables _balance = null!;
@@ -223,13 +223,50 @@ namespace RTS.Sim.Tests
         // --------------------------------------------------------------------- decay
 
         [Test]
-        public void Grievance_fades_when_nothing_happens()
+        public void A_day_with_nothing_to_resent_earns_the_faster_rate()
         {
+            // Nothing happened to the named crew today: fed, paid, nobody gone. They cool at
+            // relief_per_day rather than decay_per_day, which is what makes fixing the cause a
+            // lever rather than a slower way of waiting.
             SetGrievance(Stratum.NamedCrew, 0.50f);
 
             RunDay();
 
-            Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.45f).Within(1e-4f));
+            Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.35f).Within(1e-4f));
+        }
+
+        [Test]
+        public void A_day_that_was_merely_not_worse_earns_the_slow_rate()
+        {
+            // One unpaid wage adds 0.12 and denies the faster rate, so the day nets out above
+            // where it started. A port that has stopped bleeding is not a port that is working,
+            // and the two must not cool at the same speed.
+            SetGrievance(Stratum.NamedCrew, 0.50f);
+
+            RunDay(new WagesUnpaid { Crew = 1 });
+
+            Assert.That(GrievanceOf(Stratum.NamedCrew),
+                Is.EqualTo(0.50f - 0.05f + 0.12f).Within(1e-4f));
+        }
+
+        [Test]
+        public void One_stratums_complaint_does_not_deny_another_its_relief()
+        {
+            // Named crew do not care that a labourer has no work (idle_weight 0.00), so an idle
+            // day is a clean day for them and a slow one for the commoners who resent it. Asking
+            // the question port-wide would let either group hold the other's recovery hostage —
+            // and the shipped port has more crew than places to put them, so a port-wide clean
+            // day would never happen at all.
+            SetGrievance(Stratum.NamedCrew, 0.50f);
+            SetGrievance(Stratum.Commoners, 0.50f);
+            AddIdleCrew(1);
+
+            RunDay();
+
+            Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.35f).Within(1e-4f),
+                "the crew had nothing to complain about");
+            Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0.50f - 0.04f + 0.02f).Within(1e-4f),
+                "the commoners did");
         }
 
         [Test]

@@ -4,10 +4,20 @@
 # loyalty with every crew member who disagreed. A viable strategy, not a free one."
 #
 # grievance_relief    taken off every stratum's grievance at once
+# cowed_days          days after the crackdown in which the day's pressures add no grievance.
+#                     People are still hungry and still unpaid; they say nothing. Decay keeps
+#                     running, so this is the window in which the port actually calms.
 # baseline_increase   added to every stratum's floor, forever. Grievance decays towards the
 #                     floor, so this is the part that never goes away: a port put down by force
 #                     never returns to calm.
 # loyalty_cost        taken from every crew member. They were not asked.
+#
+# cowed_days is not flavour, and it is the difference between a decision and a trap. Grievance
+# is capped at 1.00, and a port in a spiral is already there, so the relief alone was undone by
+# the next day's hunger — measured at twelve days to leave a riot whether or not force was used,
+# which made the permanent floor a pure loss. The window is what force actually buys: not calm,
+# but time to fix the thing that caused the riot. A player who spends it on nothing has bought a
+# worse port for no reason, which is the honest version of the trade.
 #
 # The trade is deliberately real. Brutal buys three times the quiet of Restrained and costs six
 # times the permanent floor, so it is the right answer when the alternative is deposition
@@ -16,7 +26,7 @@
 # Every relief is larger than its baseline increase, and the loader enforces it: repression
 # that raised grievance on the day it was used would be a trap rather than a decision.
 
-id,grievance_relief,baseline_increase,loyalty_cost
-Restrained,0.15,0.03,0.05
-Firm,0.30,0.08,0.12
-Brutal,0.50,0.18,0.25
+id,grievance_relief,cowed_days,baseline_increase,loyalty_cost
+Restrained,0.15,2,0.03,0.05
+Firm,0.30,4,0.08,0.12
+Brutal,0.50,7,0.18,0.25

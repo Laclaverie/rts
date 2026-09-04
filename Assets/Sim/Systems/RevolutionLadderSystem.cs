@@ -9,10 +9,17 @@ namespace RTS.Sim.Systems
     /// Moves the port up and down the revolution ladder (GDD §5.2.2).
     /// </summary>
     /// <remarks>
-    /// <para><strong>One rung a day, in either direction.</strong> Escalation that skips rungs
-    /// is a spawn table; every rung being visible for at least a day is what gives a player
-    /// something to act on, and what makes the ladder readable rather than a number crossing a
-    /// line.</para>
+    /// <para><strong>One rung at a time, in either direction.</strong> Escalation that skips
+    /// rungs is a spawn table; every rung being visible is what gives a player something to act
+    /// on, and what makes the ladder readable rather than a number crossing a line.</para>
+    ///
+    /// <para><strong>Climbing is paced, falling is not.</strong> Each rung names how many days
+    /// the one below must be held before the port moves up (<c>days_to_climb</c>). Without that,
+    /// grievance pinned at 1.00 climbed the ladder every single day, and a port that reached
+    /// Riot was deposed three days later whatever the player did — grievance decays in
+    /// fortieths and cannot outrun a daily climb. The exits §5.2.2 promises only exist if there
+    /// is time to use them. Falling has no such delay, because a port whose cause has been
+    /// fixed should come down as soon as the numbers say so.</para>
     ///
     /// <para><strong>The angriest stratum drives it.</strong> Not an average: a port whose crew
     /// are furious is in trouble even if its commoners are content, and averaging would let one
@@ -54,13 +61,13 @@ namespace RTS.Sim.Systems
                 return;
             }
 
-            LadderRung wanted = Next(balance, ladder.Rung, worst);
+            // The day counted before the decision, so "held for one day" is true on the first
+            // day after arriving rather than the second.
+            ladder.DaysAtRung++;
 
-            if (wanted == ladder.Rung)
-            {
-                ladder.DaysAtRung++;
-            }
-            else
+            LadderRung wanted = Next(balance, ladder.Rung, worst, ladder.DaysAtRung);
+
+            if (wanted != ladder.Rung)
             {
                 LadderRung from = ladder.Rung;
                 ladder.Rung = wanted;
@@ -80,15 +87,21 @@ namespace RTS.Sim.Systems
         }
 
         /// <summary>The rung one step towards where this grievance belongs.</summary>
-        internal static LadderRung Next(BalanceTables balance, LadderRung current, float grievance)
+        /// <param name="daysAtRung">
+        /// How long the current rung has been held. Climbing needs this to have reached the
+        /// next rung's <see cref="LadderStep.DaysToClimb"/>; falling ignores it.
+        /// </param>
+        public static LadderRung Next(BalanceTables balance, LadderRung current, float grievance,
+            int daysAtRung)
         {
             int index = (int)current;
 
-            // Climb: the rung above is earned.
+            // Climb: the rung above is earned, and held for long enough to earn it.
             if (index + 1 < balance.Ladder.Count)
             {
                 LadderStep above = balance.Ladder[index + 1];
-                if (grievance >= above.ClimbAt && above.ClimbAt > 0f) return above.Rung;
+                if (grievance >= above.ClimbAt && above.ClimbAt > 0f && daysAtRung >= above.DaysToClimb)
+                    return above.Rung;
             }
 
             // Fall: this rung is no longer held. Calm has nowhere to go.

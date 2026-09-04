@@ -27,20 +27,20 @@ namespace RTS.Sim.Tests
                                     "laborer,2,1.00,1.0,0.00\n";
 
         private const string Strata =
-            "id,decay_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
-            "Commoners,0.04,0.10,0.02,0.03,0.02\n" +
-            "NamedCrew,0.05,0.03,0.12,0.08,0.00\n" +
-            "Merchants,0.06,0.00,0.00,0.00,0.00\n";
+            "id,decay_per_day,relief_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n" +
+            "Commoners,0.04,0.12,0.10,0.02,0.03,0.02\n" +
+            "NamedCrew,0.05,0.15,0.03,0.12,0.08,0.00\n" +
+            "Merchants,0.06,0.18,0.00,0.00,0.00,0.00\n";
 
         private const string Ladder =
-            "rung,climb_at,fall_below,output_multiplier,condition_damage\n" +
-            "Calm,0.00,0.00,1.00,0.00\n" +
-            "Grumbling,0.35,0.25,1.00,0.00\n" +
-            "Slowdown,0.50,0.40,0.75,0.00\n" +
-            "Agitator,0.65,0.55,0.60,0.00\n" +
-            "Riot,0.80,0.70,0.35,0.05\n" +
-            "Uprising,0.92,0.85,0.10,0.10\n" +
-            "Deposition,0.99,0.00,0.00,0.00\n";
+            "rung,climb_at,fall_below,days_to_climb,output_multiplier,condition_damage\n" +
+            "Calm,0.00,0.00,1,1.00,0.00\n" +
+            "Grumbling,0.35,0.25,1,1.00,0.00\n" +
+            "Slowdown,0.50,0.40,1,0.75,0.00\n" +
+            "Agitator,0.65,0.55,1,0.60,0.00\n" +
+            "Riot,0.80,0.70,1,0.35,0.05\n" +
+            "Uprising,0.92,0.85,1,0.10,0.10\n" +
+            "Deposition,0.99,0.00,1,0.00,0.00\n";
 
         private World _world = null!;
         private BalanceTables _balance = null!;
@@ -127,10 +127,11 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void The_ladder_climbs_one_rung_a_day_however_bad_it_gets()
+        public void The_ladder_never_skips_a_rung_however_bad_it_gets()
         {
-            // Skipping rungs would be a spawn table. Every rung being visible for at least a
-            // day is what gives a player something to act on.
+            // Skipping rungs would be a spawn table. Every rung being visible is what gives a
+            // player something to act on. This fixture sets every days_to_climb to 1, so the
+            // climb is as fast as the ladder allows and still takes one rung at a time.
             SetGrievance(Stratum.NamedCrew, 0.95f);
 
             RunDay();
@@ -141,6 +142,41 @@ namespace RTS.Sim.Tests
 
             RunDay();
             Assert.That(Rung, Is.EqualTo(LadderRung.Agitator));
+        }
+
+        [Test]
+        public void A_rung_must_be_held_before_the_next_one_is_earned()
+        {
+            // days_to_climb, and the reason the top of the ladder has exits at all. Grievance
+            // saturates in a day and decays in fortieths, so with no dwell time a port that
+            // reached Riot was deposed three days later whatever the player did.
+            var report = new ValidationReport();
+            BalanceTables slow = BalanceTables.Load(
+                CsvTable.Parse(Goods, "goods.csv"),
+                CsvTable.Parse(Buildings, "buildings.csv"),
+                CsvTable.Parse(Crew, "crew_roles.csv"),
+                report,
+                CsvTable.Parse(Strata, "strata.csv"),
+                // Every rung paced at three days, so the table still satisfies the rule that a
+                // ladder must not speed up as it gets worse.
+                CsvTable.Parse(Ladder.Replace(",1,", ",3,"), "ladder.csv"));
+
+            Assert.That(report.IsValid, Is.True, string.Join("; ", report.Problems));
+
+            Assert.That(RevolutionLadderSystem.Next(slow, LadderRung.Grumbling, 0.95f, daysAtRung: 2),
+                Is.EqualTo(LadderRung.Grumbling), "two days is not the three the rung asks for");
+            Assert.That(RevolutionLadderSystem.Next(slow, LadderRung.Grumbling, 0.95f, daysAtRung: 3),
+                Is.EqualTo(LadderRung.Slowdown));
+        }
+
+        [Test]
+        public void Falling_is_never_delayed()
+        {
+            // Only climbing is paced. A port whose cause has been fixed comes down as soon as
+            // the numbers say so — the hysteresis already stops it flickering, and making the
+            // way down as slow as the way up would undo the point of having a way down.
+            Assert.That(RevolutionLadderSystem.Next(_balance, LadderRung.Riot, 0f, daysAtRung: 0),
+                Is.EqualTo(LadderRung.Agitator));
         }
 
         [Test]
@@ -296,6 +332,26 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
+        public void A_ladder_that_speeds_up_as_it_gets_worse_is_rejected()
+        {
+            // days_to_climb is what gives the player time to act, and the time needed grows with
+            // the stakes. A ladder that escalated fastest at the top would take longest where it
+            // mattered least.
+            var report = new ValidationReport();
+            BalanceTables.Load(
+                CsvTable.Parse(Goods, "goods.csv"),
+                CsvTable.Parse(Buildings, "buildings.csv"),
+                CsvTable.Parse(Crew, "crew_roles.csv"),
+                report,
+                CsvTable.Parse(Strata, "strata.csv"),
+                CsvTable.Parse(
+                    Ladder.Replace("Slowdown,0.50,0.40,1", "Slowdown,0.50,0.40,4"), "ladder.csv"));
+
+            Assert.That(report.Problems.Any(p => p.Contains("speed up as it")), Is.True,
+                string.Join("; ", report.Problems));
+        }
+
+        [Test]
         public void A_missing_rung_is_rejected()
         {
             // It would be skipped without ever being seen, and §5.2.2 wants every rung visible.
@@ -306,7 +362,7 @@ namespace RTS.Sim.Tests
                 CsvTable.Parse(Crew, "crew_roles.csv"),
                 report,
                 CsvTable.Parse(Strata, "strata.csv"),
-                CsvTable.Parse(Ladder.Replace("Agitator,0.65,0.55,0.60,0.00\n", ""), "ladder.csv"));
+                CsvTable.Parse(Ladder.Replace("Agitator,0.65,0.55,1,0.60,0.00\n", ""), "ladder.csv"));
 
             Assert.That(report.Problems.Any(p => p.Contains("'Agitator' is missing")), Is.True,
                 string.Join("; ", report.Problems));
