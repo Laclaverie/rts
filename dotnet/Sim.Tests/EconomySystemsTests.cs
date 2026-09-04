@@ -22,6 +22,7 @@ namespace RTS.Sim.Tests
 
         private const string Buildings = "id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day,staff\n" +
                                          "farm,3,0,0,0,food,6,1\n" +
+                                         "bigfarm,3,0,0,0,food,12,2\n" +
                                          "longhouse,2,0,0,8,,0,0\n";
 
         private const string Crew = "id,wage_coin,work_rate,food_per_day,rum_per_day\n" +
@@ -69,7 +70,12 @@ namespace RTS.Sim.Tests
             public void Assign(EntityId member, EntityId building) =>
                 World.Add(member, new Assignment { Building = building });
 
-            public EntityId AddBuilding(string id, float condition = 1f, bool mothballed = false)
+            /// <summary>
+            /// Builds one, fully worked unless told otherwise. <c>Labour</c> would fill it from
+            /// the population; these tests run one system at a time, so they set it directly.
+            /// </summary>
+            public EntityId AddBuilding(string id, float condition = 1f, bool mothballed = false,
+                int? workers = null)
             {
                 int index = Enumerable.Range(0, Tables.Buildings.Count)
                     .First(i => Tables.Buildings[i].Id == id);
@@ -80,7 +86,16 @@ namespace RTS.Sim.Tests
                     DefinitionIndex = index,
                     Condition = condition,
                     Mothballed = mothballed,
+                    Workers = workers ?? Tables.Buildings[index].Staff,
                 });
+                return e;
+            }
+
+            /// <summary>Gives the port a town of the given size.</summary>
+            public EntityId AddPopulation(int commoners)
+            {
+                EntityId e = World.CreateEntity();
+                World.Add(e, new Population { Commoners = commoners });
                 return e;
             }
 
@@ -287,11 +302,11 @@ namespace RTS.Sim.Tests
         // ------------------------------------------------------------- production
 
         [Test]
-        public void A_producer_adds_its_output()
+        public void A_worked_producer_adds_its_output()
         {
+            // Commoners are the labour. No specialist here, so this is the plain rate.
             var port = new Port();
-            EntityId farm = port.AddBuilding("farm");
-            port.Assign(port.AddCrew(), farm);
+            port.AddBuilding("farm");
 
             port.Run(new ProductionSystem());
 
@@ -302,8 +317,7 @@ namespace RTS.Sim.Tests
         public void Output_scales_with_condition()
         {
             var port = new Port();
-            EntityId farm = port.AddBuilding("farm", condition: 0.5f);
-            port.Assign(port.AddCrew(), farm);
+            port.AddBuilding("farm", condition: 0.5f);
 
             port.Run(new ProductionSystem());
 
@@ -311,14 +325,60 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void Nothing_is_produced_without_crew()
+        public void Output_scales_with_how_much_of_the_staffing_is_filled()
+        {
+            // A farm wanting two hands and given one is half a farm. This is the link that
+            // makes losing people cost the port income (§5.2.3).
+            var port = new Port();
+            port.AddBuilding("bigfarm", workers: 1);
+
+            port.Run(new ProductionSystem());
+
+            Assert.That(port.Food, Is.EqualTo(6f).Within(1e-4f), "half of twelve");
+        }
+
+        [Test]
+        public void Nothing_is_produced_without_workers()
         {
             var port = new Port();
-            port.AddBuilding("farm");
+            port.AddBuilding("farm", workers: 0);
 
             port.Run(new ProductionSystem());
 
             Assert.That(port.Food, Is.EqualTo(0f).Within(1e-4f));
+        }
+
+        [Test]
+        public void A_specialist_cannot_replace_the_hands()
+        {
+            // An overseer without labour is not a farm. The bonus multiplies work that is
+            // already happening, so a building nobody works produces nothing however skilled
+            // the person standing in it.
+            var port = new Port();
+            EntityId farm = port.AddBuilding("farm", workers: 0);
+            port.Assign(port.AddCrew(), farm);
+
+            port.Run(new ProductionSystem());
+
+            Assert.That(port.Food, Is.EqualTo(0f).Within(1e-4f));
+        }
+
+        [Test]
+        public void A_specialist_improves_the_building_they_are_assigned_to()
+        {
+            var bare = new Port();
+            bare.AddBuilding("farm");
+            bare.Run(new ProductionSystem());
+
+            var overseen = new Port();
+            EntityId farm = overseen.AddBuilding("farm");
+            overseen.Assign(overseen.AddCrew(), farm);
+            overseen.Run(new ProductionSystem());
+
+            Assert.That(overseen.Food, Is.GreaterThan(bare.Food));
+            Assert.That(overseen.Food,
+                Is.EqualTo(bare.Food * (1f + ProductionSystem.MaximumSpecialistBonus)).Within(1e-4f),
+                "one full-rate specialist on a one-hand building is the whole bonus");
         }
 
         [Test]
@@ -336,14 +396,17 @@ namespace RTS.Sim.Tests
         [Test]
         public void Low_morale_lowers_output()
         {
-            // The link that gives the cascade its teeth: unpaid crew produce less, so income
-            // falls, so wages get harder to pay (§5.2.3).
+            // The §5.2.3 link between unpaid wages and income, now running through the
+            // specialist rather than through the labour: a resentful overseer is worth less,
+            // but the hands keep working.
             var eager = new Port();
-            eager.Assign(eager.AddCrew(morale: 1f), eager.AddBuilding("farm"));
+            EntityId eagerFarm = eager.AddBuilding("farm");
+            eager.Assign(eager.AddCrew(morale: 1f), eagerFarm);
             eager.Run(new ProductionSystem());
 
             var resentful = new Port();
-            resentful.Assign(resentful.AddCrew(morale: 0f), resentful.AddBuilding("farm"));
+            EntityId sullenFarm = resentful.AddBuilding("farm");
+            resentful.Assign(resentful.AddCrew(morale: 0f), sullenFarm);
             resentful.Run(new ProductionSystem());
 
             Assert.That(resentful.Food, Is.LessThan(eager.Food));
@@ -352,30 +415,35 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void An_unstaffed_producer_produces_nothing()
+        public void A_crew_member_assigned_nowhere_improves_nothing()
         {
-            // Under the old pool model this building would still have drawn on the port's
-            // labour. Nobody works here, so nothing comes out of it.
+            var bare = new Port();
+            bare.AddBuilding("farm");
+            bare.Run(new ProductionSystem());
+
             var port = new Port();
             port.AddBuilding("farm");
             port.AddCrew();      // hired, but assigned nowhere
 
             port.Run(new ProductionSystem());
 
-            Assert.That(port.Food, Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(port.Food, Is.EqualTo(bare.Food).Within(1e-4f));
         }
 
         [Test]
-        public void Crew_assigned_elsewhere_do_not_staff_this_building()
+        public void Crew_assigned_elsewhere_do_not_improve_this_building()
         {
             var port = new Port();
-            EntityId worked = port.AddBuilding("farm");
-            port.AddBuilding("farm");                       // idle second farm
-            port.Assign(port.AddCrew(), worked);
+            EntityId overseen = port.AddBuilding("farm");
+            port.AddBuilding("farm");                       // no specialist on this one
+            port.Assign(port.AddCrew(), overseen);
 
             port.Run(new ProductionSystem());
 
-            Assert.That(port.Food, Is.EqualTo(6f).Within(1e-4f), "one farm's worth, not two");
+            float plain = 6f;
+            Assert.That(port.Food,
+                Is.EqualTo(plain * (1f + ProductionSystem.MaximumSpecialistBonus) + plain).Within(1e-4f),
+                "one improved farm and one plain one");
         }
 
         // ------------------------------------------------------------ a whole day

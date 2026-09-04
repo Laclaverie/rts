@@ -312,3 +312,96 @@ All ten scenario digests moved, which is expected: three changes to grievance ar
 apply on ordinary days. Shape change worth noting — `three-correlated` used to end at
 Deposition and now ends Collapsed but Calm, which is the population gap in Appendix A.-1
 showing through the corpus.
+
+---
+
+## Strata populations: what changed and what it cost to rebalance
+
+Commoners exist. They work the buildings, they eat, and after sustained starvation they leave.
+Named crew stopped being the labour and became specialists who improve a building rather than
+manning it. That closed the gap the Phase 2 gate found — Deposition is reachable, an emptied
+port is no longer Calm — and it broke the economy in three separate ways on the way there.
+
+### Losing crew became a windfall
+
+The first corpus run after the change had `one-desertion` ending **richer than undisturbed**:
+448 coin against 404. Exactly the inversion the pooled-labour model produced two phases ago,
+arrived at from the opposite direction — crew no longer produce anything directly, so their
+wages are pure cost and desertion is a saving.
+
+The arithmetic is worth keeping, because it is a constraint on any future crew mechanic. A
+labourer costs 2 coin of wage plus a food. On a two-hand farm, one labourer is half the
+specialist bonus, so at a 25% cap they add `0.5 × 0.25 × 6 = 0.75` food a day, worth 0.75 coin
+against a cost of 3. **A specialist only pays for themselves on high-value output**: the same
+crew member on the mine adds `0.25 × 4 = 1` iron a day, worth 4 coin, and clears their cost
+comfortably.
+
+`PortScenario.Assign` fills producers in build order, which puts four of seven crew on farms
+where they lose money. The starting port is therefore deliberately over-crewed, which is
+consistent with what `Assignment` already says about hiring being a decision rather than a
+mistake — but a desertion shock still reads as a small windfall in the corpus. Left as it
+stands, recorded here, and the fix is either posting crew by the value of what a building makes
+or giving crew something to do that is not production.
+
+### A town that eats made reserves meaningless
+
+With commoners eating, the binding constraint stopped being coin and became food — and coin
+could not buy food. `three-correlated-deep-reserves` at 450 coin died exactly as fast as the
+150-coin run. That is not a tuning problem, it is the Phase 1 gate losing its premise: "one
+shock is survivable, three are not, and the difference is the slack you kept" means nothing if
+the slack cannot be spent.
+
+`MarketSystem` now buys food up to `keep` when the store is short, at `base_price` rather than
+`sell_price` — four coin against one. The spread is the point: importing what you should be
+growing is an emergency, not a business model.
+
+This also revises a Phase 2 finding. "Past a riot, money cannot save the port" was recorded as
+a deliberate shape; it is now softer. A rioting port can buy its way through a famine if it is
+rich enough, which makes deep reserves a genuine alternative to repression rather than a
+consolation. Repression is still far faster.
+
+### The market was selling the port into famine
+
+Food `keep` was 10 while daily demand was 11, so the market sold the store down below what the
+port would eat the next morning, every single day. Chronic hunger by construction, and invisible
+until commoners existed to starve.
+
+→ **A good the port consumes must have `keep` above one day's demand.** Food is now 20 against a
+demand of 13. Not validated in the loader, because demand depends on the scenario's population
+rather than on content alone.
+
+### The re-measured band
+
+Three correlated shocks (storm, harvest failure, theft) against starting reserves:
+
+| Coin | Outcome |
+|---|---|
+| 80–150 | Collapsed, Deposition |
+| 200 | Collapsed, Uprising |
+| **250** | **Healthy, Calm** |
+| 400 | Healthy, Calm |
+
+A single storm:
+
+| Coin | Outcome |
+|---|---|
+| 20–60 | Collapsed, Deposition |
+| 80 | Struggling, survives |
+| 100+ | Healthy |
+
+The band is sharper than the old one and the shape is the same: below ~80 a single shock is
+fatal, above ~250 three correlated ones are absorbed, and the starting port at **150** sits
+inside — one is survivable, three are not. The starting coin did not need to move, which is a
+reassuring sign that the shape is a property of the design rather than of the numbers.
+
+### Settings that came out of this
+
+- Town of **12 commoners**, eating **0.5** a day. At 8 the port was too rich (+19/day against a
+  target of ~+2); at 16 the undisturbed run drifted to Grumbling and a single storm killed it.
+- **`MaximumSpecialistBonus` 0.25.** At 0.5 the port earned +19/day; at 0.10 a specialist was
+  not worth noticing.
+- **`idle_weight` 0.005** for commoners, down from 0.02. A town always has more people than
+  jobs — 12 commoners against 6 places — so at the old weight unemployment alone outran decay
+  and every port drifted into permanent unrest.
+- **`leave_after_days` 12.** Crew desert in two or three; if commoners left as readily, a
+  collapsing port would empty before the ladder could climb, which was the original bug.

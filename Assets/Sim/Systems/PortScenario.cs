@@ -24,6 +24,11 @@ namespace RTS.Sim.Systems
     {
         public int StartingCoin { get; set; } = 150;
 
+        /// <summary>
+        /// Civilians living in the port. They work the buildings and they eat (§5.2.2).
+        /// </summary>
+        public int StartingCommoners { get; set; } = 12;
+
         /// <summary>Role id and how many, in the order they are hired.</summary>
         public List<KeyValuePair<string, int>> Crew { get; } = new List<KeyValuePair<string, int>>();
 
@@ -83,6 +88,11 @@ namespace RTS.Sim.Systems
 
             EntityId treasury = world.CreateEntity();
             world.Add(treasury, new Treasury { Coin = StartingCoin });
+
+            // The town. Created before the crew so that a port always has a population even if
+            // every named individual in it leaves — which is the whole point of it existing.
+            EntityId town = world.CreateEntity();
+            world.Add(town, new Population { Commoners = StartingCommoners, HungryDays = 0 });
 
             foreach (KeyValuePair<string, int> hire in Crew)
             {

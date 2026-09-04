@@ -186,13 +186,33 @@ It is explicitly *not* a wave, not a timer, and not scripted. It is a state mach
 by the economy and by the player's own choices, which is why it can't be memorised or
 farmed the way escalating waves can.
 
-**Strata.** Population is not one number. Three groups, each with its own grievance:
+**Strata.** Population is not one number. Three groups, each with its own grievance, each
+angered by what happens to *its own people* rather than by a shared tally:
 
 | Stratum | Wants | Grievance driven by |
 |---|---|---|
 | **Commoners** | food, work, safety | hunger, unemployment, taxes, casualties, repression |
 | **Named crew** | pay, rest, respect | wages, morale, losses, orders they disagree with |
 | **Merchants** | open routes, low tax | tariffs, blockades, lost convoys, seizures |
+
+**Commoners are the port's labour and the port's mouths.** They are a count rather than
+entities — the mob of rung 5 is "hundreds of anonymous bodies with a handful of named faces
+inside it", and the named faces are the crew. They fill the `staff` a building asks for,
+nobody places them by hand, and whoever the port has no work for is unemployed and resents
+it. They eat from the same store the crew do, and after sustained starvation they leave.
+
+**Named crew are specialists, not labour.** A crew member assigned to a building improves
+what the hands there achieve; a building nobody works produces nothing however skilled the
+person standing in it. That keeps `AssignCrew` a decision about where expertise is worth
+most rather than a way of manning things, and it is why losing crew and losing commoners are
+two different kinds of disaster.
+
+*This was learned the hard way.* Until the Phase 2 gate, only crew were modelled: every
+pressure was a count of crew, so Commoners and Merchants were three weightings of the same
+events. Rob a port and its crew deserted by day twelve, grievance lost its source, and the
+ladder walked back down to Calm on a ruin with nobody in it — the flagship system reporting
+that all was well, and Deposition unreachable from play. Populations of their own are what
+make the three groups three groups.
 
 **The ladder.** Escalation is a ladder, not a spawn table. Every rung is visible, and
 every rung has an exit:
@@ -232,11 +252,13 @@ deny another its recovery. Without the second rate, fixing the economy was not a
 took twenty-five clear days to unwind a saturated grievance, which the ladder outran, and
 repression became the only exit rather than one option among them.
 
-**Where the economic exit runs out.** A rioting port produces 35% of its output. Two farms
-at six a day become four, seven crew eat seven, and coin does not buy food — so past Riot,
-money cannot save a port that has stopped working. That is the point at which repression
-stops being one option and becomes the option, and it is a deliberate shape rather than an
-oversight: the lower rungs are fixed by good management, the upper ones are paid for.
+**Where the economic exit runs out.** A rioting port produces 35% of its output, so it cannot
+feed itself out of a riot: two farms at six a day become four against a demand of thirteen.
+Coin buys food from a passing merchant at four times what the port sells it for, which means a
+rich port *can* import its way through, slowly and expensively, while a thin one cannot. That
+is the point at which repression stops being one option among several and becomes the obvious
+one — the lower rungs are fixed by good management, the upper ones are paid for, in coin or in
+loyalty.
 
 **Rung 5 is where the bounded crowd tech is spent** (§6.4) — and it is the *only* place
 it is spent. A mob is hundreds of anonymous bodies with a handful of named faces inside
@@ -536,33 +558,7 @@ Written down so they stop leaking into scope. Not rejected — deferred, with a 
 | Ships as directly controlled units | Evaluate after routes prove fun |
 | Labour market: hiring away from rival ports | After neighbouring ports exist |
 | Subsidised buyers (below) | After trade and routes exist |
-| **Strata populations** (below) | Next; the Phase 2 gate found it |
 | **Decision Timeline** (below) | After the game is playable and fun |
-
-### A.-1 Strata populations — the gap the Phase 2 gate found
-
-§5.2.2 says "population is not one number: three groups, each with its own grievance". Only
-the crew are modelled. Every pressure `UnrestSystem` reads — hungry, unpaid, deserted, idle —
-is a count of crew, so Commoners and Merchants are today just different weightings of the
-same crew events.
-
-The consequence is visible in play. Rob a port every day and it riots on day 9; by day 12
-every crew member has deserted; grievance then loses its source, all three strata go quiet
-together, and the ladder walks back down to Calm. The port is a ruin with nobody in it and
-the flagship system reports that all is well. **Deposition is currently unreachable from
-play** for the same reason: the top two rungs need to be held for nine days between them,
-and the population that would depose you leaves before that.
-
-Everything else on the ladder works — the climb, both ways down, hysteresis, repression's
-price. This is the one thing that does not, and it is a missing model rather than a number
-to tune. It is recorded as a passing test (`RevoltGateTests.An_emptied_port_reads_as_calm_and_is_never_deposed`)
-that asserts the wrong behaviour on purpose, so that fixing it breaks the test rather than
-being forgotten.
-
-Fixing it means commoners and merchants existing as counts in their own right, with their
-own pressures: unemployment and food price for commoners, tariffs and lost convoys for
-merchants. That also unblocks the labour market above, and it is what makes a neighbour
-port's revolt legible from outside.
 
 ### A.0 Subsidised buyers — a price that is not a market
 

@@ -24,7 +24,8 @@ namespace RTS.Content.Registries
 
         /// <summary>The strata columns, used to stand in an empty table when none is supplied.</summary>
         public const string StrataHeader =
-            "id,decay_per_day,relief_per_day,hunger_weight,unpaid_weight,desertion_weight,idle_weight\n";
+            "id,decay_per_day,relief_per_day,food_per_day,leave_after_days," +
+            "hunger_weight,unpaid_weight,desertion_weight,idle_weight\n";
 
         /// <summary>The ladder columns, used to stand in an empty table when none is supplied.</summary>
         public const string LadderHeader =
@@ -88,8 +89,8 @@ namespace RTS.Content.Registries
                 ConfigRegistry<StratumRules>.Load(
                     sources.Strata ?? CsvTable.Parse(StrataHeader, StrataFile),
                     report, ReadStratum,
-                    "id", "decay_per_day", "relief_per_day", "hunger_weight", "unpaid_weight",
-                    "desertion_weight", "idle_weight");
+                    "id", "decay_per_day", "relief_per_day", "food_per_day", "leave_after_days",
+                    "hunger_weight", "unpaid_weight", "desertion_weight", "idle_weight");
 
             ReferenceResolver.Resolve(report, pending, GoodsFile, goodRegistry);
 
@@ -169,6 +170,8 @@ namespace RTS.Content.Registries
                 stratum: stratum,
                 decayPerDay: row.Float("decay_per_day", 0f, 1f),
                 reliefPerDay: row.Float("relief_per_day", 0f, 1f),
+                foodPerDay: row.Float("food_per_day", 0f, 100f),
+                leaveAfterDays: row.Int("leave_after_days", 0, 365),
                 hungerWeight: row.Float("hunger_weight", 0f, 1f),
                 unpaidWeight: row.Float("unpaid_weight", 0f, 1f),
                 desertionWeight: row.Float("desertion_weight", 0f, 1f),

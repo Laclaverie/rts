@@ -46,6 +46,7 @@ DayBoundary,10,Consumption,true
 DayBoundary,20,Wages,true
 DayBoundary,30,Upkeep,true
 DayBoundary,35,Desertion,true
+DayBoundary,38,Labour,true
 DayBoundary,40,Production,true
 DayBoundary,50,Market,true
 DayBoundary,70,Unrest,true

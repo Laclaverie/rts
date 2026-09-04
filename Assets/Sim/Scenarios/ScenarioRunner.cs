@@ -91,14 +91,26 @@ namespace RTS.Sim.Scenarios
         /// The shipped pipeline plus the command drain, which is not in the file yet because
         /// nothing in the game constructs a dispatcher.
         /// </summary>
+        /// <summary>
+        /// Every system the game runs, in one place.
+        /// </summary>
+        /// <remarks>
+        /// The list lived in four places — here, the harness, and two test fixtures — and adding
+        /// <c>Labour</c> broke three of them with "declared but no system implements it". The
+        /// pipeline file decides the order; this decides what exists, and there is no reason for
+        /// either to have a second copy.
+        /// </remarks>
+        public static List<ISystem> AllSystems() => new List<ISystem>
+        {
+            new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
+            new DesertionSystem(), new LabourSystem(), new ProductionSystem(),
+            new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
+        };
+
         public static Pipeline BuildPipeline(string shippedCsv, CommandDispatcher dispatcher)
         {
-            var systems = new List<ISystem>
-            {
-                new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
-                new DesertionSystem(), new ProductionSystem(), new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
-                new CommandDrainSystem(dispatcher),
-            };
+            List<ISystem> systems = AllSystems();
+            systems.Add(new CommandDrainSystem(dispatcher));
 
             // Order 5: input takes effect before anything else that day, so a shock scheduled
             // for day N is felt on day N rather than the morning after. When the game gains a

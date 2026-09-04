@@ -279,8 +279,11 @@ namespace RTS.Sim.Tests
             repressed.Fund(3000);
             fed.Fund(3000);
 
-            repressed.Advance(40);
-            fed.Advance(40);
+            // Long enough for both to settle. A rioting port produces a third of its food, so
+            // the one left to recover on its own has to buy its way back to a full store before
+            // it can start cooling — which is slower than a crackdown and is meant to be.
+            repressed.Advance(100);
+            fed.Advance(100);
 
             Assert.That(repressed.Rung, Is.EqualTo(LadderRung.Calm), "repressed: " + repressed);
             Assert.That(fed.Rung, Is.EqualTo(LadderRung.Calm), "fed: " + fed);
@@ -315,43 +318,49 @@ namespace RTS.Sim.Tests
         // ------------------------------------------------------------------ terminal
 
         [Test]
-        public void An_emptied_port_reads_as_calm_and_is_never_deposed()
+        public void Total_mismanagement_ends_in_deposition()
         {
-            // A finding, recorded as a test rather than a note so it cannot be forgotten.
+            // This test and the next replace a deliberately-wrong one. Before the strata had
+            // populations of their own, every grievance pressure was a count of crew: rob the
+            // port and the crew deserted by day twelve, grievance lost its source, and the
+            // ladder walked back down to Calm on a ruin with nobody left in it. Deposition was
+            // unreachable from play and the flagship system reported that all was well.
             //
-            // Sixty days of the worst mismanagement available and the port is never deposed. It
-            // riots on day 9; by day 12 every crew member has deserted; grievance then loses its
-            // source and the ladder walks back down to Calm. The port is a ruin with nobody left
-            // in it, and the flagship system reports that all is well. Starving it instead of
-            // robbing it gives the same shape, one day earlier.
-            //
-            // The cause is structural rather than a number to tune. §5.2.2 says "population is
-            // not one number: three groups, each with its own grievance", but only the crew are
-            // modelled. Every pressure UnrestSystem reads — hungry, unpaid, deserted, idle — is
-            // a count of crew, so Commoners and Merchants are today just different weightings of
-            // the same crew events. Empty the crew and all three strata go quiet together, and
-            // the ladder's top two rungs can never be held for the days they need.
-            //
-            // So Deposition is currently unreachable from play, and remains covered only as a
-            // state machine (RevolutionLadderTests). Everything else on the ladder works: the
-            // climb, both ways down, the hysteresis, and repression's price. This is the one
-            // thing that does not, and the fix is to give strata populations of their own, which
-            // is its own piece of work.
-            //
-            // When that lands, this test should fail. Replace it then with the two it stands in
-            // for: a port whose crew have all deserted is not calm, and total mismanagement ends
-            // in Deposition.
+            // A port with a town in it still has somebody to be angry.
             var run = new Run();
 
-            for (int day = 0; day < 60; day++)
+            for (int day = 0; day < 60 && run.Rung != LadderRung.Deposition; day++)
             {
                 run.Rob();
                 run.Advance(1);
             }
 
-            Assert.That(run.World.Store<CrewMember>().Count, Is.Zero, "the port emptied");
-            Assert.That(run.Rung, Is.EqualTo(LadderRung.Calm),
-                "an empty port reads as calm, which is the finding this records");
+            Assert.That(run.Rung, Is.EqualTo(LadderRung.Deposition), run.ToString());
+
+            run.Fund(100000);
+            run.Advance(60);
+
+            Assert.That(run.Rung, Is.EqualTo(LadderRung.Deposition),
+                "a hundred thousand coin changes nothing: " + run);
+        }
+
+        [Test]
+        public void A_port_that_loses_its_crew_is_not_calm()
+        {
+            // The crew are the port's named professionals, not its population. Losing every one
+            // of them is a catastrophe, and it used to read as peace.
+            var run = new Run();
+
+            for (int day = 0; day < 40 && run.World.Store<CrewMember>().Count > 0; day++)
+            {
+                run.Rob();
+                run.Advance(1);
+            }
+
+            Assert.That(run.World.Store<CrewMember>().Count, Is.Zero, "the crew all deserted");
+            Assert.That(run.World.Store<Population>().Values[0].Commoners, Is.GreaterThan(0),
+                "the town is still there: commoners do not leave over a missed payday");
+            Assert.That(run.Rung, Is.GreaterThanOrEqualTo(LadderRung.Riot), run.ToString());
         }
 
         // ----------------------------------------------------------- the third lever

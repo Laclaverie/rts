@@ -100,10 +100,17 @@ mechanics the gate exposed as missing, each written up in `doc/design/ECONOMY_FI
 - `relief_per_day` per stratum, because at 0.04/day fixing the economy was not a lever at all and
   repression was the only exit rather than one of two
 
-**One thing the gate could not make work**, recorded rather than hidden: Deposition is currently
-unreachable from play, and an emptied port reads as Calm. Strata have no populations of their
-own, so when the last crew member deserts all three go quiet at once. Written up in `GDD`
-Appendix A.-1, and pinned by a deliberately-wrong-on-purpose test so the fix breaks it.
+**The one thing the gate could not make work has since been fixed.** Deposition was unreachable
+from play and an emptied port read as Calm, because strata had no populations of their own: every
+pressure was a count of crew, so when the last one deserted all three went quiet at once.
+Commoners now exist — they work the buildings, they eat, and they leave only after sustained
+starvation — and each stratum is angered by its own people rather than a shared tally. Named crew
+became specialists who improve a building rather than manning it.
+
+That rebalance broke the economy three ways before it settled, all measured in
+`doc/design/ECONOMY_FINDINGS.md`: losing crew briefly became a windfall, a town that eats made
+coin reserves meaningless until the market could sell food, and the food `keep` was below one
+day's demand so the market had been selling the port into famine every morning.
 
 **Not now:** the mob as a visual thing — rung 5 is a state, not a scene, until Phase 5.
 
