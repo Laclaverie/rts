@@ -71,6 +71,10 @@ namespace RTS.Sim.Tests
                     MarketSystem.SystemId,
                     UnrestSystem.SystemId,
                     RevolutionLadderSystem.SystemId,
+
+                    // The crowd is a reading of the rung, so it is told after the ladder has
+                    // decided. Running it first would put yesterday's rung on today's street.
+                    MobSystem.SystemId,
                 }));
         }
 

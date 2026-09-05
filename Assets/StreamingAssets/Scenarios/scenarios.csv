@@ -72,15 +72,31 @@
 # and it ate most of the margin the reserve band is measured against. On iron alone it costs
 # nothing at all: Saltmarsh has no mine.
 #
+#
+# All ten digests moved for rung 5, and once again NOTHING ELSE MOVED: every state, rung and
+# coin value is identical to the run before it, to the unit. The world gained a MobAgent store,
+# which the digest covers whether or not anybody is on the street, and three-correlated now
+# musters a crowd on its way to Deposition — bodies with positions, where before Uprising was a
+# word in a state machine and nothing else.
+#
+# The crowd's walking speed was then slowed so the approach takes about three days rather than
+# finishing inside the day it musters, and exactly one digest moved for it: three-correlated,
+# the only recorded run that ever reaches Uprising. That is the check that the mob is inert
+# everywhere else, made by accident and worth keeping.
+#
+# The mob costs the economy nothing on purpose. It is a reading of the rung the port is already
+# on: who comes out, who stands where, and where they walk. What it changes is what a revolt
+# looks like, which is the half of §5.2.2 that had never been built.
+#
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,a858ad74a990f1eb
-one-storm,1,150,40,10:Storm:0.30,0649acef0420fa0e
-one-theft,1,150,40,10:Theft:100,2783d99c76981d50
-one-harvest-failure,1,150,40,10:HarvestFailure:8,3f73f52323bf4fd4
-one-desertion,1,150,40,10:Desertion:2,bbafed4cc1790ac3
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,6c29a2e946375973
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c0285089dc4849f3
-lean-start,1,90,30,,c4e228f370994712
-long-quiet-run,7,150,120,,17bfccd066d3a0a9
-late-storm,3,150,60,50:Storm:0.40,5264499fb4b785e1
+undisturbed,1,150,40,,74f8d3c186cd9f04
+one-storm,1,150,40,10:Storm:0.30,8a677a2efcfd6279
+one-theft,1,150,40,10:Theft:100,9008a2cb6f401a57
+one-harvest-failure,1,150,40,10:HarvestFailure:8,96f52a982da7ad6b
+one-desertion,1,150,40,10:Desertion:2,61a19bc218e8e5ac
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,a89721153b2bbd12
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,0ba4218fd706c880
+lean-start,1,90,30,,bd7fe77482fa0161
+long-quiet-run,7,150,120,,46c15d0eddc7bcaa
+late-storm,3,150,60,50:Storm:0.40,383e95c454ab0802

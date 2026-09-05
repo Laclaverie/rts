@@ -66,24 +66,38 @@ namespace RTS.Sim.Presentation
             Width > 0f ? (point.X - MinX) / Width : 0.5f,
             Height > 0f ? (point.Y - MinY) / Height : 0.5f);
 
-        /// <summary>The extent of every city in the world, or a unit square if there are none.</summary>
-        public static MapBounds Around(IReadOnlyList<MapPort> ports)
+        /// <summary>
+        /// The extent of everything there is to draw, or a unit square if there is nothing.
+        /// </summary>
+        /// <remarks>
+        /// The crowd counts, not only the cities. A revolt musters well outside its own city —
+        /// a couple of units, against cities twenty-odd apart — so bounds taken from the cities
+        /// alone would put the far side of the outermost port's crowd past the edge of the view
+        /// and quietly clip the thing the player is meant to be watching.
+        /// </remarks>
+        public static MapBounds Around(IReadOnlyList<MapPort> ports, IReadOnlyList<MapBody> crowd)
         {
             if (ports == null || ports.Count == 0) return new MapBounds(0f, 0f, 1f, 1f);
 
             float minX = float.MaxValue, minY = float.MaxValue;
             float maxX = float.MinValue, maxY = float.MinValue;
 
-            for (int i = 0; i < ports.Count; i++)
-            {
-                MapPoint at = ports[i].At;
-                if (at.X < minX) minX = at.X;
-                if (at.Y < minY) minY = at.Y;
-                if (at.X > maxX) maxX = at.X;
-                if (at.Y > maxY) maxY = at.Y;
-            }
+            for (int i = 0; i < ports.Count; i++) Widen(ports[i].At, ref minX, ref minY, ref maxX, ref maxY);
+
+            if (crowd != null)
+                for (int i = 0; i < crowd.Count; i++)
+                    Widen(crowd[i].At, ref minX, ref minY, ref maxX, ref maxY);
 
             return new MapBounds(minX, minY, maxX, maxY);
+        }
+
+        private static void Widen(in MapPoint at, ref float minX, ref float minY, ref float maxX,
+            ref float maxY)
+        {
+            if (at.X < minX) minX = at.X;
+            if (at.Y < minY) minY = at.Y;
+            if (at.X > maxX) maxX = at.X;
+            if (at.Y > maxY) maxY = at.Y;
         }
     }
 
@@ -154,6 +168,32 @@ namespace RTS.Sim.Presentation
         public readonly bool IsPlayers;
     }
 
+    /// <summary>One body in a revolt, placed on the map (GDD §5.2.2 rung 5).</summary>
+    /// <remarks>
+    /// The mob stores an offset from its own city, because a revolt happens in one square and
+    /// the square is wherever that city is. This is that offset added to the city, so a renderer
+    /// has a place rather than an arithmetic problem.
+    /// </remarks>
+    public readonly struct MapBody
+    {
+        public MapBody(EntityId port, MapPoint at, MobSide side, bool isNamed)
+        {
+            Port = port;
+            At = at;
+            Side = side;
+            IsNamed = isNamed;
+        }
+
+        /// <summary>The city whose square this is.</summary>
+        public readonly EntityId Port;
+
+        public readonly MapPoint At;
+        public readonly MobSide Side;
+
+        /// <summary>A named crew member rather than an anonymous body (§5.2.2).</summary>
+        public readonly bool IsNamed;
+    }
+
     /// <summary>
     /// Everything on the map right now (BUILD_ORDER Phase 5).
     /// </summary>
@@ -172,12 +212,14 @@ namespace RTS.Sim.Presentation
     {
         private static readonly MapPort[] NoPorts = new MapPort[0];
         private static readonly MapConvoy[] NoConvoys = new MapConvoy[0];
+        private static readonly MapBody[] NoCrowd = new MapBody[0];
 
         private MapModel(IReadOnlyList<MapPort> ports, IReadOnlyList<MapConvoy> convoys,
-            MapBounds bounds)
+            IReadOnlyList<MapBody> crowd, MapBounds bounds)
         {
             Ports = ports;
             Convoys = convoys;
+            Crowd = crowd;
             Bounds = bounds;
         }
 
@@ -185,11 +227,14 @@ namespace RTS.Sim.Presentation
 
         public IReadOnlyList<MapConvoy> Convoys { get; }
 
+        /// <summary>Every body on every street. Empty unless somewhere has risen.</summary>
+        public IReadOnlyList<MapBody> Crowd { get; }
+
         public MapBounds Bounds { get; }
 
         /// <summary>An empty world, for a front end built before a session exists.</summary>
         public static MapModel Empty { get; } =
-            new MapModel(NoPorts, NoConvoys, new MapBounds(0f, 0f, 1f, 1f));
+            new MapModel(NoPorts, NoConvoys, NoCrowd, new MapBounds(0f, 0f, 1f, 1f));
 
         /// <summary>
         /// Reads the world.
@@ -249,7 +294,30 @@ namespace RTS.Sim.Presentation
                     isPlayers: mine));
             }
 
-            return new MapModel(ports, convoys, MapBounds.Around(ports));
+            var crowd = new List<MapBody>();
+
+            ComponentStore<MobAgent> bodies = world.Store<MobAgent>();
+            for (int i = 0; i < bodies.Count; i++)
+            {
+                EntityId home = Port.OwnerOf(world, bodies.Ids[i]);
+                if (!byId.TryGetValue(home, out MapPoint square)) continue;
+
+                MobAgent body = bodies.Values[i];
+
+                // Between where it stood this morning and where it stands tonight. The sim
+                // moves in whole days, so without this the crowd would jump once a day and a
+                // revolt would read as a report rather than as something happening.
+                float x = body.PreviousX + ((body.X - body.PreviousX) * fraction);
+                float y = body.PreviousY + ((body.Y - body.PreviousY) * fraction);
+
+                crowd.Add(new MapBody(
+                    port: home,
+                    at: new MapPoint(square.X + x, square.Y + y),
+                    side: body.Side,
+                    isNamed: !body.Crew.IsNone));
+            }
+
+            return new MapModel(ports, convoys, crowd, MapBounds.Around(ports, crowd));
         }
 
         /// <summary>

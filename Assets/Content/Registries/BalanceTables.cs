@@ -22,6 +22,7 @@ namespace RTS.Content.Registries
         public const string LadderFile = "ladder.csv";
         public const string RepressionFile = "repression.csv";
         public const string PortsFile = "ports.csv";
+        public const string MobFile = "mob.csv";
 
         /// <summary>The strata columns, used to stand in an empty table when none is supplied.</summary>
         public const string StrataHeader =
@@ -39,8 +40,9 @@ namespace RTS.Content.Registries
         private BalanceTables(ConfigRegistry<Good> goods, ConfigRegistry<Building> buildings,
             ConfigRegistry<CrewRole> crewRoles, ConfigRegistry<StratumRules> strata,
             ConfigRegistry<LadderStep> ladder, ConfigRegistry<RepressionRules> repression,
-            ConfigRegistry<PortDefinition> ports)
+            ConfigRegistry<PortDefinition> ports, MobRules mob)
         {
+            Mob = mob;
             Ladder = ladder;
             Repression = repression;
             Ports = ports;
@@ -56,6 +58,9 @@ namespace RTS.Content.Registries
         public ConfigRegistry<StratumRules> Strata { get; }
         public ConfigRegistry<LadderStep> Ladder { get; }
         public ConfigRegistry<RepressionRules> Repression { get; }
+
+        /// <summary>What a revolt's crowd is made of, and how it moves (GDD §5.2.2).</summary>
+        public MobRules Mob { get; }
 
         /// <summary>The cities. Trade only works because they differ (GDD §5.3).</summary>
         public ConfigRegistry<PortDefinition> Ports { get; }
@@ -121,7 +126,8 @@ namespace RTS.Content.Registries
             PortsLoader.CrossCheck(portRegistry, report);
 
             var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry,
-                strataRegistry, ladderRegistry, repressionRegistry, portRegistry);
+                strataRegistry, ladderRegistry, repressionRegistry, portRegistry,
+                MobRules.Load(sources.Mob, report));
             tables.CrossCheck(report);
             return tables;
         }
