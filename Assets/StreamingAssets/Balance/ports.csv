@@ -16,6 +16,17 @@
 # buildings     building ids, separated by ';', in build order
 # stock         good:units, separated by ';'
 #
+# EVERY CITY MUST BE ABLE TO FEED ITSELF, BADLY.
+#
+# The first version of this table did not, and three of the five were deposed by day forty-five
+# with no player involvement at all: Ironhold mined iron it could not eat, Millrace cut timber it
+# could not eat, and Fairhaven grew slightly less bread than it needed. They were written that
+# way on the theory that they would trade for food — but routes do not exist yet, and a world
+# that empties itself before the mechanic arrives is not a world with opportunities in it.
+#
+# Each city now grows roughly what it eats, and specialises in what it SELLS. That honours the
+# line below rather than contradicting it: survive alone badly, prosper only by trading.
+#
 # SPECIALISATION IS PARTIAL, ON PURPOSE.
 #
 # A city producing only iron starves the day a route closes, which makes the route a lifeline
@@ -68,7 +79,7 @@
 
 id,name,x,y,player,coin,commoners,crew,buildings,stock
 saltmarsh,Saltmarsh,0,0,true,150,12,laborer:3;sailor:1;guard:1,longhouse;farm;farm;farm;sawmill;warehouse,food:20;timber:10;iron:5
-ironhold,Ironhold,21,9,false,180,10,laborer:3;sailor:2;guard:2,longhouse;mine;mine;farm;warehouse,food:12;timber:6;iron:20
-millrace,Millrace,7,-11,false,140,11,laborer:4;sailor:1;guard:1,longhouse;sawmill;sawmill;farm;warehouse,food:14;timber:22;iron:4
-fairhaven,Fairhaven,-5,-4,false,120,16,laborer:5;sailor:1;guard:1,longhouse;farm;farm;warehouse,food:26;timber:5;iron:3
+ironhold,Ironhold,21,9,false,180,10,laborer:3;sailor:2;guard:2,longhouse;mine;mine;farm;farm;warehouse,food:12;timber:6;iron:20
+millrace,Millrace,7,-11,false,140,11,laborer:4;sailor:1;guard:1,longhouse;sawmill;sawmill;farm;farm;warehouse,food:14;timber:22;iron:4
+fairhaven,Fairhaven,-5,-4,false,120,14,laborer:3;guard:1,longhouse;farm;farm;farm;sawmill;warehouse,food:26;timber:5;iron:3
 coldwater,Coldwater,-5,16,false,90,7,laborer:2;sailor:1;guard:1,longhouse;farm;farm;sawmill,food:9;timber:6;iron:2

@@ -467,3 +467,22 @@ one storm has lost the property §5.2.3 is built on.
 Every city runs consumption, wages, upkeep, labour, production, market, unrest and the ladder.
 Ten days in, the five hold visibly different amounts of coin, which is the cheap proof that the
 systems are really running per city rather than once over a heap of entities.
+
+### The neighbours could not survive being neighbours
+
+The first five-city table killed three of them by day forty-five with no player involvement at
+all. Ironhold mined iron it could not eat, Millrace cut timber it could not eat, and Fairhaven
+grew slightly less bread than it needed. Each was written short of food on the theory that it
+would trade for it — and routes do not exist yet.
+
+That contradicted the principle written into the file directly above the rows: *survive alone
+badly, prosper only by trading.* They could not survive alone at all.
+
+Every city now grows roughly what it eats and specialises in what it **sells**. Fairhaven needed
+a second correction for a different reason: it produced only food, which sells at one coin a
+unit, so it could not cover a seven-person payroll however much bread it had. It has four crew
+and a sawmill now — a thing to sell, and fewer people to pay.
+
+→ **The test that would have caught it now runs sixty days rather than ten**, and asserts that
+no city is deposed, emptied of people, or stripped of crew while nobody is doing anything to it.
+Ten days hid it completely.

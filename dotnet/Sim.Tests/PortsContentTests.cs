@@ -99,16 +99,18 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void At_least_one_city_cannot_feed_itself()
+        public void Every_city_feeds_itself()
         {
-            // The concrete form of "you cannot produce all by yourself", as far as it can be
-            // asserted today: food is the only good with a consumer, so it is the only place a
-            // real dependency can exist yet. Timber and iron gain consumers when buildings can
-            // eat goods as well as make them, and this test should grow a sibling then.
+            // This test used to assert the opposite, and the opposite was a bug. Cities were
+            // written short of food on the theory that they would trade for it, and three of
+            // the five were deposed by day forty-five with no player involvement — routes do
+            // not exist yet, and a world that empties itself before the mechanic arrives has no
+            // opportunities in it.
+            //
+            // Survive alone badly, prosper only by trading. Feeding yourself is the "survive"
+            // half; the "prosper" half is the test below.
             BalanceTables balance = Shipped(out _);
             StratumRules commoners = balance.Strata.First(s => s.Stratum == Stratum.Commoners);
-
-            bool anyHungry = false;
 
             foreach (PortDefinition port in balance.Ports)
             {
@@ -120,11 +122,33 @@ namespace RTS.Sim.Tests
                 float eaten = port.Commoners * commoners.FoodPerDay +
                               port.Crew.Sum(c => balance.CrewRoles[c.Key].FoodPerDay * c.Value);
 
-                if (grown < eaten) anyHungry = true;
+                Assert.That(grown, Is.GreaterThanOrEqualTo(eaten),
+                    $"{port.Id} grows {grown:0.0} and eats {eaten:0.0}");
             }
+        }
 
-            Assert.That(anyHungry, Is.True,
-                "every city feeds itself, so nobody has to trade for anything");
+        [Test]
+        public void No_city_produces_every_good()
+        {
+            // The "cannot produce all by yourself" half, stated as capability rather than
+            // capacity. Saltmarsh makes no iron at all and Ironhold makes the only iron there
+            // is — so once buildings consume goods as well as make them, neither can finish
+            // alone. That is the differential §5.3 calls the economic game.
+            BalanceTables balance = Shipped(out _);
+
+            string[] everything = balance.Buildings
+                .Where(b => b.IsProducer)
+                .Select(b => b.Produces)
+                .Distinct()
+                .ToArray();
+
+            foreach (PortDefinition port in balance.Ports)
+            {
+                string[] mine = Produces(balance, port);
+
+                Assert.That(mine.Length, Is.LessThan(everything.Length),
+                    port.Id + " makes everything and would never need a route");
+            }
         }
 
         [Test]
