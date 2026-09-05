@@ -603,3 +603,74 @@ All ten, for the second time in two phases, with every state, rung and coin valu
 run before it. The world gained a `Convoy` store the digest covers whether or not a convoy exists,
 and Ironhold now holds iron it used to sell. That pattern — hash changes, simulation does not — is
 what the corpus is for.
+
+
+## Phase 4 — Heat and raids
+
+### The two highest-Heat goods cannot be held at all
+
+`heat_per_unit` has sat in `goods.csv` since Phase 1: nothing for bread and timber, 0.05 for
+iron, 0.10 for rum, 0.30 for spice. The intent is plain — a port that ships grain is invisible
+and a port that ships spice is hunted.
+
+Except **rum and spice both have `keep,0`**, so the passing merchant carries off every unit the
+day it appears and neither can ever sit in a warehouse. The two goods the content says are worth
+crossing the sea for are the two the system can never see. Everything Heat actually measures
+today is iron.
+
+Not fixed here, because the fix is a warehouse with a real storage cap (§5.5) rather than a
+number. Recorded so the next person does not spend an afternoon wondering why spice never does
+anything.
+
+### The weights were fifty times too small, and measuring said so
+
+The first pass guessed `held_weight` 0.010 and `at_sea_weight` 0.030. A port running iron to
+Ironhold continuously — five units on the water, a few more in the shed — came out at Heat
+**0.006**, which is indistinguishable from a port doing nothing.
+
+The raw quantity is about 0.45 attention-units. Set against weights of 0.5 and 1.5 it produces
+Heat around 0.3 for routine trading and near zero for a port that never ships, which is the band
+the mechanic needs. The lesson is the ordinary one: the numbers came from a probe printing the
+real values from the real session, not from judgement about what looked plausible.
+
+### The counter cost four times the risk it removed
+
+This is the finding of the phase, and it would have silently deleted the mechanic.
+
+At the first prices — a raid chance of 0.12 at full Heat, escorts at 3 coin per convoy-day — a
+crossing to Ironhold cost **fifteen coin to guard against an expected loss of about four**. Any
+player who did the arithmetic would never have stood the guard up, and §5.2's central dilemma
+would have had one obviously correct answer. A dilemma with a right answer is not a dilemma.
+
+Correcting it to 1 coin overshot the other way: over forty days the guarded port ended up
+*richer* than the unguarded one, because the raids it avoided cost more than the guard did. A
+counter that pays for itself is the same single right answer with the sign flipped.
+
+At 2 coin per convoy-day and a raid chance of 0.30, sixty days of guarded and unguarded trading
+side by side end **two coin apart** — 2333 against 2335. That is the margin a decision lives in.
+
+Worth noting what the guarded port looks like at the end: it carries *more* Heat than the
+unguarded one, because its cargo survives to be seen. Protecting your wealth makes you more
+visible, which is §5.2's table working without anybody writing it down.
+
+### The two costs are in different currencies, which is the real dilemma
+
+An escort takes coin every morning, before wages, out of the same treasury the crew are about to
+be paid from. A raid takes cargo, in one lump, from a ship at sea. One threatens payday and
+therefore grievance; the other threatens the warehouse and therefore production.
+
+That is why the Phase 4 gate is testable without a tax system. §5.2's table says reducing Heat
+raises Unrest, and the mechanism is just the ordering in `pipeline.csv`: `Escort` at 7, `Wages`
+at 20. A port too thin to afford both pays the guard and short-changes the crew, and an unpaid
+wage feeds grievance the same day.
+
+### Continuous iron trading bankrupts the port
+
+Found while writing the long-run test, and it is not about Heat. Iron costs 12 a unit to buy and
+the workshop turns 1 iron and 3 food into 2 rum worth 16 — so a five-unit parcel costs 60 coin
+and returns something close to it. Both test ports went broke by about day twenty, stopped
+shipping, and the comparison quietly became one between two ports with nothing on the water.
+
+The long-run test funds both ports every morning so it measures what it claims to. The
+underlying fact — that a route is barely worth running at current prices — is the same one Phase
+4 recorded as "a route is access, not profit", now with a number on it.

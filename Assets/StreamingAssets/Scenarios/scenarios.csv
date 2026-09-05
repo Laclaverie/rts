@@ -88,15 +88,30 @@
 # on: who comes out, who stands where, and where they walk. What it changes is what a revolt
 # looks like, which is the half of §5.2.2 that had never been built.
 #
+#
+# All ten moved for Heat and raids, and once again every state, rung and coin value is identical
+# to the run before it. Two things changed the hash and neither changed the economy: the world
+# gained a Heat store, and every port gained an Escorting flag.
+#
+# That nothing else moved is itself the finding. These ten scenarios never issue a trade command,
+# so no convoy is ever on the water in any of them - and a port with nothing at sea draws heat
+# only from the iron in its shed, is never raided, and pays no escort. The corpus measures the
+# port standing still, which is exactly what it was built for and exactly why it cannot show what
+# this phase added. What raids cost is measured in HeatAndRaidTests instead, on ports that trade.
+#
+# Worth writing down as a gap: the reserve band these ten scenarios define is the band for a port
+# that never ships anything. A player who runs routes is playing a different, sharper game than
+# the one the corpus is guarding.
+#
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,74f8d3c186cd9f04
-one-storm,1,150,40,10:Storm:0.30,8a677a2efcfd6279
-one-theft,1,150,40,10:Theft:100,9008a2cb6f401a57
-one-harvest-failure,1,150,40,10:HarvestFailure:8,96f52a982da7ad6b
-one-desertion,1,150,40,10:Desertion:2,61a19bc218e8e5ac
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,a89721153b2bbd12
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,0ba4218fd706c880
-lean-start,1,90,30,,bd7fe77482fa0161
-long-quiet-run,7,150,120,,46c15d0eddc7bcaa
-late-storm,3,150,60,50:Storm:0.40,383e95c454ab0802
+undisturbed,1,150,40,,322de97d911cc731
+one-storm,1,150,40,10:Storm:0.30,89cbb4500e3d0ec7
+one-theft,1,150,40,10:Theft:100,6bd489f4cbc69f69
+one-harvest-failure,1,150,40,10:HarvestFailure:8,771b7ee5282366d5
+one-desertion,1,150,40,10:Desertion:2,66d28d3b0ae6a613
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,6c0f7c4c7e781a5d
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,f16047dc07fbfdcf
+lean-start,1,90,30,,580aa89ce2b255cc
+long-quiet-run,7,150,120,,f37d55e58d71b0d0
+late-storm,3,150,60,50:Storm:0.40,ed29e7761499b59b

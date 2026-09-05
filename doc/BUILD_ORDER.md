@@ -169,6 +169,21 @@ The economic game arrives.
 to fund escorts and feels the Unrest bill arrive. If the dilemma isn't felt, the design's
 core tension isn't real yet, and more content won't add it.
 
+**Heat and raids are in, and the dilemma exists without a tax system.** Coin was always the
+thing both pressures competed for: an escort is charged before wages, from the same morning's
+treasury, so coin spent on Heat is coin missing on payday and an unpaid wage feeds grievance the
+same day (§5.2.3). The gate's *mechanism* is therefore real and asserted. Its wording is not yet
+satisfied — there is still no tax, and "a tester" has not held it. That last part is Phase 6's.
+
+Heat is read off what the port has on show, using the `heat_per_unit` column that had sat in
+`goods.csv` unused since Phase 1. A port that ships grain is never raided; a port that ships iron
+is raided because of what it chose to carry. Raids take a share of a cargo at sea, which is P1's
+"anything on the map can be intercepted" made true — convoys had been sailing for two phases with
+nothing able to touch them.
+
+**Still missing from this phase:** an AI port that trades, and stances including `Shadow`. Ironhold
+accumulates iron nobody buys unless the player does.
+
 **Revised: five cities, not one neighbour.** The original note said a second neighbour adds
 nothing the first has not proven, and that is right about neighbours as *threats* — one raider
 teaches what two do. It does not transfer to neighbours as an *economy*. With a single partner,

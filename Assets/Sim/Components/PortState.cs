@@ -27,9 +27,21 @@ namespace RTS.Sim.Components
         /// <summary>Whether this is the port the player runs.</summary>
         public bool IsPlayer;
 
+        /// <summary>
+        /// Whether this city is paying to escort its shipping (GDD 5.2.1).
+        /// </summary>
+        /// <remarks>
+        /// A standing posture, which is what 5.2's table describes: "escort convoys" sits beside
+        /// "fortify" and "hire guards" as a way of living rather than a click per shipment. On
+        /// the port rather than on each convoy so that standing the guard down applies to the
+        /// ships already at sea - a guard you have stopped paying is not still out there.
+        /// </remarks>
+        public bool Escorting;
+
         public void Write(IStateWriter writer)
         {
             writer.Write("definition", DefinitionIndex);
+            writer.Write("escorting", Escorting ? 1 : 0);
             writer.Write("player", IsPlayer);
         }
     }

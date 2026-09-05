@@ -37,6 +37,17 @@
 #                                    one irreversible step in the day: everything else recovers
 #                                    on its own, so without it shocks add instead of compound.
 #
+#   Raid before Convoy            - a raid catches a ship at sea. Running it after the convoys
+#                                    sail would let a cargo be taken from a ship on its final
+#                                    day, which the player watched arrive and then lose.
+#   Escort before Wages           - the guard is paid out of the same morning's treasury the
+#                                    crew are about to be paid from. Charging afterwards would
+#                                    let a port pay everyone and then discover it owed for the
+#                                    guard, which hides the choice being made. This ordering is
+#                                    the whole of 5.2's dilemma: coin spent on Heat is coin that
+#                                    is not available for Unrest.
+#   Heat after Market             - what the passing merchant carried off this morning is not
+#                                    still drawing attention this evening.
 #   Mob after RevolutionLadder    — the crowd is a reading of the rung the port is on, so it
 #                                    must be told after the ladder has decided. Running it
 #                                    first would put yesterday's rung on today's street.
@@ -52,6 +63,8 @@
 # this, which is a design decision and belongs in this file.
 
 phase,order,system,enabled
+DayBoundary,6,Raid,true
+DayBoundary,7,Escort,true
 DayBoundary,8,Convoy,true
 DayBoundary,10,Consumption,true
 DayBoundary,20,Wages,true
@@ -60,6 +73,7 @@ DayBoundary,35,Desertion,true
 DayBoundary,38,Labour,true
 DayBoundary,40,Production,true
 DayBoundary,50,Market,true
+DayBoundary,60,Heat,true
 DayBoundary,70,Unrest,true
 DayBoundary,80,RevolutionLadder,true
 DayBoundary,90,Mob,true
