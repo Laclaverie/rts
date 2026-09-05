@@ -17,10 +17,16 @@
 # cascade visible in one session — which is the point of it being a file rather than a constant.
 # Put it back before judging how the pacing feels.
 #
+# Put it back before COMMITTING, too. A twelve-second day was left in this file for two phases
+# and nobody noticed, because the shipped value is exactly the sort of thing a test deliberately
+# does not pin — ClockTests says so, and is right to: a suite that failed whenever somebody
+# sped the clock up would teach people to stop running it. So the check is here, in the file,
+# for the person who is about to change it.
+#
 # Speeds are for boredom, pause is for complexity (§3.2). They are different problems and both
 # need answering: a quiet stretch must be skippable or twenty-minute days read as dead air, and
 # a hard decision must be thinkable without a clock running.
 
 key,value
-seconds_per_day,12
+seconds_per_day,1200
 speeds,1;2;4

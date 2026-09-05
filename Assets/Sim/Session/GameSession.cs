@@ -359,6 +359,17 @@ namespace RTS.Sim.Session
             for (int i = 0; i < buildings.Count; i++)
             {
                 EntityId id = buildings.Ids[i];
+
+                // Yours, not everybody's. Without this the card offered an order for every
+                // building in the world - sixty-six rows against the seven the player owns -
+                // including shutting a neighbour's mine and posting your specialists into their
+                // sawmill. It also buried the trade routes off the bottom of the list, so the
+                // one part of the game this phase was for was unreachable by clicking.
+                //
+                // A §5.6 leak as well: which buildings a neighbour has, and whether they are
+                // working, is intelligence you are meant to buy with a stance or a scout.
+                if (!Port.BelongsTo(World, id, PlayerPort)) continue;
+
                 BuildingState state = buildings.Values[i];
                 Building definition = Balance.Buildings[state.DefinitionIndex];
                 string detail = Describe(in state, definition, id);
@@ -373,13 +384,28 @@ namespace RTS.Sim.Session
 
                 if (definition.Staff <= 0) continue;
 
-                var post = new AssignCrew(FirstUnpostedCrew(), id);
-                _actions.Add(new PlayerAction(
-                    group: "Buildings",
-                    label: "post a specialist",
-                    detail: detail,
-                    command: post,
-                    rejection: Validate(post)));
+                // Only when there is somebody of your own to post. Every other disabled order
+                // stays on screen on purpose (§3.2: a control you cannot discover is worse than
+                // one you cannot use), but this one would be disabled for a reason the handler
+                // cannot state: asked with nobody spare it carries EntityId.None, and the honest
+                // refusal for a crew member who does not exist is "it is gone" — which reads as
+                // a bug rather than as "everybody is already working".
+                //
+                // Recalling somebody makes it appear immediately, which is where a player would
+                // look for it anyway. It surfaced when the crew list stopped including other
+                // cities' people: before that this row was always enabled, by offering to post a
+                // stranger from Ironhold.
+                EntityId spare = FirstUnpostedCrew();
+                if (!spare.IsNone)
+                {
+                    var post = new AssignCrew(spare, id);
+                    _actions.Add(new PlayerAction(
+                        group: "Buildings",
+                        label: "post a specialist",
+                        detail: detail,
+                        command: post,
+                        rejection: Validate(post)));
+                }
 
                 EntityId posted = FirstCrewAt(id);
                 if (posted.IsNone) continue;
@@ -394,22 +420,6 @@ namespace RTS.Sim.Session
             }
         }
 
-        /// <summary>
-        /// Buying from and selling to the other cities (GDD §5.1, §5.3).
-        /// </summary>
-        /// <remarks>
-        /// A fixed parcel rather than a quantity the player types, because the decision §5.1
-        /// wants is <em>which city, and is it worth the wait</em> — not how many barrels. The
-        /// days are on the button for the same reason the repression price is: a commitment
-        /// measured in days is only a commitment if you can see how many.
-        /// <para>
-        /// Only goods the neighbour can actually spare are offered. Listing a buy that will be
-        /// refused teaches the player nothing except to distrust the list.
-        /// </para>
-        /// </remarks>
-        /// <param name="only">
-        /// One city, or <see cref="EntityId.None"/> for every neighbour.
-        /// </param>
         /// <summary>
         /// What a city pays for its guard today.
         /// </summary>
@@ -454,6 +464,22 @@ namespace RTS.Sim.Session
                 rejection: Validate(command)));
         }
 
+        /// <summary>
+        /// Buying from and selling to the other cities (GDD §5.1, §5.3).
+        /// </summary>
+        /// <remarks>
+        /// A fixed parcel rather than a quantity the player types, because the decision §5.1
+        /// wants is <em>which city, and is it worth the wait</em> — not how many barrels. The
+        /// days are on the button for the same reason the repression price is: a commitment
+        /// measured in days is only a commitment if you can see how many.
+        /// <para>
+        /// Only goods the neighbour can actually spare are offered. Listing a buy that will be
+        /// refused teaches the player nothing except to distrust the list.
+        /// </para>
+        /// </remarks>
+        /// <param name="only">
+        /// One city, or <see cref="EntityId.None"/> for every neighbour.
+        /// </param>
         private void AddTrade(EntityId only)
         {
             EntityId player = Port.Player(World);
@@ -510,6 +536,11 @@ namespace RTS.Sim.Session
         }
 
         /// <summary>A crew member nobody has posted, or None. First in creation order.</summary>
+        /// <summary>A crew member of your own that nobody has posted, or None.</summary>
+        /// <remarks>
+        /// Of your own: the world has five cities' crews in one store, and without the check
+        /// this offered to post a stranger from Ironhold into a Saltmarsh sawmill.
+        /// </remarks>
         private EntityId FirstUnpostedCrew()
         {
             ComponentStore<CrewMember> crew = World.Store<CrewMember>();
@@ -517,6 +548,7 @@ namespace RTS.Sim.Session
             for (int i = 0; i < crew.Count; i++)
             {
                 EntityId id = crew.Ids[i];
+                if (!Port.BelongsTo(World, id, PlayerPort)) continue;
                 if (!World.TryGet(id, out Assignment assignment) || assignment.IsIdle) return id;
             }
 

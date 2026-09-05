@@ -33,6 +33,9 @@ namespace RTS.Game.Boot
         private MapPanel _map;
         private PortView _port;
 
+        /// <summary>The day the screen was last drawn for.</summary>
+        private int _drawnDay;
+
         /// <summary>The running game, for anything else in the scene that needs to read it.</summary>
         public GameSession Session => _session;
 
@@ -76,8 +79,16 @@ namespace RTS.Game.Boot
             // The only line in the project where a frame rate meets the game, and it meets it
             // as an integer number of days. What the machine was doing between days cannot
             // reach the world, which is what makes a played session replay (§6.1, §7.1).
-            if (_session.Advance(UnityEngine.Time.deltaTime) > 0)
+            _session.Advance(UnityEngine.Time.deltaTime);
+
+            // Redrawn when the day changes, whoever changed it. The clock is only one of the
+            // ways: the panel has a step button, the keyboard has a full stop, and a console can
+            // call Step directly. Watching the day rather than the return value means every one
+            // of those refreshes everything, instead of each path having to remember to.
+            if (_session.Day != _drawnDay)
             {
+                _drawnDay = _session.Day;
+
                 _panel.Refresh();
                 _port?.Refresh();
 
@@ -136,8 +147,8 @@ namespace RTS.Game.Boot
 
             if (keyboard.periodKey.wasPressedThisFrame)
             {
+                // No refresh here: Update notices the day moved and redraws everything.
                 _session.Step();
-                _panel.Refresh();
                 return;
             }
 

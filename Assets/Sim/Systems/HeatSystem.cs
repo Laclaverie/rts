@@ -78,6 +78,8 @@ namespace RTS.Sim.Systems
             heat.Drawn = drawn;
             heat.DaysSinceRaid++;
 
+            float before = heat.Value;
+
             // Towards what is on show, never jumping straight to it. Attention is a reputation
             // rather than an inventory: emptying the warehouse this morning does not mean nobody
             // remembers what was in it.
@@ -87,8 +89,16 @@ namespace RTS.Sim.Systems
             if (heat.Value < 0f) heat.Value = 0f;
             if (heat.Value > 1f) heat.Value = 1f;
 
-            ctx.Events.Emit(new HeatChanged { Port = port, Value = heat.Value, Drawn = drawn });
+            // Only when the number a player would read actually moved. Emitted every day for
+            // every port it was three hundred lines of nothing in a sixty-day event listing,
+            // drowning the events somebody ran the harness to look at — and Heat creeps by
+            // thousandths on a quiet day, so most of those said nothing at all.
+            if (Percent(before) != Percent(heat.Value))
+                ctx.Events.Emit(new HeatChanged { Port = port, Value = heat.Value, Drawn = drawn });
         }
+
+        /// <summary>Heat as the player reads it, so an event fires when the readout would change.</summary>
+        private static int Percent(float value) => (int)((value * 100f) + 0.5f);
 
         /// <summary>The entity carrying a city's heat, or None.</summary>
         public static EntityId HeatOf(World world, EntityId port)

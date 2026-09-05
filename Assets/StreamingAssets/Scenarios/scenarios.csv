@@ -103,15 +103,27 @@
 # that never ships anything. A player who runs routes is playing a different, sharper game than
 # the one the corpus is guarding.
 #
+#
+# Seven of the ten moved when HeatChanged stopped being emitted on days the readout would not
+# have changed. Not a simulation change - every state, rung and coin value is identical - but a
+# real one all the same: the digest covers the event stream by design (see ReplayRun.WriteTo,
+# which writes each pending event's id, cause, day and payload), so which events exist is part
+# of what a replay is asserting. Three scenarios were unaffected.
+#
+# The event was firing once per port per day whatever happened, which put three hundred lines of
+# nothing into a sixty-day `--events` listing and buried the events somebody ran the harness to
+# look at. Heat creeps by thousandths on a quiet day; now it speaks when the number a player
+# would read actually moves.
+#
 
 id,seed,coin,days,shocks,expected_digest
 undisturbed,1,150,40,,322de97d911cc731
-one-storm,1,150,40,10:Storm:0.30,89cbb4500e3d0ec7
-one-theft,1,150,40,10:Theft:100,6bd489f4cbc69f69
-one-harvest-failure,1,150,40,10:HarvestFailure:8,771b7ee5282366d5
-one-desertion,1,150,40,10:Desertion:2,66d28d3b0ae6a613
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,6c0f7c4c7e781a5d
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,f16047dc07fbfdcf
+one-storm,1,150,40,10:Storm:0.30,d5aeeecc614644e6
+one-theft,1,150,40,10:Theft:100,6bacbb946fdd64ac
+one-harvest-failure,1,150,40,10:HarvestFailure:8,b90ce1243fdc21e0
+one-desertion,1,150,40,10:Desertion:2,f260f039de72f74a
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,a1bfb3721e531b43
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,d6db85d39e7c1bc1
 lean-start,1,90,30,,580aa89ce2b255cc
 long-quiet-run,7,150,120,,f37d55e58d71b0d0
-late-storm,3,150,60,50:Storm:0.40,ed29e7761499b59b
+late-storm,3,150,60,50:Storm:0.40,20e115011ee7cdb5
