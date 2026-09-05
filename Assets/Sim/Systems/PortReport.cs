@@ -57,35 +57,66 @@ namespace RTS.Sim.Systems
         /// <summary>Grievance per stratum, indexed as the strata registry is.</summary>
         public readonly IReadOnlyList<float> Grievance;
 
-        public static PortReport Of(World world, BalanceTables balance, int day)
+        /// <summary>
+        /// The player's city. A world with no ports at all reports zeroes rather than throwing:
+        /// a console asking for a report before anything is built is a question, not a fault.
+        /// </summary>
+        public static PortReport Of(World world, BalanceTables balance, int day) =>
+            Of(world, Port.Count(world) > 0 ? Port.Player(world) : EntityId.None, balance, day);
+
+        /// <summary>
+        /// One city's numbers. A world holds several, and a report of all of them added
+        /// together would describe nowhere.
+        /// </summary>
+        public static PortReport Of(World world, EntityId port, BalanceTables balance, int day)
         {
-            ComponentStore<Treasury> treasuries = world.Store<Treasury>();
-            int coin = treasuries.Count > 0 ? treasuries.Values[0].Coin : 0;
-            int arrears = treasuries.Count > 0 ? treasuries.Values[0].Arrears : 0;
+            int coin = 0;
+            int arrears = 0;
+            if (Port.HasTreasury(world, port))
+            {
+                ref Treasury treasury = ref Port.Treasury(world, port);
+                coin = treasury.Coin;
+                arrears = treasury.Arrears;
+            }
 
             ComponentStore<CrewMember> crew = world.Store<CrewMember>();
             float morale = 0f;
             float loyalty = 0f;
+            int crewCount = 0;
             for (int i = 0; i < crew.Count; i++)
             {
+                if (!Port.BelongsTo(world, crew.Ids[i], port)) continue;
+
                 morale += crew.Values[i].Morale;
                 loyalty += crew.Values[i].Loyalty;
+                crewCount++;
             }
 
             ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
             float condition = 0f;
-            for (int i = 0; i < buildings.Count; i++) condition += buildings.Values[i].Condition;
+            int buildingCount = 0;
+            for (int i = 0; i < buildings.Count; i++)
+            {
+                if (!Port.BelongsTo(world, buildings.Ids[i], port)) continue;
+
+                condition += buildings.Values[i].Condition;
+                buildingCount++;
+            }
 
             var stock = new float[balance.Goods.Count];
-            for (int i = 0; i < stock.Length; i++) stock[i] = Port.UnitsOf(world, i);
+            for (int i = 0; i < stock.Length; i++) stock[i] = Port.UnitsOf(world, port, i);
 
             ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
-            LadderRung rung = ladders.Count > 0 ? ladders.Values[0].Rung : LadderRung.Calm;
+            LadderRung rung = LadderRung.Calm;
+            for (int i = 0; i < ladders.Count; i++)
+                if (Port.BelongsTo(world, ladders.Ids[i], port)) rung = ladders.Values[i].Rung;
 
             var grievance = new float[balance.Strata.Count];
             ComponentStore<Grievance> grievances = world.Store<Grievance>();
             for (int i = 0; i < grievances.Count; i++)
             {
+                if (!Port.BelongsTo(world, grievances.Ids[i], port)) continue;
+
                 Grievance entry = grievances.Values[i];
                 if (entry.StratumIndex >= 0 && entry.StratumIndex < grievance.Length)
                     grievance[entry.StratumIndex] = entry.Value;
@@ -99,11 +130,11 @@ namespace RTS.Sim.Systems
                 day: day,
                 coin: coin,
                 arrears: arrears,
-                averageMorale: crew.Count > 0 ? morale / crew.Count : 0f,
-                averageLoyalty: crew.Count > 0 ? loyalty / crew.Count : 0f,
-                averageCondition: buildings.Count > 0 ? condition / buildings.Count : 0f,
-                crew: crew.Count,
-                buildings: buildings.Count,
+                averageMorale: crewCount > 0 ? morale / crewCount : 0f,
+                averageLoyalty: crewCount > 0 ? loyalty / crewCount : 0f,
+                averageCondition: buildingCount > 0 ? condition / buildingCount : 0f,
+                crew: crewCount,
+                buildings: buildingCount,
                 stock: stock,
                 rung: rung,
                 grievance: grievance);

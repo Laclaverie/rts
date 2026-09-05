@@ -32,6 +32,7 @@ namespace RTS.Sim.Tests
         private World _world = null!;
         private BalanceTables _balance = null!;
         private EventQueue _events = null!;
+        private EntityId _port;
         private AssignCrewHandler _handler = null!;
 
         private EntityId _worker;
@@ -52,16 +53,20 @@ namespace RTS.Sim.Tests
 
             _world = new World();
             _events = new EventQueue();
+            _port = TestPort.Create(_world);
             _handler = new AssignCrewHandler();
 
             _worker = _world.CreateEntity();
             _world.Add(_worker, new CrewMember { RoleIndex = 0, Morale = 1f, Loyalty = 1f });
+            TestPort.Own(_world, _worker, _port);
 
             _farm = _world.CreateEntity();
             _world.Add(_farm, new BuildingState { DefinitionIndex = Index("farm"), Condition = 1f });
+            TestPort.Own(_world, _farm, _port);
 
             _tavern = _world.CreateEntity();
             _world.Add(_tavern, new BuildingState { DefinitionIndex = Index("tavern"), Condition = 1f });
+            TestPort.Own(_world, _tavern, _port);
         }
 
         private int Index(string id) =>
@@ -110,6 +115,7 @@ namespace RTS.Sim.Tests
         {
             EntityId second = _world.CreateEntity();
             _world.Add(second, new BuildingState { DefinitionIndex = Index("farm"), Condition = 1f });
+            TestPort.Own(_world, second, _port);
 
             Apply(_worker, _farm);
             Apply(_worker, second);
@@ -136,6 +142,7 @@ namespace RTS.Sim.Tests
             // the order systems see, and §7.1 makes that order part of determinism.
             EntityId second = _world.CreateEntity();
             _world.Add(second, new CrewMember { RoleIndex = 0, Morale = 1f, Loyalty = 1f });
+            TestPort.Own(_world, second, _port);
 
             Apply(_worker, _farm);
             Apply(second, _farm);
@@ -202,6 +209,7 @@ namespace RTS.Sim.Tests
             // costs wages either way.
             EntityId second = _world.CreateEntity();
             _world.Add(second, new CrewMember { RoleIndex = 0, Morale = 1f, Loyalty = 1f });
+            TestPort.Own(_world, second, _port);
 
             Apply(_worker, _farm);
 
@@ -226,7 +234,7 @@ namespace RTS.Sim.Tests
             production.Run(_world, in ctx);
             _events.EndCause();
 
-            float improved = Port.UnitsOf(_world, 0);
+            float improved = Port.UnitsOf(_world, _port, 0);
             Assert.That(improved,
                 Is.EqualTo(6f * (1f + ProductionSystem.MaximumSpecialistBonus)).Within(1e-4f),
                 "one farm worked, with an overseer on it");
@@ -239,7 +247,7 @@ namespace RTS.Sim.Tests
             production.Run(_world, in second_ctx);
             _events.EndCause();
 
-            Assert.That(Port.UnitsOf(_world, 0) - improved, Is.EqualTo(6f).Within(1e-4f),
+            Assert.That(Port.UnitsOf(_world, _port, 0) - improved, Is.EqualTo(6f).Within(1e-4f),
                 "the plain rate, with nobody overseeing it");
         }
     }

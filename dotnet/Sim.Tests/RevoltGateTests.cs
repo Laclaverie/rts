@@ -121,7 +121,7 @@ namespace RTS.Sim.Tests
             /// Puts coin back, standing in for a windfall the player earned elsewhere. This is
             /// the "fix the economy" lever in its simplest form: the port can pay its people.
             /// </summary>
-            public void Fund(int coin) => Port.Treasury(World).Coin += coin;
+            public void Fund(int coin) => Port.Treasury(World, Port.Player(World)).Coin += coin;
 
             /// <summary>
             /// Robs the port daily until it riots, and stops there. Deposition is terminal and

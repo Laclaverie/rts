@@ -1,3 +1,4 @@
+using System;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -37,14 +38,31 @@ namespace RTS.Sim.Systems
             BalanceTables balance = ctx.Balance;
             if (balance == null || balance.Strata.Count == 0) return;
 
+            ReadOnlySpan<EntityId> ports = Port.All(world);
+            for (int i = 0; i < ports.Length; i++) Stir(world, ports[i], balance, ctx);
+        }
+
+        /// <summary>
+        /// One city's grievance. Each is angered by what happened to its own people.
+        /// </summary>
+        /// <remarks>
+        /// Tallied per port, not per world. A famine in Ironhold is not a grievance in
+        /// Saltmarsh — though once routes exist and the bread was coming from Ironhold, it
+        /// very much will be, by way of Saltmarsh's own empty granary.
+        /// </remarks>
+        private static void Stir(World world, EntityId port, BalanceTables balance,
+            in Context ctx)
+        {
             ComponentStore<Grievance> grievances = world.Store<Grievance>();
             if (grievances.Count == 0) return;
 
-            DayTally tally = Tally(world, ctx.Events);
+            DayTally tally = Tally(world, port, ctx.Events);
 
             for (int i = 0; i < grievances.Count; i++)
             {
                 EntityId entity = grievances.Ids[i];
+                if (!Port.BelongsTo(world, entity, port)) continue;
+
                 ref Grievance grievance = ref grievances.GetRef(entity);
 
                 if (grievance.StratumIndex < 0 || grievance.StratumIndex >= balance.Strata.Count) continue;
@@ -94,7 +112,7 @@ namespace RTS.Sim.Systems
         }
 
         /// <summary>What happened today, counted from the events already emitted.</summary>
-        public static DayTally Tally(World world, EventQueue events)
+        public static DayTally Tally(World world, EntityId port, EventQueue events)
         {
             var tally = new DayTally();
 
@@ -104,10 +122,24 @@ namespace RTS.Sim.Systems
                 {
                     Envelope envelope = events.Pending[i];
 
-                    if (envelope.TryGet(out FoodShortfall hunger)) tally.CrewHungry += hunger.Crew;
-                    else if (envelope.TryGet(out CommonersWentHungry town)) tally.CommonersHungry += town.Commoners;
-                    else if (envelope.TryGet(out WagesUnpaid unpaid)) tally.Unpaid += unpaid.Crew;
-                    else if (envelope.Is<CrewDeserted>()) tally.Deserted++;
+                    // Only what happened here. One queue carries every city's day, so without
+                    // the filter a neighbour's famine would anger the player's commoners.
+                    if (envelope.TryGet(out FoodShortfall hunger))
+                    {
+                        if (hunger.Port == port) tally.CrewHungry += hunger.Crew;
+                    }
+                    else if (envelope.TryGet(out CommonersWentHungry town))
+                    {
+                        if (town.Port == port) tally.CommonersHungry += town.Commoners;
+                    }
+                    else if (envelope.TryGet(out WagesUnpaid unpaid))
+                    {
+                        if (unpaid.Port == port) tally.Unpaid += unpaid.Crew;
+                    }
+                    else if (envelope.TryGet(out CrewDeserted gone))
+                    {
+                        if (gone.Port == port) tally.Deserted++;
+                    }
                 }
             }
 
@@ -115,9 +147,10 @@ namespace RTS.Sim.Systems
             // work today", and a stratum that resents unemployment resents it every day.
             ComponentStore<Assignment> assignments = world.Store<Assignment>();
             for (int i = 0; i < assignments.Count; i++)
-                if (assignments.Values[i].IsIdle) tally.CrewIdle++;
+                if (assignments.Values[i].IsIdle && Port.BelongsTo(world, assignments.Ids[i], port))
+                    tally.CrewIdle++;
 
-            tally.CommonersIdle = LabourSystem.UnemployedIn(world);
+            tally.CommonersIdle = LabourSystem.UnemployedIn(world, port);
 
             return tally;
         }

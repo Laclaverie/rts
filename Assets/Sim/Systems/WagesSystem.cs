@@ -1,3 +1,4 @@
+using System;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -34,7 +35,23 @@ namespace RTS.Sim.Systems
         public void Run(World world, in Context ctx)
         {
             BalanceTables balance = ctx.Balance;
-            if (balance == null || !Port.HasTreasury(world)) return;
+            if (balance == null) return;
+
+            ReadOnlySpan<EntityId> ports = Port.All(world);
+            for (int i = 0; i < ports.Length; i++) Pay(world, ports[i], balance, ctx);
+        }
+
+        /// <summary>
+        /// One port's payday. Each pays its own crew out of its own treasury.
+        /// </summary>
+        /// <remarks>
+        /// Scoped per port rather than run once over every crew member in the world, which
+        /// would have Ironhold's coin paying Saltmarsh's sailors. That is not a subtle bug: the
+        /// whole of §5.2.3's cascade runs on a port being unable to meet its own bills.
+        /// </remarks>
+        private static void Pay(World world, EntityId port, BalanceTables balance, in Context ctx)
+        {
+            if (!Port.HasTreasury(world, port)) return;
 
             ComponentStore<CrewMember> crew = world.Store<CrewMember>();
             if (crew.Count == 0) return;
@@ -46,11 +63,13 @@ namespace RTS.Sim.Systems
 
             for (int i = 0; i < crew.Count; i++)
             {
+                if (!Port.BelongsTo(world, crew.Ids[i], port)) continue;
+
                 ref CrewMember state = ref crew.GetRef(crew.Ids[i]);
                 int wage = balance.CrewRoles[state.RoleIndex].WageCoin;
                 owed += wage;
 
-                ref Treasury treasury = ref Port.Treasury(world);
+                ref Treasury treasury = ref Port.Treasury(world, port);
 
                 if (treasury.Coin >= wage)
                 {
@@ -66,13 +85,18 @@ namespace RTS.Sim.Systems
                 unpaidCrew++;
             }
 
+            if (owed == 0) return;
+
             if (unpaidCrew > 0)
             {
-                ctx.Events.Emit(new WagesUnpaid { Owed = owed, Paid = paidCoin, Crew = unpaidCrew });
+                ctx.Events.Emit(new WagesUnpaid
+                {
+                    Port = port, Owed = owed, Paid = paidCoin, Crew = unpaidCrew,
+                });
                 return;
             }
 
-            ctx.Events.Emit(new WagesPaid { Coin = paidCoin, Crew = paidCrew });
+            ctx.Events.Emit(new WagesPaid { Port = port, Coin = paidCoin, Crew = paidCrew });
         }
     }
 }

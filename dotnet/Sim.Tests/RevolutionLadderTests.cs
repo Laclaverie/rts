@@ -46,6 +46,7 @@ namespace RTS.Sim.Tests
         private BalanceTables _balance = null!;
         private EventQueue _events = null!;
         private EntityId _ladder;
+        private EntityId _port;
 
         [SetUp]
         public void SetUp()
@@ -65,15 +66,18 @@ namespace RTS.Sim.Tests
 
             _world = new World();
             _events = new EventQueue();
+            _port = TestPort.Create(_world);
 
             for (int i = 0; i < _balance.Strata.Count; i++)
             {
                 EntityId entity = _world.CreateEntity();
                 _world.Add(entity, new Grievance { StratumIndex = i, Value = 0f, Baseline = 0f });
+                TestPort.Own(_world, entity, _port);
             }
 
             _ladder = _world.CreateEntity();
             _world.Add(_ladder, new RevolutionLadder { Rung = LadderRung.Calm });
+            TestPort.Own(_world, _ladder, _port);
         }
 
         private void SetGrievance(Stratum stratum, float value)
@@ -270,7 +274,7 @@ namespace RTS.Sim.Tests
             RunDays(2);
 
             Assert.That(Rung, Is.EqualTo(LadderRung.Slowdown));
-            Assert.That(ProductionSystem.UnrestMultiplier(_world, _balance),
+            Assert.That(ProductionSystem.UnrestMultiplier(_world, _balance, _port),
                 Is.EqualTo(0.75f).Within(1e-4f));
         }
 
@@ -279,6 +283,7 @@ namespace RTS.Sim.Tests
         {
             EntityId farm = _world.CreateEntity();
             _world.Add(farm, new BuildingState { DefinitionIndex = 0, Condition = 1f });
+            TestPort.Own(_world, farm, _port);
 
             SetGrievance(Stratum.NamedCrew, 0.85f);
             RunDays(4);
@@ -292,6 +297,7 @@ namespace RTS.Sim.Tests
         {
             EntityId shut = _world.CreateEntity();
             _world.Add(shut, new BuildingState { DefinitionIndex = 0, Condition = 0.6f, Mothballed = true });
+            TestPort.Own(_world, shut, _port);
 
             SetGrievance(Stratum.NamedCrew, 0.85f);
             RunDays(4);

@@ -43,6 +43,7 @@ namespace RTS.Sim.Tests
         private World _world = null!;
         private BalanceTables _balance = null!;
         private EventQueue _events = null!;
+        private EntityId _port;
 
         [SetUp]
         public void SetUp()
@@ -60,13 +61,14 @@ namespace RTS.Sim.Tests
 
             _world = new World();
             _events = new EventQueue();
+            _port = TestPort.Create(_world);
         }
 
         private EntityId Town(int commoners)
         {
             EntityId e = _world.CreateEntity();
             _world.Add(e, new Population { Commoners = commoners });
-            return e;
+            return TestPort.Own(_world, e, _port);
         }
 
         private EntityId Build(string id, bool mothballed = false)
@@ -81,7 +83,7 @@ namespace RTS.Sim.Tests
                 Condition = 1f,
                 Mothballed = mothballed,
             });
-            return e;
+            return TestPort.Own(_world, e, _port);
         }
 
         private void Run(ISystem system)
@@ -119,7 +121,7 @@ namespace RTS.Sim.Tests
 
             Assert.That(WorkersAt(farm), Is.EqualTo(2));
             Assert.That(WorkersAt(mine), Is.EqualTo(1));
-            Assert.That(LabourSystem.UnemployedIn(_world), Is.Zero);
+            Assert.That(LabourSystem.UnemployedIn(_world, _port), Is.Zero);
         }
 
         [Test]
@@ -143,7 +145,7 @@ namespace RTS.Sim.Tests
 
             Run(new LabourSystem());
 
-            Assert.That(LabourSystem.UnemployedIn(_world), Is.EqualTo(4));
+            Assert.That(LabourSystem.UnemployedIn(_world, _port), Is.EqualTo(4));
         }
 
         [Test]
@@ -157,7 +159,7 @@ namespace RTS.Sim.Tests
             Run(new LabourSystem());
 
             Assert.That(WorkersAt(shut), Is.Zero);
-            Assert.That(LabourSystem.UnemployedIn(_world), Is.EqualTo(2));
+            Assert.That(LabourSystem.UnemployedIn(_world, _port), Is.EqualTo(2));
         }
 
         [Test]
@@ -177,11 +179,11 @@ namespace RTS.Sim.Tests
         public void The_town_eats()
         {
             Town(4);
-            Port.Add(_world, 0, 10f);
+            Port.Add(_world, _port, 0, 10f);
 
             Run(new ConsumptionSystem());
 
-            Assert.That(Port.UnitsOf(_world, 0), Is.EqualTo(8f).Within(1e-4f),
+            Assert.That(Port.UnitsOf(_world, _port, 0), Is.EqualTo(8f).Within(1e-4f),
                 "four commoners at half a unit each");
         }
 
@@ -194,7 +196,8 @@ namespace RTS.Sim.Tests
             Town(4);
             EntityId member = _world.CreateEntity();
             _world.Add(member, new CrewMember { RoleIndex = 0, Morale = 1f, Loyalty = 1f });
-            Port.Add(_world, 0, 1f);
+            TestPort.Own(_world, member, _port);
+            Port.Add(_world, _port, 0, 1f);
 
             Run(new ConsumptionSystem());
 
@@ -230,7 +233,7 @@ namespace RTS.Sim.Tests
             _events.Drain();
             Assert.That(Town().HungryDays, Is.EqualTo(1));
 
-            Port.Add(_world, 0, 10f);
+            Port.Add(_world, _port, 0, 10f);
             Run(new ConsumptionSystem());
 
             Assert.That(Town().HungryDays, Is.Zero,
@@ -306,12 +309,12 @@ namespace RTS.Sim.Tests
         {
             // Context is a ref struct, so it cannot be captured in Assert.DoesNotThrow.
             Build("farm");
-            Port.Add(_world, 0, 5f);
+            Port.Add(_world, _port, 0, 5f);
 
             Run(new ConsumptionSystem());
             Run(new LabourSystem());
 
-            Assert.That(Port.UnitsOf(_world, 0), Is.EqualTo(5f).Within(1e-4f));
+            Assert.That(Port.UnitsOf(_world, _port, 0), Is.EqualTo(5f).Within(1e-4f));
         }
     }
 }

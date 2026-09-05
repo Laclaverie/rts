@@ -1,3 +1,4 @@
+using System;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -43,9 +44,21 @@ namespace RTS.Sim.Systems
         public void Run(World world, in Context ctx)
         {
             BalanceTables balance = ctx.Balance;
-            if (balance == null || !Port.HasTreasury(world)) return;
+            if (balance == null) return;
 
-            Buy(world, balance, ctx);
+            // Every city trades with the passing merchant on its own account. This is not yet
+            // trade *between* cities — that needs routes, and cargo that takes days to arrive
+            // (§5.1) — but it is each port's own books, which is what routes will move goods
+            // between.
+            ReadOnlySpan<EntityId> ports = Port.All(world);
+            for (int i = 0; i < ports.Length; i++) Trade(world, ports[i], balance, ctx);
+        }
+
+        private static void Trade(World world, EntityId port, BalanceTables balance, in Context ctx)
+        {
+            if (!Port.HasTreasury(world, port)) return;
+
+            Buy(world, port, balance, ctx);
 
             int earned = 0;
             int unitsSold = 0;
@@ -55,21 +68,21 @@ namespace RTS.Sim.Systems
                 Good good = balance.Goods[goodIndex];
                 if (good.SellPrice <= 0) continue;
 
-                float held = Port.UnitsOf(world, goodIndex);
+                float held = Port.UnitsOf(world, port, goodIndex);
                 float above = held - good.Keep;
                 if (above < 1f) continue;
 
                 // Whole units only. Coin is an integer, and half a barrel is not a sale.
                 int sellable = (int)above;
 
-                Port.Take(world, goodIndex, sellable);
+                Port.Take(world, port, goodIndex, sellable);
                 earned += sellable * good.SellPrice;
                 unitsSold += sellable;
             }
 
             if (earned <= 0) return;
 
-            ref Treasury treasury = ref Port.Treasury(world);
+            ref Treasury treasury = ref Port.Treasury(world, port);
 
             // Income does not service arrears. That was tried and it was wrong: paying the
             // backlog first left nothing for today's wages, which added to the backlog, so a
@@ -82,7 +95,7 @@ namespace RTS.Sim.Systems
             // what price in loyalty, is a design decision that belongs with unrest.
             treasury.Coin += earned;
 
-            ctx.Events.Emit(new GoodsSold { Coin = earned, Units = unitsSold });
+            ctx.Events.Emit(new GoodsSold { Port = port, Coin = earned, Units = unitsSold });
         }
 
         /// <summary>
@@ -105,7 +118,8 @@ namespace RTS.Sim.Systems
         /// is spending yesterday's money, which keeps reserves the resource that matters.
         /// </para>
         /// </remarks>
-        private static void Buy(World world, BalanceTables balance, in Context ctx)
+        private static void Buy(World world, EntityId port, BalanceTables balance,
+            in Context ctx)
         {
             int goodIndex = ConsumptionSystem.IndexOf(balance, BuyableGood);
             if (goodIndex < 0) return;
@@ -113,11 +127,11 @@ namespace RTS.Sim.Systems
             Good good = balance.Goods[goodIndex];
             if (good.BasePrice <= 0) return;
 
-            float held = Port.UnitsOf(world, goodIndex);
+            float held = Port.UnitsOf(world, port, goodIndex);
             float short_ = good.Keep - held;
             if (short_ < 1f) return;
 
-            ref Treasury treasury = ref Port.Treasury(world);
+            ref Treasury treasury = ref Port.Treasury(world, port);
             if (treasury.Coin < good.BasePrice) return;
 
             int affordable = treasury.Coin / good.BasePrice;
@@ -126,10 +140,11 @@ namespace RTS.Sim.Systems
             if (bought <= 0) return;
 
             treasury.Coin -= bought * good.BasePrice;
-            Port.Add(world, goodIndex, bought);
+            Port.Add(world, port, goodIndex, bought);
 
             ctx.Events.Emit(new GoodsBought
             {
+                Port = port,
                 Coin = bought * good.BasePrice,
                 Units = bought,
                 Good = good.Id,

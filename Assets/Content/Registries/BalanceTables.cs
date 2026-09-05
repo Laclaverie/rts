@@ -21,6 +21,7 @@ namespace RTS.Content.Registries
         public const string StrataFile = "strata.csv";
         public const string LadderFile = "ladder.csv";
         public const string RepressionFile = "repression.csv";
+        public const string PortsFile = "ports.csv";
 
         /// <summary>The strata columns, used to stand in an empty table when none is supplied.</summary>
         public const string StrataHeader =
@@ -37,10 +38,12 @@ namespace RTS.Content.Registries
 
         private BalanceTables(ConfigRegistry<Good> goods, ConfigRegistry<Building> buildings,
             ConfigRegistry<CrewRole> crewRoles, ConfigRegistry<StratumRules> strata,
-            ConfigRegistry<LadderStep> ladder, ConfigRegistry<RepressionRules> repression)
+            ConfigRegistry<LadderStep> ladder, ConfigRegistry<RepressionRules> repression,
+            ConfigRegistry<PortDefinition> ports)
         {
             Ladder = ladder;
             Repression = repression;
+            Ports = ports;
             Goods = goods;
             Buildings = buildings;
             CrewRoles = crewRoles;
@@ -53,6 +56,9 @@ namespace RTS.Content.Registries
         public ConfigRegistry<StratumRules> Strata { get; }
         public ConfigRegistry<LadderStep> Ladder { get; }
         public ConfigRegistry<RepressionRules> Repression { get; }
+
+        /// <summary>The cities. Trade only works because they differ (GDD §5.3).</summary>
+        public ConfigRegistry<PortDefinition> Ports { get; }
 
         /// <summary>
         /// Loads and validates every table. Collects problems rather than throwing, so one run
@@ -107,8 +113,15 @@ namespace RTS.Content.Registries
                     report, ReadRepression,
                     "id", "grievance_relief", "cowed_days", "baseline_increase", "loyalty_cost");
 
+            ConfigRegistry<PortDefinition> portRegistry =
+                ConfigRegistry<PortDefinition>.Load(
+                    sources.Ports ?? CsvTable.Parse(PortsLoader.Header, PortsFile),
+                    report, PortsLoader.Read, PortsLoader.Columns);
+
+            PortsLoader.CrossCheck(portRegistry, report);
+
             var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry,
-                strataRegistry, ladderRegistry, repressionRegistry);
+                strataRegistry, ladderRegistry, repressionRegistry, portRegistry);
             tables.CrossCheck(report);
             return tables;
         }
@@ -223,6 +236,7 @@ namespace RTS.Content.Registries
         private void CrossCheck(ValidationReport report)
         {
             if (Ladder.Count > 0) CheckLadder(report);
+            if (Ports.Count > 0) CheckPorts(report);
 
             foreach (RepressionRules rules in Repression)
             {
@@ -400,6 +414,54 @@ namespace RTS.Content.Registries
                         $"'{step.Id}' climbs after {step.DaysToClimb} days but the milder " +
                         $"'{below.Id}' takes {below.DaysToClimb}. The ladder would speed up as it " +
                         "got worse, leaving least time to act where it matters most.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks each city names things that exist.
+        /// </summary>
+        /// <remarks>
+        /// Only visible with every table in hand, which is the whole argument of §5.3 for
+        /// loading them together: a port naming a building that was renamed reads perfectly
+        /// well on its own, and produces a city that silently has one fewer building.
+        /// </remarks>
+        private void CheckPorts(ValidationReport report)
+        {
+            foreach (PortDefinition port in Ports)
+            {
+                int line = Ports.LineOf(port.Id);
+
+                foreach (string building in port.Buildings)
+                {
+                    if (Buildings.Contains(building)) continue;
+
+                    report.Add(PortsFile, line,
+                        $"'{port.Id}' builds '{building}', which is not in {BuildingsFile}.");
+                }
+
+                foreach (KeyValuePair<string, int> hire in port.Crew)
+                {
+                    if (CrewRoles.Contains(hire.Key)) continue;
+
+                    report.Add(PortsFile, line,
+                        $"'{port.Id}' hires '{hire.Key}', which is not in {CrewRolesFile}.");
+                }
+
+                foreach (KeyValuePair<string, float> pile in port.Stock)
+                {
+                    if (Goods.Contains(pile.Key)) continue;
+
+                    report.Add(PortsFile, line,
+                        $"'{port.Id}' stocks '{pile.Key}', which is not in {GoodsFile}.");
+                }
+
+                // A city with nobody to work its buildings is a ruin, and starting one that way
+                // is a mistake in the file rather than a scenario anybody wanted.
+                if (port.Commoners <= 0)
+                {
+                    report.Add(PortsFile, line,
+                        $"'{port.Id}' has no commoners. Nobody would work its buildings.");
                 }
             }
         }

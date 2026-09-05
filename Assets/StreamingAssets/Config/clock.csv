@@ -22,5 +22,5 @@
 # a hard decision must be thinkable without a clock running.
 
 key,value
-seconds_per_day,1200
+seconds_per_day,12
 speeds,1;2;4

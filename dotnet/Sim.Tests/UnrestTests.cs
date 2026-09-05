@@ -35,6 +35,7 @@ namespace RTS.Sim.Tests
         private World _world = null!;
         private BalanceTables _balance = null!;
         private EventQueue _events = null!;
+        private EntityId _port;
 
         [SetUp]
         public void SetUp()
@@ -52,11 +53,13 @@ namespace RTS.Sim.Tests
 
             _world = new World();
             _events = new EventQueue();
+            _port = TestPort.Create(_world);
 
             for (int i = 0; i < _balance.Strata.Count; i++)
             {
                 EntityId entity = _world.CreateEntity();
                 _world.Add(entity, new Grievance { StratumIndex = i, Value = 0f, Baseline = 0f });
+                TestPort.Own(_world, entity, _port);
             }
         }
 
@@ -127,7 +130,7 @@ namespace RTS.Sim.Tests
             // "Crew signed up for hard weather; a commoner who cannot feed a family did not."
             // The two counts are separate events because the two populations are separate: a
             // starving town does not calm down because the crew ate.
-            RunDay(new CommonersWentHungry { Commoners = 3, Wanted = 3f, Eaten = 0f });
+            RunDay(new CommonersWentHungry { Port = _port, Commoners = 3, Wanted = 3f, Eaten = 0f });
 
             Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0.30f).Within(1e-4f));
             Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0f).Within(1e-4f),
@@ -137,7 +140,7 @@ namespace RTS.Sim.Tests
         [Test]
         public void Crew_hunger_angers_the_crew_and_not_the_town()
         {
-            RunDay(new FoodShortfall { Crew = 3, Wanted = 3f, Eaten = 0f });
+            RunDay(new FoodShortfall { Port = _port, Crew = 3, Wanted = 3f, Eaten = 0f });
 
             Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.09f).Within(1e-4f));
             Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0f).Within(1e-4f));
@@ -147,11 +150,11 @@ namespace RTS.Sim.Tests
         public void The_same_hunger_angers_commoners_more_than_crew()
         {
             // Per head, and this is the asymmetry §5.2.2 asks for.
-            RunDay(new CommonersWentHungry { Commoners = 3 });
+            RunDay(new CommonersWentHungry { Port = _port, Commoners = 3 });
             float commoners = GrievanceOf(Stratum.Commoners);
 
             SetGrievance(Stratum.Commoners, 0f);
-            RunDay(new FoodShortfall { Crew = 3 });
+            RunDay(new FoodShortfall { Port = _port, Crew = 3 });
 
             Assert.That(commoners, Is.GreaterThan(GrievanceOf(Stratum.NamedCrew)));
         }
@@ -162,7 +165,7 @@ namespace RTS.Sim.Tests
             // Commoners are not on the payroll. What will anger them about money is taxes
             // (§5.2.2), and there is no tax yet — so a missed payday is the crew's grievance
             // alone rather than a small share of everyone's.
-            RunDay(new WagesUnpaid { Crew = 2, Owed = 4, Paid = 0 });
+            RunDay(new WagesUnpaid { Port = _port, Crew = 2, Owed = 4, Paid = 0 });
 
             Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.24f).Within(1e-4f));
             Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0f).Within(1e-4f));
@@ -171,7 +174,7 @@ namespace RTS.Sim.Tests
         [Test]
         public void Desertion_angers_both()
         {
-            RunDay(new CrewDeserted { RoleIndex = 0, Remaining = 3 });
+            RunDay(new CrewDeserted { Port = _port, RoleIndex = 0, Remaining = 3 });
 
             Assert.That(GrievanceOf(Stratum.NamedCrew), Is.EqualTo(0.08f).Within(1e-4f));
             Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(0.03f).Within(1e-4f));
@@ -186,6 +189,7 @@ namespace RTS.Sim.Tests
         {
             EntityId town = _world.CreateEntity();
             _world.Add(town, new Population { Commoners = count });
+            TestPort.Own(_world, town, _port);
         }
 
         [Test]
@@ -226,6 +230,7 @@ namespace RTS.Sim.Tests
         {
             EntityId building = _world.CreateEntity();
             _world.Add(building, new BuildingState { DefinitionIndex = 0, Condition = 1f, Workers = 1 });
+            TestPort.Own(_world, building, _port);
 
             AddUnemployedCommoners(1);   // the one commoner, and the one job
 
@@ -240,8 +245,8 @@ namespace RTS.Sim.Tests
             // Honest rather than an oversight: tariffs, blockades and seizures need trade,
             // routes and neighbours. The stratum exists so the ladder reads all three and
             // adding it later would not mean re-tuning the other two.
-            RunDay(new FoodShortfall { Crew = 5 }, new WagesUnpaid { Crew = 5 },
-                new CrewDeserted { Remaining = 0 });
+            RunDay(new FoodShortfall { Port = _port, Crew = 5 }, new WagesUnpaid { Port = _port, Crew = 5 },
+                new CrewDeserted { Port = _port, Remaining = 0 });
 
             Assert.That(GrievanceOf(Stratum.Merchants), Is.EqualTo(0f).Within(1e-4f));
         }
@@ -269,7 +274,7 @@ namespace RTS.Sim.Tests
             // and the two must not cool at the same speed.
             SetGrievance(Stratum.NamedCrew, 0.50f);
 
-            RunDay(new WagesUnpaid { Crew = 1 });
+            RunDay(new WagesUnpaid { Port = _port, Crew = 1 });
 
             Assert.That(GrievanceOf(Stratum.NamedCrew),
                 Is.EqualTo(0.50f - 0.05f + 0.12f).Within(1e-4f));
@@ -324,7 +329,7 @@ namespace RTS.Sim.Tests
         {
             SetGrievance(Stratum.Commoners, 0.95f);
 
-            RunDay(new CommonersWentHungry { Commoners = 10 });
+            RunDay(new CommonersWentHungry { Port = _port, Commoners = 10 });
 
             Assert.That(GrievanceOf(Stratum.Commoners), Is.EqualTo(1f).Within(1e-4f));
         }

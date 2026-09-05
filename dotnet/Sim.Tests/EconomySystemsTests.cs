@@ -49,6 +49,11 @@ namespace RTS.Sim.Tests
             public EventQueue Events = new EventQueue();
             public BalanceTables Tables = Balance();
 
+            /// <summary>The city everything in this fixture belongs to.</summary>
+            public readonly EntityId Id;
+
+            public Port() => Id = TestPort.Create(World);
+
             public Context Context(int day = 1) =>
                 new Context(day, 0f, Events, rng: null, balance: Tables);
 
@@ -56,14 +61,14 @@ namespace RTS.Sim.Tests
             {
                 EntityId e = World.CreateEntity();
                 World.Add(e, new Treasury { Coin = coin });
-                return e;
+                return TestPort.Own(World, e, Id);
             }
 
             public EntityId AddCrew(float morale = 1f, float loyalty = 1f, int roleIndex = 0)
             {
                 EntityId e = World.CreateEntity();
                 World.Add(e, new CrewMember { RoleIndex = roleIndex, Morale = morale, Loyalty = loyalty });
-                return e;
+                return TestPort.Own(World, e, Id);
             }
 
             /// <summary>Puts a crew member to work at a building.</summary>
@@ -88,7 +93,7 @@ namespace RTS.Sim.Tests
                     Mothballed = mothballed,
                     Workers = workers ?? Tables.Buildings[index].Staff,
                 });
-                return e;
+                return TestPort.Own(World, e, Id);
             }
 
             /// <summary>Gives the port a town of the given size.</summary>
@@ -96,12 +101,12 @@ namespace RTS.Sim.Tests
             {
                 EntityId e = World.CreateEntity();
                 World.Add(e, new Population { Commoners = commoners });
-                return e;
+                return TestPort.Own(World, e, Id);
             }
 
-            public void AddFood(float units) => Systems.Port.Add(World, 0, units);
+            public void AddFood(float units) => Systems.Port.Add(World, Id, 0, units);
 
-            public float Food => Systems.Port.UnitsOf(World, 0);
+            public float Food => Systems.Port.UnitsOf(World, Id, 0);
 
             public int Coin => World.Store<Treasury>().Values[0].Coin;
 

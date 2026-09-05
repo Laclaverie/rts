@@ -1,0 +1,74 @@
+# The cities (GDD §5.3). One row per port, the player's included.
+#
+# "Trade only works because ports differ. Each port produces some goods and demands others;
+# prices move with local supply. Finding and protecting a profitable differential IS the
+# economic game."
+#
+# id            referred to by other files
+# name          what a player is shown
+# x, y          where the city sits, in arbitrary units. Route length is computed from these.
+#               Nothing draws a map yet; the numbers are here so that when something does, it
+#               reads the same two values rather than disagreeing with a hand-written day count.
+# player        exactly one row says true
+# coin          starting reserves
+# commoners     civilians, who work the buildings and eat
+# crew          role:count, separated by ';'
+# buildings     building ids, separated by ';', in build order
+# stock         good:units, separated by ';'
+#
+# SPECIALISATION IS PARTIAL, ON PURPOSE.
+#
+# A city producing only iron starves the day a route closes, which makes the route a lifeline
+# rather than a decision — losing it is not a setback to trade around, it is an ending. A city
+# producing everything never trades at all. So each leans toward one or two goods and keeps a
+# thin capability in the rest: enough to survive alone badly, not enough to prosper alone.
+#
+# That gap is the whole game. §5.3 wants a differential worth finding and protecting, and §3.1
+# wants the decisions to be economic rather than executional. A port that must import to grow,
+# but not to breathe, has decisions worth making every day.
+#
+# THE FIVE, AND WHY EACH IS WHAT IT IS
+#
+# Saltmarsh   the player. Two farms and a sawmill: food to spare, timber enough for its own
+#             repairs, no iron at all. It can feed the coast and cannot build anything demanding
+#             without buying metal.
+# Ironhold    two mines and one farm. The opposite problem, and the reason it exists: iron to
+#             sell and not enough bread to eat it with. The most obvious partner and the most
+#             dangerous dependency.
+# Millrace    sawmills and a farm. Timber for everyone else's construction, and the city that
+#             will matter most once buildings can consume goods rather than only produce them.
+# Fairhaven   farms and a warehouse, the largest population. It eats most of what it grows, so
+#             its surplus is small and its labour is not — a place to hire from rather than buy
+#             from.
+# Coldwater   farms and a sawmill, but small and poor: the same lean as Saltmarsh at half the
+#             scale, with the reserves to survive one bad week rather than three. The marginal
+#             city, and the one most likely to be deposed — which §5.2.2 says should be the
+#             player's opportunity rather than only their neighbour's problem.
+#
+# Every city leans towards something, and a test enforces it. A city good at nothing in
+# particular has no differential to offer, so nobody would ever run a route to it; being small
+# and poor is a difference worth having, being featureless is not.
+#
+# Distances are deliberately UNEVEN, not merely wide. An earlier arrangement had every city
+# about fifteen units from Saltmarsh, which at five units a day rounded to three days for all of
+# them — so distance existed in the file and changed nothing in play. Near and far have to be a
+# decision.
+#
+# From Saltmarsh, at five units a day:
+#
+#   Fairhaven   6.4  -> 2 days   the close one. Cheap to run, and a poor differential.
+#   Millrace   13.0  -> 3 days
+#   Coldwater  16.8  -> 4 days
+#   Ironhold   22.8  -> 5 days   the iron is furthest away, which is the point: the good the
+#                                player cannot make at all costs the longest commitment and
+#                                gives a raider the most time.
+#
+# §5.1 wants a round trip measured in days — a commitment, not a toggle — so the nearest pair is
+# still two days there and two back.
+
+id,name,x,y,player,coin,commoners,crew,buildings,stock
+saltmarsh,Saltmarsh,0,0,true,150,12,laborer:4;sailor:2;guard:1,longhouse;farm;farm;sawmill;warehouse,food:20;timber:10;iron:5
+ironhold,Ironhold,21,9,false,180,10,laborer:3;sailor:2;guard:2,longhouse;mine;mine;farm;warehouse,food:12;timber:6;iron:20
+millrace,Millrace,7,-11,false,140,11,laborer:4;sailor:1;guard:1,longhouse;sawmill;sawmill;farm;warehouse,food:14;timber:22;iron:4
+fairhaven,Fairhaven,-5,-4,false,120,16,laborer:5;sailor:1;guard:1,longhouse;farm;farm;warehouse,food:26;timber:5;iron:3
+coldwater,Coldwater,-5,16,false,90,7,laborer:2;sailor:1;guard:1,longhouse;farm;farm;sawmill,food:9;timber:6;iron:2
