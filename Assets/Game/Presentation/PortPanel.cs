@@ -28,6 +28,9 @@ namespace RTS.Game.Presentation
         private readonly VisualElement _selection = new VisualElement();
         private readonly VisualElement _feed = new VisualElement();
         private readonly ScrollView _feedScroll = new ScrollView();
+
+        /// <summary>Everything on the card, so a card taller than the window can still be read.</summary>
+        private readonly ScrollView _scroll = new ScrollView();
         private readonly VisualElement _orders = new VisualElement();
         private readonly List<Button> _speedButtons = new List<Button>();
         private Button _pause;
@@ -42,18 +45,36 @@ namespace RTS.Game.Presentation
             Root.style.position = Position.Absolute;
             Root.style.left = 8;
             Root.style.top = 8;
-            Root.style.minWidth = 240;
+            // Fixed rather than grown to fit the widest order. The map leaves a share of the
+            // view clear down the left for this card (MapPanel.LeftMargin), and a card that
+            // widened whenever a longer label appeared - or whenever the scrollbar arrived -
+            // would slide back over the cities it is meant to sit beside. That is exactly what
+            // happened when the scroll view was added: Coldwater and Fairhaven went back under
+            // it. One of the two has to be the fixed one, and it should be the card.
+            Root.style.width = 360;
             Root.style.paddingLeft = 8;
             Root.style.paddingRight = 8;
             Root.style.paddingTop = 6;
             Root.style.paddingBottom = 6;
             Root.style.backgroundColor = new Color(0f, 0f, 0f, 0.65f);
 
-            Root.Add(Controls());
-            Root.Add(_readouts);
-            Root.Add(_selection);
-            Root.Add(Orders());
-            Root.Add(Feed());
+            // The card is taller than the window and always has been. Measured at 1993 pixels
+            // against a 502 pixel view: the readouts, twenty-six orders and the feed do not fit
+            // on any screen, and everything past the first few orders was simply off the bottom
+            // with no way to reach it. The trade orders are last, so the part of the game Phase 4
+            // exists for could not be clicked at all — which is exactly how it was found.
+            //
+            // Bounded and scrolled rather than trimmed: which orders exist is §3.2's business
+            // (a control you cannot discover is worse than one you cannot use) and it is not a
+            // panel's place to decide the player has seen enough of them.
+            Root.style.maxHeight = new StyleLength(new Length(94f, LengthUnit.Percent));
+
+            _scroll.Add(Controls());
+            _scroll.Add(_readouts);
+            _scroll.Add(_selection);
+            _scroll.Add(Orders());
+            _scroll.Add(Feed());
+            Root.Add(_scroll);
 
             Refresh();
             return Root;

@@ -91,10 +91,16 @@ namespace RTS.Game.Tests
 
             VisualElement root = panel.Build();
 
-            Assert.That(root.childCount, Is.EqualTo(5),
+            // Everything sits inside one scroll view: the card is taller than any window and
+            // the orders at the bottom were unreachable without it.
+            var scroll = root.Q<ScrollView>();
+            Assert.That(scroll, Is.Not.Null);
+
+            VisualElement sections = scroll.contentContainer;
+            Assert.That(sections.childCount, Is.EqualTo(5),
                 "controls, readouts, selection, orders, feed");
 
-            VisualElement readouts = root[1];
+            VisualElement readouts = sections[1];
             Assert.That(readouts.childCount, Is.EqualTo(session.Readouts().Count));
         }
 
