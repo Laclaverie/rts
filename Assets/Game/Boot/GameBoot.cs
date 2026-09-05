@@ -47,6 +47,7 @@ namespace RTS.Game.Boot
                 Strata = BalanceFiles.ReadCsv(BalanceTables.StrataFile),
                 Ladder = BalanceFiles.ReadCsv(BalanceTables.LadderFile),
                 Repression = BalanceFiles.ReadCsv(BalanceTables.RepressionFile),
+                Ports = BalanceFiles.ReadCsv(BalanceTables.PortsFile),
             }, report);
 
             Clock clock = Clock.Load(ConfigFiles.ReadCsv(ConfigFiles.ClockFile), report);
@@ -55,14 +56,15 @@ namespace RTS.Game.Boot
             // in a file; content that half-loads is a port whose numbers are quietly wrong.
             report.ThrowIfInvalid();
 
+            // No world passed: the session builds the whole map from ports.csv.
             _session = GameSession.Start(
                 balance,
                 clock,
-                BalanceFiles.ReadText("pipeline.csv"),
-                PortScenario.Default());
+                BalanceFiles.ReadText("pipeline.csv"));
 
             Log.Info(LogChannel.Boot,
-                $"session started: day {_session.Day}, {clock.SecondsPerDay}s per day");
+                $"session started: day {_session.Day}, {balance.Ports.Count} cities, " +
+                $"{clock.SecondsPerDay}s per day");
 
             BuildPanel();
         }

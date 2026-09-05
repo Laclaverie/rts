@@ -38,12 +38,15 @@ namespace RTS.Game.Tests
                 Strata = BalanceFiles.ReadCsv(BalanceTables.StrataFile),
                 Ladder = BalanceFiles.ReadCsv(BalanceTables.LadderFile),
                 Repression = BalanceFiles.ReadCsv(BalanceTables.RepressionFile),
+                Ports = BalanceFiles.ReadCsv(BalanceTables.PortsFile),
             }, report);
 
             Clock clock = Clock.Load(ConfigFiles.ReadCsv(ConfigFiles.ClockFile), report);
 
+            // No world passed, exactly as GameBoot does it: the session builds the whole map
+            // from ports.csv. Passing one here would test a path the game does not take.
             return GameSession.Start(
-                balance, clock, BalanceFiles.ReadText("pipeline.csv"), PortScenario.Default());
+                balance, clock, BalanceFiles.ReadText("pipeline.csv"));
         }
 
         [Test]

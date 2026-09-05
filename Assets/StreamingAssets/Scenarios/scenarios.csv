@@ -19,6 +19,15 @@
 # (survived, collapsed); this asserts the exact arithmetic, so tuning that keeps the shape but
 # moves the numbers still shows up.
 #
+# And again when the world became five cities rather than one. This time the numbers moved too,
+# and for a stated reason: the player's city is Saltmarsh, which has no mine. Iron was the single
+# largest earner at four coin a unit, so losing it costs about sixteen a day, and Saltmarsh now
+# runs at a small loss rather than a small profit. It is meant to. §5.3 wants a port that must
+# trade to prosper, and a player who can get rich alone has no reason to run a route.
+#
+# The band survived the change, which is the thing that mattered: every single shock is still
+# survivable, three correlated ones still are not, and deep reserves still buy the difference.
+#
 # All ten digests moved again when ports gained owners, and this time NOTHING ELSE MOVED: every
 # state, rung and coin value in the table above is identical to the run before it. That is the
 # evidence the multi-port rework was behaviour-neutral — the digest covers the world's state, and
@@ -35,13 +44,13 @@
 # That is a known gap in the population model, recorded in RevoltGateTests and §A.
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,20827efb0b57bd33
-one-storm,1,150,40,10:Storm:0.30,ad1e3cc320b44bf0
-one-theft,1,150,40,10:Theft:100,9f3f589208a5d546
-one-harvest-failure,1,150,40,10:HarvestFailure:8,96f1d3f3e3ae48a5
-one-desertion,1,150,40,10:Desertion:2,33268436a0a84076
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,a10bb5f7643cec73
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c88f4f1c2da03011
-lean-start,1,90,30,,75be8c19ccd09879
-long-quiet-run,7,150,120,,1dd2748e4dd38785
-late-storm,3,150,60,50:Storm:0.40,d83e19cae4045880
+undisturbed,1,150,40,,527b15bf3eaf4c1b
+one-storm,1,150,40,10:Storm:0.30,139d784b8d530e49
+one-theft,1,150,40,10:Theft:100,ea20213f3049f295
+one-harvest-failure,1,150,40,10:HarvestFailure:8,91daae3e27b3b0b1
+one-desertion,1,150,40,10:Desertion:2,d839383a03fd4b75
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,7312410b6fea7150
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,67f139298ab22209
+lean-start,1,90,30,,418eab4f1f549bf9
+long-quiet-run,7,150,120,,d94e8c345e656971
+late-storm,3,150,60,50:Storm:0.40,12b978eb8c7e6ad3

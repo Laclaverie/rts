@@ -124,6 +124,24 @@ comes up again.
 
 ## 4. Testing
 
+**`unity cmd run_tests` will happily pass against a stale assembly.** `GameBootTests` was left
+calling a signature that no longer existed; the editor's compile failed, the old DLLs stayed in
+place, and `run_tests` reported 29/29 green against them. The only visible symptom was that play
+mode silently refused to start, which reads like a CLI problem rather than a compile error.
+
+`recompile_status` said `up_to_date` while this was true, which is the same lie already recorded
+in §5 — and `unity cmd console` is no help either, because it keeps history, so a screen of
+errors from twenty minutes ago looks identical to a screen of current ones.
+
+→ Force a real build with `CompilationPipeline.RequestScriptCompilation()`, then read
+`recompile_status`, and only *then* believe a test result. A green suite that nobody compiled is
+worse than a red one.
+
+→ **`dotnet build` does not compile `Assets/Game`.** The shadow projects glob `Assets/Sim` and
+`Assets/Content` only, so anything Unity-side — MonoBehaviours, EditMode tests, the panel — is
+checked by the editor and nothing else. A headless suite at 434 green says nothing about whether
+the game compiles.
+
 **A gate that cannot fail is not a gate.** Each has been broken on purpose once and restored:
 asmdef boundary (`using UnityEngine;`), determinism digest (leak state between runs), category
 convention (untagged fixture), state schema (rename a key), shipped files (hide `pipeline.csv`).

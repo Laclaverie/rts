@@ -405,3 +405,84 @@ reassuring sign that the shape is a property of the design rather than of the nu
   and every port drifted into permanent unrest.
 - **`leave_after_days` 12.** Crew desert in two or three; if commoners left as readily, a
   collapsing port would empty before the ladder could climb, which was the original bug.
+
+---
+
+## Five cities: what the player lost, and why that is the point
+
+The world is now Saltmarsh plus four neighbours, all running the same systems. Saltmarsh is the
+player's, and **it has no mine**.
+
+### The cost of specialising the player
+
+Iron was the single largest earner — four coin a unit against food's one — so losing the mine
+costs about sixteen coin a day. Saltmarsh now runs at a **small loss**, roughly one coin a day,
+where it used to make two.
+
+That is deliberate and it is the whole argument of §5.3: a port that gets rich alone has no
+reason to run a route. What Saltmarsh has is food it cannot eat and timber it does not need;
+what it lacks is metal it cannot make at all. Ironhold has the opposite problem and sits five
+days away, which is the longest commitment on the map.
+
+**Until routes exist, that loss has no remedy.** The port survives a forty-day corpus run and
+bleeds slowly over a hundred. Trade is what turns it around, and it is the next piece of work
+rather than an oversight here.
+
+### The port had to be rebuilt to survive at all
+
+The first attempt kept Saltmarsh's old composition minus the mine, and it was deposed by day
+forty: two farms feed twelve commoners and seven crew for exactly one day less than the month
+has. It now has **three farms and five crew** instead of two and seven — more bread, a smaller
+payroll, and a surplus worth selling.
+
+### The band, re-measured
+
+Three correlated shocks (storm, harvest failure, theft):
+
+| Coin | Outcome |
+|---|---|
+| 80–200 | Collapsed, Deposition |
+| **250** | **Healthy, Calm** |
+| 400 | Healthy, Calm |
+
+A single storm:
+
+| Coin | Outcome |
+|---|---|
+| ≤110 | Collapsed |
+| **120** | Struggling, survives |
+| 130+ | Healthy |
+
+**The shape holds and the margin narrowed.** One shock is survivable and three are not, which is
+§5.2.3's requirement. But the starting port at 150 now sits thirty coin above the single-shock
+edge where it used to sit seventy, because a port losing a coin a day has less slack the longer
+a run goes.
+
+→ **Watch this after routes land.** If trade does not restore the margin, the starting reserves
+have to rise rather than the shocks softening — the band is the design, and a port that dies to
+one storm has lost the property §5.2.3 is built on.
+
+### Neighbours are not scenery
+
+Every city runs consumption, wages, upkeep, labour, production, market, unrest and the ladder.
+Ten days in, the five hold visibly different amounts of coin, which is the cheap proof that the
+systems are really running per city rather than once over a heap of entities.
+
+### The neighbours could not survive being neighbours
+
+The first five-city table killed three of them by day forty-five with no player involvement at
+all. Ironhold mined iron it could not eat, Millrace cut timber it could not eat, and Fairhaven
+grew slightly less bread than it needed. Each was written short of food on the theory that it
+would trade for it — and routes do not exist yet.
+
+That contradicted the principle written into the file directly above the rows: *survive alone
+badly, prosper only by trading.* They could not survive alone at all.
+
+Every city now grows roughly what it eats and specialises in what it **sells**. Fairhaven needed
+a second correction for a different reason: it produced only food, which sells at one coin a
+unit, so it could not cover a seven-person payroll however much bread it had. It has four crew
+and a sawmill now — a thing to sell, and fewer people to pay.
+
+→ **The test that would have caught it now runs sixty days rather than ten**, and asserts that
+no city is deposed, emptied of people, or stripped of crew while nobody is doing anything to it.
+Ten days hid it completely.

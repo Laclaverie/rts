@@ -53,9 +53,6 @@ namespace RTS.Sim.Scenarios
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             if (pipelineCsv == null) throw new ArgumentNullException(nameof(pipelineCsv));
 
-            PortScenario port = PortScenario.Default();
-            port.StartingCoin = scenario.StartingCoin;
-
             ReplayRun run = ReplayRun.Start(
                 scenario.Seed,
                 new ICommandHandler[]
@@ -64,7 +61,7 @@ namespace RTS.Sim.Scenarios
                     new AssignCrewHandler(), new MothballBuildingHandler(),
                 },
                 dispatcher => BuildPipeline(pipelineCsv, dispatcher),
-                port.Build(balance),
+                WorldScenario.FromContent(balance, scenario.StartingCoin),
                 balance);
 
             for (int day = 1; day <= scenario.Days; day++)
