@@ -233,6 +233,24 @@ namespace RTS.Sim.Session
         public void SelectHome() => Select(PlayerPort);
 
         /// <summary>
+        /// Whether the player may see inside a city (§5.6).
+        /// </summary>
+        /// <remarks>
+        /// Your own, and today nothing else. §5.6 makes what you know about a neighbour
+        /// something you buy with a stance or a scout, and the inside of a city is its buildings,
+        /// their condition and which rung it stands on — the intelligence game entire. The map
+        /// already withholds all of it; a close-up that handed it over because the world happens
+        /// to be one process would be giving away a system before it is built, and taking it back
+        /// later is much harder than never showing it.
+        /// <para>
+        /// Here rather than in the front end because this is a rule about what the player is
+        /// allowed to know, which is the game's business. What the front end decides is whether
+        /// to grey the door or hide it.
+        /// </para>
+        /// </remarks>
+        public bool CanLookInside(EntityId port) => !port.IsNone && port == PlayerPort;
+
+        /// <summary>
         /// What can be seen of the selected city from outside it (§5.6).
         /// </summary>
         /// <remarks>

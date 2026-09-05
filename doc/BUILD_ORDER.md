@@ -218,10 +218,20 @@ none of it was the steering: it was a component lookup per pair asking whose cit
 and a span rebuilt per comparison. Fixing those took it to 1.1 ms. A flow field would have
 replaced the cheap half. Dozens are enough, exactly as this phase predicted.
 
-**What is left of the gate.** Whether the revolt *reads* as an event is a question for someone
-watching it, and the honest answer today is: better than a number, not yet a scene. It reads at
-map scale — a city turns red and a crowd presses in around it. A port you can look inside is its
-own piece of work.
+**The gate.** "The revolt reads as an event, not a number." You can now step inside a city —
+click the selected one again, or press Enter — and see the square: the longhouse in the middle,
+the town's own buildings named around it, every one of them outlined in damage as the uprising
+takes condition off it daily, and the crowd pressed in a ring against the line. Named crew are
+drawn larger, labelled with their role and coloured by the side they chose. The port card floats
+over it, so the orders that might end the revolt are reachable from inside it.
+
+That is the gate met as far as one person's judgement goes, which is as far as this kind of gate
+can be taken alone. The remaining half is Phase 6's: hand it to someone who is not you.
+
+`PortModel` in `Sim` decides where everything stands; `PortView` decides how big a person is
+drawn. The building layout is arithmetic rather than authored — §5.5 keeps a port to five
+building types and nobody places them by hand — and that is what a real layout replaces when a
+port becomes a place the player builds in.
 
 ---
 
