@@ -97,6 +97,15 @@ namespace RTS.Game.Presentation
         /// <summary>Raised when a click changed what is selected, so the orders can be redrawn.</summary>
         public System.Action SelectionChanged { get; set; }
 
+        /// <summary>
+        /// Raised when a city already selected is clicked again.
+        /// </summary>
+        /// <remarks>
+        /// The way into a city. The map does not know what looking inside one means — it reports
+        /// that the player asked twice, and something else decides that is a door.
+        /// </remarks>
+        public System.Action<EntityId> SelectionRepeated { get; set; }
+
         /// <summary>The world as it was last drawn. For tests, and for anything else that asks.</summary>
         public MapModel Map => _map;
 
@@ -433,7 +442,12 @@ namespace RTS.Game.Presentation
 
         private void Choose(EntityId port)
         {
-            if (!_session.Select(port)) return;
+            if (!_session.Select(port))
+            {
+                // Already selected. Asking for the same city twice is asking to go in.
+                if (port == _session.Selected && !port.IsNone) SelectionRepeated?.Invoke(port);
+                return;
+            }
 
             Refresh();
             SelectionChanged?.Invoke();

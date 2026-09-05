@@ -31,6 +31,7 @@ namespace RTS.Game.Boot
         private GameSession _session;
         private PortPanel _panel;
         private MapPanel _map;
+        private PortView _port;
 
         /// <summary>The running game, for anything else in the scene that needs to read it.</summary>
         public GameSession Session => _session;
@@ -78,6 +79,7 @@ namespace RTS.Game.Boot
             if (_session.Advance(UnityEngine.Time.deltaTime) > 0)
             {
                 _panel.Refresh();
+                _port?.Refresh();
 
                 // The map too, not only the ships. Cities do not move, but what is highlighted
                 // and what a marker says can change without anyone having clicked one, and a
@@ -90,6 +92,7 @@ namespace RTS.Game.Boot
             // is the clock's fraction of a day, computed in Sim — a frame reaches the drawing
             // and never the world (§7.1).
             _map?.Tick();
+            _port?.Tick();
 
             ReadKeys();
         }
@@ -109,6 +112,20 @@ namespace RTS.Game.Boot
         {
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
+
+            // Escape goes back out to the map. Enter looks inside whatever is selected, which is
+            // your own city until you click another.
+            if (keyboard.escapeKey.wasPressedThisFrame)
+            {
+                _port.Close();
+                return;
+            }
+
+            if (keyboard.enterKey.wasPressedThisFrame)
+            {
+                _port.Open(_session.Selected);
+                return;
+            }
 
             if (keyboard.spaceKey.wasPressedThisFrame)
             {
@@ -146,17 +163,27 @@ namespace RTS.Game.Boot
                 return;
             }
 
-            // The map first, so it lies behind: the port panel is a floating card over the
-            // world rather than a column beside it.
+            // Back to front. The map is the world, the close-up of a city covers it when you
+            // step inside one, and the port card floats over both — so the orders stay reachable
+            // while you are standing in the square. Added last is drawn on top.
             _map = new MapPanel(_session);
             document.rootVisualElement.Add(_map.Build());
+
+            _port = new PortView(_session);
+            document.rootVisualElement.Add(_port.Build());
 
             _panel = new PortPanel(_session);
             document.rootVisualElement.Add(_panel.Build());
 
-            // Clicking a city changes which orders exist, so the card has to redraw. The map
-            // does not know what a panel is; it says that something changed.
+            // Clicking a city changes which orders exist, so the card has to redraw. Neither
+            // view knows what a panel is; they say that something changed.
             _map.SelectionChanged = () => _panel.Refresh();
+            _port.Changed = () => _panel.Refresh();
+
+            // Clicking the city you are already looking at goes inside it. A second click is a
+            // gesture the map already had spare, and it means the way in is the same thing you
+            // do to choose a city rather than a control to find.
+            _map.SelectionRepeated = port => _port.Open(port);
         }
 
         /// <summary>
