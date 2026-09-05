@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace RTS.Content.Registries
 {
     /// <summary>
@@ -11,8 +13,10 @@ namespace RTS.Content.Registries
     public sealed class Building : IHasId
     {
         public Building(string id, int upkeepCoin, int buildTimber, int buildIron,
-            int capacity, string produces, float outputPerDay, int staff)
+            int capacity, string produces, float outputPerDay, int staff,
+            IReadOnlyList<KeyValuePair<string, float>> consumes = null)
         {
+            Consumes = consumes ?? System.Array.Empty<KeyValuePair<string, float>>();
             Staff = staff;
             Id = id;
             UpkeepCoin = upkeepCoin;
@@ -47,7 +51,25 @@ namespace RTS.Content.Registries
         /// </summary>
         public int Staff { get; }
 
+        /// <summary>
+        /// What it eats each day to work, as good and units at full output.
+        /// </summary>
+        /// <remarks>
+        /// A farm consumes nothing and a workshop consumes a great deal, and the difference is
+        /// what turns a list of independent cities into an economy. §5.3 says trade only works
+        /// because ports differ; a building that needs a good its city cannot make is how that
+        /// difference becomes a reason to send a ship somewhere.
+        /// <para>
+        /// Empty for an extractor. Iron comes out of the ground, and the ground asks for
+        /// nothing back.
+        /// </para>
+        /// </remarks>
+        public IReadOnlyList<KeyValuePair<string, float>> Consumes { get; }
+
         public bool IsProducer => !string.IsNullOrEmpty(Produces);
+
+        /// <summary>Whether it turns goods into other goods rather than making them from nothing.</summary>
+        public bool IsTransformer => Consumes.Count > 0;
 
         public override string ToString() => Id;
     }

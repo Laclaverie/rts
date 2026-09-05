@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using RTS.Content.Registries;
 using RTS.Sim.Engine.Commands;
+using RTS.Sim.Engine.Entities;
 using RTS.Sim.Engine.Events;
 
 namespace RTS.Sim.Session
@@ -57,10 +58,11 @@ namespace RTS.Sim.Session
         /// Commands first, deliberately. They are the cause of the events that follow them, and
         /// a feed that listed the consequence above the decision would read backwards.
         /// </remarks>
-        public void Record(CommandLog log, IReadOnlyList<Envelope> drained, BalanceTables balance)
+        public void Record(CommandLog log, IReadOnlyList<Envelope> drained, BalanceTables balance,
+            EntityId port = default)
         {
             RecordCommands(log);
-            RecordEvents(drained, balance);
+            RecordEvents(drained, balance, port);
         }
 
         private void RecordCommands(CommandLog log)
@@ -78,7 +80,20 @@ namespace RTS.Sim.Session
             }
         }
 
-        private void RecordEvents(IReadOnlyList<Envelope> drained, BalanceTables balance)
+        /// <summary>
+        /// Records the day's events, keeping only the ones that happened to this city.
+        /// </summary>
+        /// <remarks>
+        /// One queue carries every city's day. Without the filter the player's feed showed five
+        /// paydays every morning and reported a neighbour's famine as their own — five times the
+        /// noise and none of it true. Whether another city's troubles are visible at all belongs
+        /// with stances and intelligence (§5.6) rather than leaking by accident.
+        /// <para>
+        /// <see cref="EntityId.None"/> keeps everything, which is what a single-port test wants.
+        /// </para>
+        /// </remarks>
+        private void RecordEvents(IReadOnlyList<Envelope> drained, BalanceTables balance,
+            EntityId port)
         {
             if (drained == null) return;
 
@@ -87,10 +102,12 @@ namespace RTS.Sim.Session
                 Envelope envelope = drained[i];
 
                 if (!FeedNarrator.TryDescribe(in envelope, balance,
-                        out string text, out FeedImportance importance))
+                        out string text, out FeedImportance importance, out EntityId happenedTo))
                 {
                     continue;
                 }
+
+                if (!port.IsNone && !happenedTo.IsNone && happenedTo != port) continue;
 
                 Add(new FeedEntry(envelope.Id, envelope.Cause, envelope.Day, text, importance));
             }

@@ -171,6 +171,57 @@ namespace RTS.Content.Registries
                 conditionDamage: row.Float("condition_damage", 0f, 1f));
         }
 
+        /// <summary>
+        /// Reads the <c>consumes</c> column: <c>good:units</c> entries separated by ';'.
+        /// </summary>
+        /// <remarks>
+        /// The good ids go through the same pending-reference machinery as <c>produces</c>, so a
+        /// workshop that eats a good nobody defines is a load failure naming the file and line
+        /// rather than a building that silently needs nothing.
+        /// </remarks>
+        private static IReadOnlyList<KeyValuePair<string, float>> ReadConsumes(
+            RowReader row, ICollection<PendingReference> pending)
+        {
+            var found = new List<KeyValuePair<string, float>>();
+
+            // Optional, unlike every other column here. A buildings table without it is a table
+            // of extractors, which is a coherent thing rather than a broken one — and dozens of
+            // test fixtures describe exactly that. Asking whether the column exists is cheaper
+            // than making all of them carry an empty field they do not use.
+            if (!row.Has("consumes")) return found;
+
+            string text = row.Text("consumes");
+            if (string.IsNullOrWhiteSpace(text)) return found;
+
+            foreach (string entry in text.Split(';'))
+            {
+                string trimmed = entry.Trim();
+                if (trimmed.Length == 0) continue;
+
+                string[] halves = trimmed.Split(':');
+                if (halves.Length != 2 ||
+                    !float.TryParse(halves[1], System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out float units) ||
+                    units <= 0f)
+                {
+                    row.Problem($"'{trimmed}' in consumes is not 'good:units' above zero.");
+                    continue;
+                }
+
+                string good = halves[0].Trim();
+                pending.Add(new PendingReference(
+                    source: BuildingsFile,
+                    line: row.Line,
+                    column: "consumes",
+                    value: good,
+                    targetTable: GoodsFile));
+
+                found.Add(new KeyValuePair<string, float>(good, units));
+            }
+
+            return found;
+        }
+
         private static StratumRules ReadStratum(RowReader row)
         {
             string id = row.Id();
@@ -208,6 +259,7 @@ namespace RTS.Content.Registries
             }
 
             return new Building(
+                consumes: ReadConsumes(row, pending),
                 id: row.Id(),
                 upkeepCoin: row.Int("upkeep_coin", min: 0),
                 buildTimber: row.Int("build_timber", min: 0),
@@ -262,6 +314,12 @@ namespace RTS.Content.Registries
                 // are wanted at all before trade exists.
                 if (building.BuildTimber > 0) consumed.Add("timber");
                 if (building.BuildIron > 0) consumed.Add("iron");
+
+                // And a workshop eating iron every day is the plainest consumer there is. This
+                // was missed when transformers arrived: the checker knew what buildings make and
+                // what they cost to build, and not what they run on.
+                for (int i = 0; i < building.Consumes.Count; i++)
+                    consumed.Add(building.Consumes[i].Key);
             }
 
             foreach (CrewRole role in CrewRoles)

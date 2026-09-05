@@ -19,6 +19,16 @@
 # (survived, collapsed); this asserts the exact arithmetic, so tuning that keeps the shape but
 # moves the numbers still shows up.
 #
+# And again when workshops arrived. Saltmarsh distils rum from food and iron, which is worth
+# more than either — so the port earns well until its five iron run out, and then owns a building
+# that eats upkeep and makes nothing. That is the shape the whole phase is for: a good it cannot
+# make, a use for it, and no way to get more without a route.
+#
+# The workshop's upkeep was three before it was one. At three, the idle building alone cost a
+# hundred and twenty coin over forty days and late-storm collapsed — a single shock stopped being
+# survivable, which §5.2.3 does not allow. At one it is affordable to leave standing, and shutting
+# it while the iron is gone is a decision the player can already make.
+#
 # And again when the world became five cities rather than one. This time the numbers moved too,
 # and for a stated reason: the player's city is Saltmarsh, which has no mine. Iron was the single
 # largest earner at four coin a unit, so losing it costs about sixteen a day, and Saltmarsh now
@@ -44,13 +54,13 @@
 # That is a known gap in the population model, recorded in RevoltGateTests and §A.
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,527b15bf3eaf4c1b
-one-storm,1,150,40,10:Storm:0.30,139d784b8d530e49
-one-theft,1,150,40,10:Theft:100,ea20213f3049f295
-one-harvest-failure,1,150,40,10:HarvestFailure:8,91daae3e27b3b0b1
-one-desertion,1,150,40,10:Desertion:2,d839383a03fd4b75
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,7312410b6fea7150
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,67f139298ab22209
-lean-start,1,90,30,,418eab4f1f549bf9
-long-quiet-run,7,150,120,,d94e8c345e656971
-late-storm,3,150,60,50:Storm:0.40,12b978eb8c7e6ad3
+undisturbed,1,150,40,,6d8e79df7b05d047
+one-storm,1,150,40,10:Storm:0.30,ad9768ac09f73262
+one-theft,1,150,40,10:Theft:100,fda4c9cc7b2016dc
+one-harvest-failure,1,150,40,10:HarvestFailure:8,62e22569f92b1748
+one-desertion,1,150,40,10:Desertion:2,0037e3b87c05568f
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,9c1031dcff67ece3
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c9e6c34de0f805f7
+lean-start,1,90,30,,af9a5fe4bcb66e4f
+long-quiet-run,7,150,120,,00654a1c08f85c2d
+late-storm,3,150,60,50:Storm:0.40,d1eccf6dc86bbe81

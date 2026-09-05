@@ -153,7 +153,7 @@ namespace RTS.Sim.Session
         private void RunOneDay()
         {
             Run.AdvanceDay();
-            Feed.Record(Run.CommandLog, Run.Events.Drain(), Balance);
+            Feed.Record(Run.CommandLog, Run.Events.Drain(), Balance, PlayerPort);
         }
 
         /// <summary>
