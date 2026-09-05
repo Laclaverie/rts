@@ -167,6 +167,35 @@ namespace RTS.Sim.Session
                 return true;
             }
 
+            if (envelope.TryGet(out ConvoyRaided raided))
+            {
+                importance = FeedImportance.Alarming;
+
+                string what = $"{raided.Taken:0.#} {Good(balance, raided.GoodIndex)}";
+                text = raided.Left <= 0.01f
+                    ? $"raiders took the whole cargo — {what} gone"
+                    : raided.Escorted
+                        ? $"raiders got past the escort — {what} taken, {raided.Left:0.#} still aboard"
+                        : $"raiders took {what}, {raided.Left:0.#} still aboard";
+                return true;
+            }
+
+            if (envelope.TryGet(out EscortStanding standing))
+            {
+                importance = FeedImportance.Notable;
+                text = standing.Escorting ? "escorts are standing" : "the escorts stood down";
+                return true;
+            }
+
+            if (envelope.TryGet(out EscortPaid escort))
+            {
+                importance = escort.Short > 0 ? FeedImportance.Alarming : FeedImportance.Detail;
+                text = escort.Short > 0
+                    ? $"the escort went {escort.Short} coin short over {escort.Convoys} convoys"
+                    : $"paid the escort {escort.Coin} coin over {escort.Convoys} convoys";
+                return true;
+            }
+
             if (envelope.TryGet(out MobMustered mob))
             {
                 importance = FeedImportance.Alarming;
@@ -270,6 +299,10 @@ namespace RTS.Sim.Session
             if (envelope.TryGet(out MobMustered v)) return v.Port;
             if (envelope.TryGet(out MobDispersed w)) return w.Port;
             if (envelope.TryGet(out CrewChoseSide x)) return x.Port;
+            if (envelope.TryGet(out ConvoyRaided y)) return y.Port;
+            if (envelope.TryGet(out EscortPaid z)) return z.Port;
+            if (envelope.TryGet(out EscortStanding aa)) return aa.Port;
+            if (envelope.TryGet(out HeatChanged ab)) return ab.Port;
 
             return EntityId.None;
         }
@@ -302,6 +335,8 @@ namespace RTS.Sim.Session
                     return $"put down the riot, {suppress.Harshness.ToString().ToLowerInvariant()}";
                 case MothballBuilding mothball:
                     return mothball.Mothballed ? "shut a building" : "reopen a building";
+                case SetEscort escort:
+                    return escort.Escorting ? "stand the escorts up" : "stand the escorts down";
                 case BuyFrom _:
                     return "buy from a neighbour";
                 case SellTo _:

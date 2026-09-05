@@ -54,13 +54,18 @@ namespace RTS.Sim.Tests
 
             Assert.That(pipeline.Systems(Phase.Tick), Is.Empty, "nothing runs per-tick yet");
 
-            // The order is design, not incidental: convoys land before anything eats, so bread
-            // that arrives this morning is edible this morning; crew eat yesterday's stock
-            // before today's output lands; wages are paid before buildings are maintained
-            // (§5.2.3).
+            // The order is design, not incidental: a raid catches a ship at sea, so it runs
+            // before the convoys sail; the escort is paid out of the same morning's treasury the
+            // crew are about to be paid from, which is the whole of §5.2's dilemma made
+            // mechanical; convoys land before anything eats, so bread that arrives this morning
+            // is edible this morning; crew eat yesterday's stock before today's output lands;
+            // wages are paid before buildings are maintained (§5.2.3); and Heat is read after
+            // the market, so what the merchant carried off is not still on show.
             Assert.That(pipeline.Systems(Phase.DayBoundary).Select(s => s.Id),
                 Is.EqualTo(new[]
                 {
+                    RaidSystem.SystemId,
+                    EscortSystem.SystemId,
                     ConvoySystem.SystemId,
                     ConsumptionSystem.SystemId,
                     WagesSystem.SystemId,
@@ -69,6 +74,7 @@ namespace RTS.Sim.Tests
                     LabourSystem.SystemId,
                     ProductionSystem.SystemId,
                     MarketSystem.SystemId,
+                    HeatSystem.SystemId,
                     UnrestSystem.SystemId,
                     RevolutionLadderSystem.SystemId,
 

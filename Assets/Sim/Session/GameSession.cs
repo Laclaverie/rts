@@ -128,6 +128,7 @@ namespace RTS.Sim.Session
         public static ICommandHandler[] PlayerCommands() => new ICommandHandler[]
         {
             new ShockHandler(),
+            new SetEscortHandler(),
             new SuppressRiotHandler(),
             new AssignCrewHandler(),
             new MothballBuildingHandler(),
@@ -311,6 +312,7 @@ namespace RTS.Sim.Session
             if (Selected == PlayerPort)
             {
                 AddRepression();
+                AddDefence();
                 AddBuildings();
                 AddTrade(EntityId.None);
             }
@@ -408,6 +410,50 @@ namespace RTS.Sim.Session
         /// <param name="only">
         /// One city, or <see cref="EntityId.None"/> for every neighbour.
         /// </param>
+        /// <summary>
+        /// What a city pays for its guard today.
+        /// </summary>
+        /// <remarks>
+        /// The size of what is being protected rather than a flat fee, so the bill is nothing on
+        /// a quiet week and real when four fat convoys are out. Shown on the readout and on the
+        /// button, because this number is the price of one half of §5.2's dilemma and a price
+        /// the player cannot see is not a decision they are making.
+        /// </remarks>
+        public int EscortBill()
+        {
+            int convoys = 0;
+            ComponentStore<Convoy> afloat = World.Store<Convoy>();
+
+            for (int i = 0; i < afloat.Count; i++)
+                if (Port.BelongsTo(World, afloat.Ids[i], PlayerPort)) convoys++;
+
+            return convoys * Balance.Heat.EscortCoinPerDay;
+        }
+
+        /// <summary>
+        /// Standing the guard up, and standing it down (GDD §5.2.1).
+        /// </summary>
+        /// <remarks>
+        /// One line rather than an escorted variant of every trade route, because §5.2 describes
+        /// escorting as a posture beside fortifying and hiring guards rather than as a decision
+        /// per shipment - and because doubling the trade list would bury it.
+        /// </remarks>
+        private void AddDefence()
+        {
+            bool standing = EscortSystem.IsEscorting(World, PlayerPort);
+            var command = new SetEscort(!standing);
+
+            _actions.Add(new PlayerAction(
+                group: "Defence",
+                label: standing ? "Stand the escorts down" : "Stand the escorts up",
+                detail: standing
+                    ? "saves " + EscortBill() + " coin a day"
+                    : Balance.Heat.EscortCoinPerDay + " coin per convoy per day, "
+                      + Percent(1f - Balance.Heat.EscortRaidMultiplier) + " fewer raids",
+                command: command,
+                rejection: Validate(command)));
+        }
+
         private void AddTrade(EntityId only)
         {
             EntityId player = Port.Player(World);
@@ -542,6 +588,16 @@ namespace RTS.Sim.Session
             }
 
             _readouts.Add(new Readout("Unrest", report.Rung.ToString()));
+
+            // Beside Unrest, because §5.2 puts the two pressures against each other and a
+            // player who cannot see both at once cannot feel them pulling. Heat is shown with
+            // what is drawing it: §5.2.1 insists the pressure be readable, and a number with no
+            // stated cause is the arbitrary penalty Heat was written to replace.
+            _readouts.Add(new Readout("Heat", Percent(HeatSystem.Of(World, PlayerPort))));
+            _readouts.Add(new Readout("Escorts",
+                EscortSystem.IsEscorting(World, PlayerPort)
+                    ? "standing, " + EscortBill() + "/day"
+                    : "stood down"));
 
             for (int i = 0; i < Balance.Strata.Count && i < report.Grievance.Count; i++)
                 _readouts.Add(new Readout(Balance.Strata[i].Id, Percent(report.Grievance[i])));

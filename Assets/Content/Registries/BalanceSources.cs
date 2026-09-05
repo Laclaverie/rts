@@ -43,5 +43,11 @@ namespace RTS.Content.Registries
         /// had a crowd meant.
         /// </summary>
         public CsvTable Mob { get; set; }
+
+        /// <summary>
+        /// What wealth draws and what guarding it costs. Optional: a world without it uses
+        /// <see cref="HeatRules.Default"/>.
+        /// </summary>
+        public CsvTable Heat { get; set; }
     }
 }

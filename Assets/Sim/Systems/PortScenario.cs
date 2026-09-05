@@ -177,6 +177,13 @@ namespace RTS.Sim.Systems
                 world.Add(stratum, new Owner { Port = port });
             }
 
+            // Every port draws attention, including one whose content mentions no strata: Heat
+            // is read off wealth rather than off anger, and the two pressures are independent by
+            // design (§5.2).
+            EntityId attention = world.CreateEntity();
+            world.Add(attention, new Heat { Value = 0f, Drawn = 0f, DaysSinceRaid = 0 });
+            world.Add(attention, new Owner { Port = port });
+
             if (balance.Ladder.Count > 0)
             {
                 EntityId ladder = world.CreateEntity();

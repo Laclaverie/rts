@@ -1,0 +1,71 @@
+# Heat: what wealth draws, and what guarding it costs (GDD 5.2.1).
+#
+# Heat is the outward-facing half of 5.2's central dilemma. Unrest comes from inside and is
+# driven by how you got your wealth; Heat comes from outside and is driven by the wealth
+# itself. Their counters fight each other, and there is no stable equilibrium. That is the game.
+#
+# Nothing here is a wave or a timer. Heat is read off what the port has on show, and which
+# goods show is already in goods.csv as heat_per_unit: nothing for bread and timber, a little
+# for iron, most for spice. A port that ships grain is never raided. A port that ships spice is
+# raided because of what it chose to carry.
+#
+# held_weight             attention per unit of heat_per_unit sitting in a warehouse
+# at_sea_weight           attention per unit of heat_per_unit on the water. Higher, because
+#                         5.2.1 lists the fat convoy first among the things that are visible.
+# decay_per_day           how fast attention moves towards what is currently on show. Attention
+#                         is a reputation rather than an inventory: emptying the warehouse this
+#                         morning does not mean nobody remembers what was in it.
+# raid_chance_at_full     chance per convoy per day at Heat 1.00. Per convoy per day, so a long
+#                         crossing is more dangerous than a short one without anything having to
+#                         say so - Ironhold being five days out becomes a decision about risk as
+#                         well as about price and time.
+# raid_takes              the share of a cargo a raid takes. Less than all of it: 5.2.3 says a
+#                         single shock is always survivable, and a raid that emptied the hold
+#                         would make one bad roll the end of a route rather than a cost of
+#                         running one.
+# escort_coin_per_day     coin per day per convoy at sea while escorts stand. This one number is
+#                         the dilemma: coin spent here is coin not in the treasury on payday, an
+#                         unpaid wage feeds grievance the same day (5.2.3), and grievance is the
+#                         ladder. No tax system is needed for the two pressures to fight, because
+#                         coin was always what they were both competing for.
+# escort_raid_multiplier  what an escort multiplies the raid chance by. Must be below one or the
+#                         escort costs coin and buys nothing, which the loader refuses.
+#
+# The escort price and the raid rate were priced against each other, and the first pair was
+# wrong in a way that quietly deleted the mechanic. At three coin per convoy-day it cost about
+# fifteen coin to guard a crossing to Ironhold, against a cargo worth sixty and an expected loss
+# of about four. Escorting was four times worse than not escorting, so no player who did the
+# arithmetic would ever have stood the guard up, and 5.2's dilemma would have had one obviously
+# correct answer - which is the same as having no dilemma.
+#
+# One coin was then too cheap the other way: over forty days of guarded trading the port came out
+# RICHER than the unguarded one, because the raids it avoided cost more than the guard did. A
+# counter that pays for itself is not a dilemma either - it is the same single right answer with
+# the sign flipped.
+#
+# At two, a crossing to Ironhold costs ten coin to guard against an expected loss of about eight.
+# Escorting is slightly negative in coin and clearly positive in certainty, which makes it a
+# judgement rather than a calculation. The two costs are also in different currencies, which is
+# the part that matters: an escort takes coin every morning before wages, and a raid takes cargo
+# in one lump. One threatens payday, the other threatens the warehouse.
+#
+# The weights were measured rather than guessed, and the first set was wrong by fifty times.
+# A port running iron to Ironhold continuously - five units on the water, a few more in the
+# warehouse - draws about 0.45 raw, so a port doing the thing the game is about sits near half
+# heat and a port that never trades iron sits near nothing. At half heat an unescorted crossing
+# to Ironhold is raided about a quarter of the time and an escorted one about one time in
+# fourteen, which is a risk worth paying three coin a day to halve twice over.
+#
+# Note what is NOT reachable: spice and rum both have keep,0 in goods.csv, so the passing
+# merchant carries off every unit the day it appears and neither can ever be held. The two
+# highest-heat goods in the file are therefore invisible to this system today. That is a real
+# gap rather than a tuning choice - it is what a warehouse with a real storage cap (5.5) is for.
+
+key,value
+held_weight,0.5
+at_sea_weight,1.5
+decay_per_day,0.15
+raid_chance_at_full,0.30
+raid_takes,0.5
+escort_coin_per_day,2
+escort_raid_multiplier,0.25
