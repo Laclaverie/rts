@@ -302,6 +302,77 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
+        public void Only_your_own_buildings_are_yours_to_order_about()
+        {
+            // The world holds five cities' buildings in one store. Without an owner check the
+            // card offered an order for every one of them — sixty-six rows against the seven the
+            // player owns — so you could shut Ironhold's mine, and the trade routes were pushed
+            // off the bottom of the list where nobody would find them.
+            int mine = 0;
+            ComponentStore<BuildingState> buildings = _session.World.Store<BuildingState>();
+
+            for (int i = 0; i < buildings.Count; i++)
+                if (Port.BelongsTo(_session.World, buildings.Ids[i], _session.PlayerPort)) mine++;
+
+            Assert.That(buildings.Count, Is.GreaterThan(mine), "a one-city world proves nothing");
+
+            PlayerAction[] rows = _session.Actions()
+                .Where(a => a.Group == "Buildings").ToArray();
+
+            foreach (PlayerAction row in rows)
+            {
+                var mothball = row.Command as MothballBuilding;
+                if (mothball == null) continue;
+
+                Assert.That(Port.BelongsTo(_session.World, mothball.Building, _session.PlayerPort),
+                    Is.True, row.Label + " belongs to somebody else");
+            }
+        }
+
+        [Test]
+        public void A_specialist_you_post_is_one_of_yours()
+        {
+            foreach (PlayerAction row in _session.Actions().Where(a => a.Group == "Buildings"))
+            {
+                var assign = row.Command as AssignCrew;
+                if (assign == null || assign.Crew.IsNone) continue;
+
+                Assert.That(Port.BelongsTo(_session.World, assign.Crew, _session.PlayerPort),
+                    Is.True, "offering to post a stranger from another city");
+            }
+        }
+
+        [Test]
+        public void Posting_a_specialist_is_offered_only_when_there_is_one_to_post()
+        {
+            // Not left on screen disabled like the other refusals, because the reason a handler
+            // would give — "it is gone", for a crew member who does not exist — reads as a bug
+            // rather than as "everybody is already working".
+            Assert.That(_session.Actions().Any(a => a.Label == "post a specialist"), Is.False,
+                "every crew member starts posted");
+
+            EntityId building = _session.World.Store<BuildingState>().Ids[0];
+            PlayerAction recall = _session.Actions()
+                .First(a => a.Label == "recall a specialist");
+
+            _session.Submit(recall.Command);
+            _session.Step();
+
+            Assert.That(_session.Actions().Any(a => a.Label == "post a specialist"), Is.True,
+                "recalling somebody did not make posting them possible again");
+        }
+
+        [Test]
+        public void The_orders_card_is_a_list_a_person_can_read()
+        {
+            // Not a hard limit, a smoke alarm. The card had seventy-nine rows on it, of which
+            // sixty-six were other cities' buildings, and the effect was that the trade orders
+            // this phase exists for were unreachable by scrolling.
+            Assert.That(_session.Actions().Count, Is.LessThan(40),
+                string.Join(" | ", _session.Actions().Select(a => a.Label)));
+        }
+
+        [Test]
         public void Clicking_open_water_changes_nothing()
         {
             // A miss is a miss, not an error. A front end should not have to know what is

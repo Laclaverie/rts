@@ -71,13 +71,23 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
-        public void Every_building_can_be_shut()
+        public void Every_building_of_your_own_can_be_shut()
         {
+            // Of your own. This test used to count every building in the world, which was right
+            // when there was one port and quietly became wrong when there were five — and it
+            // stayed green the whole time, because it was asserting exactly what the bug did:
+            // the card offered an order for all thirty buildings, including a neighbour's mine.
             GameSession session = Session();
-            int buildings = session.World.Store<BuildingState>().Count;
+            EntityId home = session.PlayerPort;
 
+            ComponentStore<BuildingState> all = session.World.Store<BuildingState>();
+            int mine = 0;
+            for (int i = 0; i < all.Count; i++)
+                if (Port.BelongsTo(session.World, all.Ids[i], home)) mine++;
+
+            Assert.That(mine, Is.LessThan(all.Count), "a one-city world would prove nothing");
             Assert.That(session.Actions().Count(a => a.Command is MothballBuilding),
-                Is.EqualTo(buildings));
+                Is.EqualTo(mine));
         }
 
         [Test]
@@ -202,16 +212,30 @@ namespace RTS.Sim.Tests
             // and the longhouse want no staff, so posting a specialist there is refused.
             GameSession session = Session();
 
-            var posts = session.Actions()
+            // Somebody has to be idle before posting is offered at all, and at day one the
+            // scenario has put every crew member to work. Recall one, so the question this test
+            // is actually asking — *which* buildings offer it — has rows to look at.
+            session.Submit(session.Actions()
+                .First(a => a.Label == "recall a specialist").Command);
+            session.Step();
+
+            PlayerAction[] posts = session.Actions()
                 .Where(a => a.Command is AssignCrew && a.Label.StartsWith("post"))
                 .ToArray();
 
-            int producers = session.Balance.Buildings.Count(b => b.Staff > 0);
+            Assert.That(posts, Is.Not.Empty, "nobody is idle, so nothing can be posted");
 
-            Assert.That(posts, Is.Not.Empty);
-            Assert.That(posts.Length, Is.LessThanOrEqualTo(
-                session.World.Store<BuildingState>().Count));
-            Assert.That(producers, Is.GreaterThan(0));
+            ComponentStore<BuildingState> buildings = session.World.Store<BuildingState>();
+
+            foreach (PlayerAction post in posts)
+            {
+                var assign = (AssignCrew)post.Command;
+                BuildingState state = buildings.GetRef(assign.Building);
+
+                Assert.That(session.Balance.Buildings[state.DefinitionIndex].Staff,
+                    Is.GreaterThan(0),
+                    session.Balance.Buildings[state.DefinitionIndex].Id + " wants no staff");
+            }
         }
 
         [Test]
