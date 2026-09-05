@@ -251,6 +251,34 @@ namespace RTS.Sim.Tests
         }
 
         [Test]
+        public void Only_the_players_own_city_reaches_the_feed()
+        {
+            // One queue carries every city's day. Before the filter the player saw five paydays
+            // every morning and a neighbour's famine reported as their own — five times the
+            // noise and none of it true.
+            GameSession session = Session();
+            session.Step();
+
+            int paydays = session.Feed.Entries.Count(e => e.Text.StartsWith("paid"));
+
+            Assert.That(paydays, Is.EqualTo(1),
+                "one city pays wages here, not five: " + AllText(session));
+        }
+
+        [Test]
+        public void A_starved_workshop_says_so_every_day()
+        {
+            // The total shortfall is the case most worth hearing about, and the first version
+            // reported every shortfall except that one: a workshop with no iron produces nothing
+            // and returned early before it could report.
+            GameSession session = Session();
+            for (int i = 0; i < 12; i++) session.Step();
+
+            Assert.That(AllText(session), Does.Contain("ran short"),
+                "Saltmarsh runs out of iron and its workshop goes quiet");
+        }
+
+        [Test]
         public void The_feed_is_not_part_of_the_simulation()
         {
             // It reads the event stream and never writes the world, so a port played with the

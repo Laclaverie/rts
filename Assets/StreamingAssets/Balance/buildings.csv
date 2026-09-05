@@ -35,12 +35,31 @@
 # Upkeep is fixed and income is variable — that asymmetry is the whole failure model
 # (§5.2.3). These numbers are a first pass and exist to be tuned against the Phase 1 gate.
 
-id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day,staff
-longhouse,2,20,0,8,,0,0
-dock,3,30,10,4,,0,0
-warehouse,2,25,5,200,,0,0
-tavern,2,15,0,0,,0,0
-watchtower,3,15,10,0,,0,0
-farm,1,10,0,0,food,6,2
-sawmill,2,15,5,0,timber,5,1
-mine,4,20,10,0,iron,4,1
+# consumes  what the building eats each day to work, as good:units separated by ';'. Empty for
+#           an extractor: iron comes out of the ground and the ground asks for nothing back.
+#
+# THE WORKSHOP IS WHY THE CITIES NEED EACH OTHER.
+#
+# §5.3 lists rum's source as "workshop, import" and its sink as morale, recruiting and bribes.
+# It is the one good in the table that is made rather than dug or grown, and making it needs
+# three food and one iron a day for two rum.
+#
+# That is deliberately a good from two different cities. Saltmarsh grows food and has no mine at
+# all; Ironhold digs iron and barely feeds itself. Neither can run a workshop well alone, and the
+# rum is worth eight a unit against seven of inputs — a real profit, out of reach without a
+# route. This is the concrete form of "you cannot produce all by yourself", and it is why the
+# column exists before anything can be built.
+#
+# A building short of inputs does not stop; it works at the fraction it can supply. A workshop
+# with half the iron makes half the rum, which is a bad day rather than a broken city.
+#
+id,upkeep_coin,build_timber,build_iron,capacity,produces,output_per_day,staff,consumes
+longhouse,2,20,0,8,,0,0,
+dock,3,30,10,4,,0,0,
+warehouse,2,25,5,200,,0,0,
+tavern,2,15,0,0,,0,0,
+watchtower,3,15,10,0,,0,0,
+farm,1,10,0,0,food,6,2,
+sawmill,2,15,5,0,timber,5,1,
+mine,4,20,10,0,iron,4,1,
+workshop,1,20,15,0,rum,2,2,food:3;iron:1

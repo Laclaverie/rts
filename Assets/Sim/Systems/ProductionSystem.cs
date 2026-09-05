@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using RTS.Content.Registries;
 using RTS.Sim.Components;
 using RTS.Sim.Engine.Entities;
@@ -93,8 +94,82 @@ namespace RTS.Sim.Systems
                                * (1f + bonus) * unrest;
                 if (output <= 0f) continue;
 
+                // What it wanted, before finding out what it could get.
+                float wanted = output;
+                output *= TakeInputs(world, port, balance, definition, output, ctx);
+
+                // Reported before the early return, not after. A workshop with no iron at all
+                // produces nothing and is the case most worth hearing about — the first version
+                // of this reported every shortfall except the total one.
+                if (definition.IsTransformer && wanted - output > 0.01f)
+                {
+                    ctx.Events.Emit(new WorkshopShort
+                    {
+                        Port = port,
+                        DefinitionIndex = state.DefinitionIndex,
+                        Wanted = wanted,
+                        Made = output,
+                    });
+                }
+
+                if (output <= 0f) continue;
+
                 Port.Add(world, port, goodIndex, output);
             }
+        }
+
+        /// <summary>
+        /// Takes what a building needs to work, and reports what fraction it got.
+        /// </summary>
+        /// <remarks>
+        /// A building short of inputs does not stop: it works at the fraction it can supply, so
+        /// a workshop with half the iron makes half the rum. That is a bad day rather than a
+        /// broken city, and it matters because §5.2.3's cascade is built out of degrees — a
+        /// port that halted entirely the moment a route was late would be a cliff, not a
+        /// ratchet.
+        /// <para>
+        /// The scarcest input decides, and everything is taken in that proportion. Consuming
+        /// the full amount of one good while short of another would burn the food and produce
+        /// nothing, which is worse than not starting.
+        /// </para>
+        /// </remarks>
+        private static float TakeInputs(World world, EntityId port, BalanceTables balance,
+            Building definition, float output, in Context ctx)
+        {
+            if (!definition.IsTransformer) return 1f;
+            if (definition.OutputPerDay <= 0f) return 1f;
+
+            // Inputs are quoted per full day's output, so a building already slowed by staffing
+            // or condition needs proportionally less.
+            float scale = output / definition.OutputPerDay;
+            float possible = 1f;
+
+            for (int i = 0; i < definition.Consumes.Count; i++)
+            {
+                KeyValuePair<string, float> input = definition.Consumes[i];
+                int index = ConsumptionSystem.IndexOf(balance, input.Key);
+                if (index < 0) return 0f;
+
+                float need = input.Value * scale;
+                if (need <= 0f) continue;
+
+                float held = Port.UnitsOf(world, port, index);
+                float share = held >= need ? 1f : held / need;
+                if (share < possible) possible = share;
+            }
+
+            if (possible <= 0f) return 0f;
+
+            for (int i = 0; i < definition.Consumes.Count; i++)
+            {
+                KeyValuePair<string, float> input = definition.Consumes[i];
+                int index = ConsumptionSystem.IndexOf(balance, input.Key);
+                if (index < 0) continue;
+
+                Port.Take(world, port, index, input.Value * scale * possible);
+            }
+
+            return possible;
         }
 
         /// <summary>

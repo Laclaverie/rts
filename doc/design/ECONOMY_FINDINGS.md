@@ -486,3 +486,59 @@ and a sawmill now — a thing to sell, and fewer people to pay.
 → **The test that would have caught it now runs sixty days rather than ten**, and asserts that
 no city is deposed, emptied of people, or stripped of crew while nobody is doing anything to it.
 Ten days hid it completely.
+
+---
+
+## Workshops: the good no city can make alone
+
+Rum is the one good §5.3 lists as made rather than dug or grown — *"workshop, import"*. A
+workshop turns **three food and one iron into two rum** a day, and rum sells at eight against
+seven of inputs.
+
+The inputs come from two different cities on purpose. Saltmarsh grows food and has no mine;
+Ironhold digs iron and barely feeds itself. Neither can run a workshop for long alone, and
+Millrace has one too — so it wants Ironhold's iron for the same reason the player does, which
+makes it a competitor for it rather than only a supplier of timber.
+
+**A building short of inputs works at the fraction it can supply.** Half the iron makes half the
+rum. §5.2.3's cascade is built out of degrees, and a port that halted the moment a route was late
+would be a cliff rather than a ratchet. Inputs are taken in that same proportion — consuming a
+full day of food while short of iron would burn the bread and produce nothing, which is worse
+than not starting.
+
+### Two tuning passes, in opposite directions
+
+The workshop's upkeep was **three** before it was **one**. At three, an idle workshop cost 120
+coin over forty days — the entire margin — and `late-storm` collapsed. A single shock stopped
+being survivable, which §5.2.3 does not allow.
+
+Overcorrecting the other way, twelve starting iron made twelve days of rum worth 192 coin, and
+`three-correlated` *survived*. A windfall that large breaks the band from above just as surely.
+
+Settled at **upkeep 1, five starting iron**: the workshop earns well for five days, then stands
+idle at a cost the port can carry while the player decides what to do about it. Shutting it is a
+decision `MothballBuilding` already supports.
+
+### What the player sees
+
+```
+d5  paid 5 crew, 12 coin
+d5  sold 14 units for 33 coin
+d7  the workshop ran short — 0 made of 2
+d7  sold 16 units for 21 coin
+```
+
+Sales fall from thirty-three to twenty-one as the iron runs out, and the feed says why. **The
+total shortfall was silent in the first version** — a workshop with no iron produces nothing and
+returned early before it could report, so every shortfall was announced except the one that
+mattered.
+
+### The feed was showing every city's business
+
+Five paydays every morning, five sales, a neighbour's famine reported as the player's own. The
+unrest tally had been filtered by port when events gained one; the feed had not. It is now, and
+`EntityId.None` still keeps everything so single-port tests are unaffected.
+
+Whether another city's troubles should be visible at all is a real design question — §5.2.2 wants
+their crises to be the player's opportunities — but it belongs with stances and intelligence
+(§5.6) rather than leaking by accident.

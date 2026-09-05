@@ -40,14 +40,17 @@
 #
 # THE FIVE, AND WHY EACH IS WHAT IT IS
 #
-# Saltmarsh   the player. Two farms and a sawmill: food to spare, timber enough for its own
-#             repairs, no iron at all. It can feed the coast and cannot build anything demanding
-#             without buying metal.
+# Saltmarsh   the player. Three farms and a sawmill: food to spare, timber enough for its own
+#             repairs, no iron at all — and a workshop that needs iron every day to turn that
+#             spare food into rum. It can feed the coast and cannot distil without buying metal
+#             from somebody who has it.
 # Ironhold    two mines and one farm. The opposite problem, and the reason it exists: iron to
 #             sell and not enough bread to eat it with. The most obvious partner and the most
 #             dangerous dependency.
-# Millrace    sawmills and a farm. Timber for everyone else's construction, and the city that
-#             will matter most once buildings can consume goods rather than only produce them.
+# Millrace    sawmills, farms and a workshop. Timber for everyone else's construction, and the
+#             other city that distils — so it wants Ironhold's iron for exactly the same reason
+#             the player does, which makes it a competitor for it rather than only a supplier of
+#             something else.
 # Fairhaven   farms and a warehouse, the largest population. It eats most of what it grows, so
 #             its surplus is small and its labour is not — a place to hire from rather than buy
 #             from.
@@ -78,8 +81,8 @@
 # still two days there and two back.
 
 id,name,x,y,player,coin,commoners,crew,buildings,stock
-saltmarsh,Saltmarsh,0,0,true,150,12,laborer:3;sailor:1;guard:1,longhouse;farm;farm;farm;sawmill;warehouse,food:20;timber:10;iron:5
+saltmarsh,Saltmarsh,0,0,true,150,12,laborer:3;sailor:1;guard:1,longhouse;farm;farm;farm;sawmill;workshop;warehouse,food:20;timber:10;iron:5
 ironhold,Ironhold,21,9,false,180,10,laborer:3;sailor:2;guard:2,longhouse;mine;mine;farm;farm;warehouse,food:12;timber:6;iron:20
-millrace,Millrace,7,-11,false,140,11,laborer:4;sailor:1;guard:1,longhouse;sawmill;sawmill;farm;farm;warehouse,food:14;timber:22;iron:4
+millrace,Millrace,7,-11,false,140,11,laborer:4;sailor:1;guard:1,longhouse;sawmill;sawmill;farm;farm;workshop;warehouse,food:14;timber:22;iron:4
 fairhaven,Fairhaven,-5,-4,false,120,14,laborer:3;guard:1,longhouse;farm;farm;farm;sawmill;warehouse,food:26;timber:5;iron:3
 coldwater,Coldwater,-5,16,false,90,7,laborer:2;sailor:1;guard:1,longhouse;farm;farm;sawmill,food:9;timber:6;iron:2

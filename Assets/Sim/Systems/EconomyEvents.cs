@@ -105,6 +105,24 @@ namespace RTS.Sim.Systems
         public string Good;
     }
 
+    /// <summary>
+    /// A building made less than it could have, because it ran short of what it eats.
+    /// </summary>
+    /// <remarks>
+    /// The first symptom a player sees of a route they have not run yet, or one that did not
+    /// arrive. Worth a line of its own rather than being inferred from a smaller number in a
+    /// stock readout, because the cause is elsewhere and the readout does not say so.
+    /// </remarks>
+    public struct WorkshopShort
+    {
+        /// <summary>Which city this happened to. One world holds several (§5.3).</summary>
+        public EntityId Port;
+
+        public int DefinitionIndex;
+        public float Wanted;
+        public float Made;
+    }
+
     /// <summary>Surplus sold to a passing merchant. The port's only income for now.</summary>
     public struct GoodsSold
     {

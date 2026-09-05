@@ -33,6 +33,9 @@ namespace RTS.Content.Loading
 
         public int Line { get; }
 
+        /// <summary>Whether the table this row came from declares that column.</summary>
+        public bool HasColumn(string column) => _table.IndexOf(column) >= 0;
+
         public string this[string column]
         {
             get

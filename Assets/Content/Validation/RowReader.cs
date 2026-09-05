@@ -58,6 +58,17 @@ namespace RTS.Content.Validation
         }
 
         /// <summary>Raw text. Empty is allowed unless <paramref name="required"/>.</summary>
+        /// <summary>
+        /// Whether the table has this column at all.
+        /// </summary>
+        /// <remarks>
+        /// For the rare optional column. Most are required, and a missing one should be a loud
+        /// load failure naming the file — but a column added later that older tables have no
+        /// reason to carry is a different case, and asking is better than every one of them
+        /// growing an empty field.
+        /// </remarks>
+        public bool Has(string column) => _row.HasColumn(column);
+
         public string Text(string column, bool required = false)
         {
             try
