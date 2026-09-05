@@ -30,6 +30,7 @@ namespace RTS.Game.Boot
     {
         private GameSession _session;
         private PortPanel _panel;
+        private MapPanel _map;
 
         /// <summary>The running game, for anything else in the scene that needs to read it.</summary>
         public GameSession Session => _session;
@@ -74,7 +75,21 @@ namespace RTS.Game.Boot
             // The only line in the project where a frame rate meets the game, and it meets it
             // as an integer number of days. What the machine was doing between days cannot
             // reach the world, which is what makes a played session replay (§6.1, §7.1).
-            if (_session.Advance(UnityEngine.Time.deltaTime) > 0) _panel.Refresh();
+            if (_session.Advance(UnityEngine.Time.deltaTime) > 0)
+            {
+                _panel.Refresh();
+
+                // The map too, not only the ships. Cities do not move, but what is highlighted
+                // and what a marker says can change without anyone having clicked one, and a
+                // map that only redrew on its own clicks would drift out of step with the card
+                // beside it.
+                _map?.Refresh();
+            }
+
+            // Ships move between day boundaries; nothing else on screen does. What they move by
+            // is the clock's fraction of a day, computed in Sim — a frame reaches the drawing
+            // and never the world (§7.1).
+            _map?.Tick();
 
             ReadKeys();
         }
@@ -131,8 +146,17 @@ namespace RTS.Game.Boot
                 return;
             }
 
+            // The map first, so it lies behind: the port panel is a floating card over the
+            // world rather than a column beside it.
+            _map = new MapPanel(_session);
+            document.rootVisualElement.Add(_map.Build());
+
             _panel = new PortPanel(_session);
             document.rootVisualElement.Add(_panel.Build());
+
+            // Clicking a city changes which orders exist, so the card has to redraw. The map
+            // does not know what a panel is; it says that something changed.
+            _map.SelectionChanged = () => _panel.Refresh();
         }
 
         /// <summary>

@@ -38,6 +38,7 @@ namespace RTS.Sim.Session
     {
         private readonly List<Readout> _readouts = new List<Readout>();
         private readonly List<PlayerAction> _actions = new List<PlayerAction>();
+        private readonly List<Readout> _selection = new List<Readout>();
         private readonly ICommandHandler[] _handlers;
 
         private GameSession(ReplayRun run, Clock clock, BalanceTables balance,
@@ -47,10 +48,26 @@ namespace RTS.Sim.Session
             Clock = clock;
             Balance = balance;
             _handlers = handlers;
+
+            // Your own city, because that is what a player is looking at before they look
+            // anywhere else.
+            Selected = Port.Player(run.World);
         }
 
         /// <summary>What has happened, for a player who looked away (§5.1).</summary>
         public EventFeed Feed { get; } = new EventFeed();
+
+        /// <summary>
+        /// The city the player is looking at. Their own until they click another.
+        /// </summary>
+        /// <remarks>
+        /// Session state rather than panel state, for the same reason the readouts and the
+        /// orders are: what a selection <em>means</em> — which orders it offers, what it is
+        /// legal to select — is game behaviour, and a front end that owned it would be a second
+        /// place the rules live (ARCHITECTURE §2.2). It also means selection is testable
+        /// headlessly, and survives a front end being replaced.
+        /// </remarks>
+        public EntityId Selected { get; private set; }
 
         public ReplayRun Run { get; }
 
@@ -196,16 +213,54 @@ namespace RTS.Sim.Session
         }
 
         /// <summary>
-        /// Everything the player could do this moment, enabled or not.
+        /// Looks at a city. Anything that is not one is ignored.
         /// </summary>
         /// <remarks>
-        /// Disabled actions are listed rather than hidden. A control that appears only when it
-        /// would work leaves the player unable to learn that it exists, and §3.2 is betting on a
-        /// game that can be understood by thinking about it rather than by discovering it.
+        /// Ignored rather than rejected: a click that lands on empty water is a miss, not an
+        /// error, and a front end should not have to know what is selectable before it asks.
+        /// </remarks>
+        /// <returns>Whether the selection changed, so a caller can avoid a needless redraw.</returns>
+        public bool Select(EntityId port)
+        {
+            if (port == Selected) return false;
+            if (!World.IsAlive(port) || !World.Has<PortState>(port)) return false;
+
+            Selected = port;
+            return true;
+        }
+
+        /// <summary>Looks back at your own city.</summary>
+        public void SelectHome() => Select(PlayerPort);
+
+        /// <summary>
+        /// What can be seen of the selected city from outside it (§5.6).
+        /// </summary>
+        /// <remarks>
+        /// Its name and how far away it is, and nothing else. §5.6 makes a neighbour's reserves
+        /// and unrest something you buy with a stance or a scout, so a panel that printed them
+        /// because the world happens to be one process would be giving the intelligence game
+        /// away. What the player learns here is what the harbour master would tell anyone: who
+        /// lives there, and how long the crossing takes.
         /// <para>
-        /// Rebuilt into the same buffer each call, like the readouts.
+        /// Empty for your own city, which has <see cref="Readouts"/> instead.
         /// </para>
         /// </remarks>
+        public IReadOnlyList<Readout> SelectionReadouts()
+        {
+            _selection.Clear();
+            if (Selected == PlayerPort || !World.Has<PortState>(Selected)) return _selection;
+
+            if (!World.TryGet(Selected, out PortState state)) return _selection;
+
+            PortDefinition definition = Balance.Ports[state.DefinitionIndex];
+            int days = ConvoySystem.DaysBetween(World, Balance, PlayerPort, Selected);
+
+            _selection.Add(new Readout("City", definition.Name));
+            _selection.Add(new Readout("Crossing", days == 1 ? "1 day" : days + " days"));
+
+            return _selection;
+        }
+
         /// <summary>How much one shipment carries.</summary>
         /// <remarks>
         /// Five, which is a workshop's iron for five days and small enough that a run to
@@ -213,13 +268,38 @@ namespace RTS.Sim.Session
         /// </remarks>
         public const float TradeParcel = 5f;
 
+        /// <summary>
+        /// Everything the player could do this moment, enabled or not.
+        /// </summary>
+        /// <remarks>
+        /// Disabled actions are listed rather than hidden. A control that appears only when it
+        /// would work leaves the player unable to learn that it exists, and §3.2 is betting on a
+        /// game that can be understood by thinking about it rather than by discovering it.
+        /// <para>
+        /// Scoped to <see cref="Selected"/>. Selecting your own city offers everything you can
+        /// do at home and a route to every neighbour; selecting a neighbour offers the routes to
+        /// that one city. This is what makes the map worth clicking — the alternative is a
+        /// single list of every deal with everybody, which grows with the world and answers a
+        /// question nobody asked.
+        /// </para>
+        /// <para>
+        /// Rebuilt into the same buffer each call, like the readouts.
+        /// </para>
+        /// </remarks>
         public IReadOnlyList<PlayerAction> Actions()
         {
             _actions.Clear();
 
-            AddRepression();
-            AddBuildings();
-            AddTrade();
+            if (Selected == PlayerPort)
+            {
+                AddRepression();
+                AddBuildings();
+                AddTrade(EntityId.None);
+            }
+            else
+            {
+                AddTrade(Selected);
+            }
 
             return _actions;
         }
@@ -307,7 +387,10 @@ namespace RTS.Sim.Session
         /// refused teaches the player nothing except to distrust the list.
         /// </para>
         /// </remarks>
-        private void AddTrade()
+        /// <param name="only">
+        /// One city, or <see cref="EntityId.None"/> for every neighbour.
+        /// </param>
+        private void AddTrade(EntityId only)
         {
             EntityId player = Port.Player(World);
             ComponentStore<PortState> ports = World.Store<PortState>();
@@ -316,6 +399,7 @@ namespace RTS.Sim.Session
             {
                 EntityId city = ports.Ids[i];
                 if (city == player) continue;
+                if (!only.IsNone && city != only) continue;
 
                 string name = Balance.Ports[ports.Values[i].DefinitionIndex].Name;
                 int days = ConvoySystem.DaysBetween(World, Balance, player, city);

@@ -25,6 +25,7 @@ namespace RTS.Game.Presentation
         private readonly GameSession _session;
         private readonly Label _day = new Label();
         private readonly VisualElement _readouts = new VisualElement();
+        private readonly VisualElement _selection = new VisualElement();
         private readonly VisualElement _feed = new VisualElement();
         private readonly ScrollView _feedScroll = new ScrollView();
         private readonly VisualElement _orders = new VisualElement();
@@ -50,6 +51,7 @@ namespace RTS.Game.Presentation
 
             Root.Add(Controls());
             Root.Add(_readouts);
+            Root.Add(_selection);
             Root.Add(Orders());
             Root.Add(Feed());
 
@@ -113,6 +115,7 @@ namespace RTS.Game.Presentation
             _readouts.Clear();
             foreach (Readout readout in readouts) _readouts.Add(RowFor(readout));
 
+            RefreshSelection();
             RefreshOrders();
             RefreshFeed();
         }
@@ -140,6 +143,34 @@ namespace RTS.Game.Presentation
 
             section.Add(_orders);
             return section;
+        }
+
+        /// <summary>
+        /// What is known about the city the player has clicked, which for a neighbour is very
+        /// little on purpose (§5.6).
+        /// </summary>
+        /// <remarks>
+        /// Empty when the player is looking at their own city, because the readouts above are
+        /// already about it. The section disappears rather than showing a heading over nothing.
+        /// </remarks>
+        private void RefreshSelection()
+        {
+            _selection.Clear();
+
+            IReadOnlyList<Readout> selected = _session.SelectionReadouts();
+            if (selected.Count == 0)
+            {
+                _selection.style.display = DisplayStyle.None;
+                return;
+            }
+
+            _selection.style.display = DisplayStyle.Flex;
+            _selection.style.marginTop = 6;
+            _selection.style.borderTopWidth = 1;
+            _selection.style.borderTopColor = new Color(1f, 1f, 1f, 0.2f);
+            _selection.style.paddingTop = 4;
+
+            foreach (Readout readout in selected) _selection.Add(RowFor(readout));
         }
 
         private void RefreshOrders()

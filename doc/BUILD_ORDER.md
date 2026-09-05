@@ -192,6 +192,17 @@ optimising anything; dozens may simply be enough.
 
 **Not now:** hundreds of agents. Scale only after the small version is proven fun.
 
+**The first bullet is done.** Five cities sit where `ports.csv` puts them, a lane appears when
+a route is committed, and a ship moves along it between day boundaries. The positions and the
+movement are `MapModel` in `Sim`, tested headlessly — where a city is drawn and where a ship
+has got to are questions with right answers, and an answer only a running editor can check is
+one nobody checks. `MapPanel` decides colours and which way up the screen counts, and nothing
+else.
+
+Selection went into `GameSession` for the same reason: clicking a neighbour offers the routes
+to that one city, and what a selection *means* is game behaviour. The mob is the rest of the
+phase.
+
 ---
 
 ### Phase 6 — Kill test

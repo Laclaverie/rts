@@ -91,7 +91,8 @@ namespace RTS.Game.Tests
 
             VisualElement root = panel.Build();
 
-            Assert.That(root.childCount, Is.EqualTo(4), "controls, readouts, orders, feed");
+            Assert.That(root.childCount, Is.EqualTo(5),
+                "controls, readouts, selection, orders, feed");
 
             VisualElement readouts = root[1];
             Assert.That(readouts.childCount, Is.EqualTo(session.Readouts().Count));
