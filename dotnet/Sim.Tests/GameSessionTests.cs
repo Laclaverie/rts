@@ -37,6 +37,7 @@ namespace RTS.Sim.Tests
                 Strata = Table(BalanceTables.StrataFile),
                 Ladder = Table(BalanceTables.LadderFile),
                 Repression = Table(BalanceTables.RepressionFile),
+                Ports = Table(BalanceTables.PortsFile),
             }, report);
 
             report.ThrowIfInvalid();
@@ -50,7 +51,7 @@ namespace RTS.Sim.Tests
                 Balance(),
                 new Clock(secondsPerDay, new[] { 1, 2, 4 }),
                 PipelineCsv(),
-                PortScenario.Default());
+                WorldScenario.FromContent(Balance()));
 
         // ------------------------------------------------------------------ time
 

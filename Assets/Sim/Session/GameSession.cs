@@ -82,12 +82,15 @@ namespace RTS.Sim.Session
         /// should leak in here (§5.2).
         /// </remarks>
         public static GameSession Start(BalanceTables balance, Clock clock, string pipelineCsv,
-            PortScenario scenario, ulong seed = 1)
+            World world = null, ulong seed = 1)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             if (clock == null) throw new ArgumentNullException(nameof(clock));
             if (pipelineCsv == null) throw new ArgumentNullException(nameof(pipelineCsv));
-            if (scenario == null) throw new ArgumentNullException(nameof(scenario));
+
+            // The whole map by default. A caller with its own world — a test exercising one
+            // city, a scenario replaying a recorded run — passes it instead.
+            world = world ?? WorldScenario.FromContent(balance);
 
             ICommandHandler[] handlers = PlayerCommands();
 
@@ -95,7 +98,7 @@ namespace RTS.Sim.Session
                 seed,
                 handlers,
                 dispatcher => ScenarioRunner.BuildPipeline(pipelineCsv, dispatcher),
-                scenario.Build(balance),
+                world,
                 balance);
 
             return new GameSession(run, clock, balance, handlers);

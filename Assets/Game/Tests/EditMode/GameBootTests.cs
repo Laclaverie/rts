@@ -38,6 +38,7 @@ namespace RTS.Game.Tests
                 Strata = BalanceFiles.ReadCsv(BalanceTables.StrataFile),
                 Ladder = BalanceFiles.ReadCsv(BalanceTables.LadderFile),
                 Repression = BalanceFiles.ReadCsv(BalanceTables.RepressionFile),
+                Ports = BalanceFiles.ReadCsv(BalanceTables.PortsFile),
             }, report);
 
             Clock clock = Clock.Load(ConfigFiles.ReadCsv(ConfigFiles.ClockFile), report);

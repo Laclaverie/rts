@@ -169,8 +169,15 @@ The economic game arrives.
 to fund escorts and feels the Unrest bill arrive. If the dilemma isn't felt, the design's
 core tension isn't real yet, and more content won't add it.
 
-**Not now:** more than one neighbour. Six to eight is the target, but the second one adds
-nothing the first hasn't already proven.
+**Revised: five cities, not one neighbour.** The original note said a second neighbour adds
+nothing the first has not proven, and that is right about neighbours as *threats* — one raider
+teaches what two do. It does not transfer to neighbours as an *economy*. With a single partner,
+trade is one bilateral relationship and there is no differential to find; "you cannot produce
+all by yourself" needs a web before it means anything. Five cities are in, each running the same
+systems, each leaning towards something and short of something else.
+
+**Not now:** neighbours as diplomatic or military actors. Stances, Shadow and raids still arrive
+one at a time.
 
 ---
 

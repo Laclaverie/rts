@@ -100,14 +100,15 @@ internal static class Program
                 "pipeline.csv"),
             EconomySystems());
 
-        PortScenario scenario = PortScenario.Default();
-        if (options.StartingCoin.HasValue) scenario.StartingCoin = options.StartingCoin.Value;
 
         var events = new EventQueue();
         var rng = new RTS.Sim.Engine.Randomness.Rng(options.Seed);
-        World world = scenario.Build(balance);
+        World world = WorldScenario.FromContent(balance, options.StartingCoin);
 
-        Console.WriteLine($"seed {options.Seed}, {options.Days} days, starting coin {scenario.StartingCoin}");
+        int startingCoin = Port.Treasury(world, Port.Player(world)).Coin;
+        Console.WriteLine(
+            $"seed {options.Seed}, {options.Days} days, {Port.Count(world)} cities, " +
+            $"starting coin {startingCoin}");
         Console.WriteLine(PortReport.Header(balance));
         Console.WriteLine(PortReport.Separator(balance));
         Console.WriteLine(PortReport.Of(world, balance, day: 0).ToRow());
@@ -170,6 +171,7 @@ internal static class Program
             Strata = Read(directory, BalanceTables.StrataFile),
             Ladder = Read(directory, BalanceTables.LadderFile),
             Repression = Read(directory, BalanceTables.RepressionFile),
+            Ports = Read(directory, BalanceTables.PortsFile),
         }, report);
 
         // Loud, and before anything runs. A sim started on invalid content produces numbers

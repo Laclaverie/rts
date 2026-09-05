@@ -49,6 +49,7 @@ namespace RTS.Sim.Tests
                 Strata = Table(BalanceTables.StrataFile),
                 Ladder = Table(BalanceTables.LadderFile),
                 Repression = Table(BalanceTables.RepressionFile),
+                Ports = Table(BalanceTables.PortsFile),
             }, report);
 
             report.ThrowIfInvalid();

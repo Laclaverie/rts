@@ -21,8 +21,15 @@ namespace RTS.Sim.Systems
     /// </remarks>
     public static class WorldScenario
     {
-        /// <summary>Builds every city the content describes.</summary>
-        public static World FromContent(BalanceTables balance)
+        /// <summary>
+        /// Builds every city the content describes.
+        /// </summary>
+        /// <param name="playerCoin">
+        /// Overrides the player city's starting reserves. The corpus sweeps this to find the
+        /// band where one shock is survivable and three are not (§5.2.3), and it is the
+        /// player's slack that the band is about — a neighbour's reserves are its own affair.
+        /// </param>
+        public static World FromContent(BalanceTables balance, int? playerCoin = null)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
 
@@ -37,7 +44,12 @@ namespace RTS.Sim.Systems
             for (int i = 0; i < balance.Ports.Count; i++)
             {
                 PortDefinition definition = balance.Ports[i];
-                Scenario(definition).BuildInto(world, balance, i, definition.IsPlayer);
+                PortScenario scenario = Scenario(definition);
+
+                if (definition.IsPlayer && playerCoin.HasValue)
+                    scenario.StartingCoin = playerCoin.Value;
+
+                scenario.BuildInto(world, balance, i, definition.IsPlayer);
             }
 
             return world;
