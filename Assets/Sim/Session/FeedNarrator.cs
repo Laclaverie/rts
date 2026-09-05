@@ -149,6 +149,23 @@ namespace RTS.Sim.Session
                 return true;
             }
 
+            if (envelope.TryGet(out ConvoyDispatched sent))
+            {
+                importance = FeedImportance.Notable;
+                text = $"sent {sent.Units:0.#} {Good(balance, sent.GoodIndex)} — {sent.Days} days out";
+                return true;
+            }
+
+            if (envelope.TryGet(out ConvoyArrived landed))
+            {
+                importance = FeedImportance.Notable;
+                text = landed.Coin > 0
+                    ? $"a convoy arrived — {landed.Units:0.#} {Good(balance, landed.GoodIndex)} " +
+                      $"delivered, {landed.Coin} coin paid"
+                    : $"a convoy arrived — {landed.Units:0.#} {Good(balance, landed.GoodIndex)}";
+                return true;
+            }
+
             if (envelope.TryGet(out WorkshopShort short_))
             {
                 importance = FeedImportance.Alarming;
@@ -215,6 +232,8 @@ namespace RTS.Sim.Session
             if (envelope.TryGet(out WorkshopShort q)) return q.Port;
             if (envelope.TryGet(out LabourAllocated r)) return r.Port;
             if (envelope.TryGet(out CrewAssigned s)) return s.Port;
+            if (envelope.TryGet(out ConvoyDispatched t)) return t.Port;
+            if (envelope.TryGet(out ConvoyArrived u)) return u.Port;
 
             return EntityId.None;
         }
@@ -247,6 +266,10 @@ namespace RTS.Sim.Session
                     return $"put down the riot, {suppress.Harshness.ToString().ToLowerInvariant()}";
                 case MothballBuilding mothball:
                     return mothball.Mothballed ? "shut a building" : "reopen a building";
+                case BuyFrom _:
+                    return "buy from a neighbour";
+                case SellTo _:
+                    return "sell to a neighbour";
                 case AssignCrew _:
                     return "move a crew member";
                 case Shock shock:
@@ -280,6 +303,11 @@ namespace RTS.Sim.Session
                 default: return kind.ToString();
             }
         }
+
+        private static string Good(BalanceTables balance, int index) =>
+            balance != null && index >= 0 && index < balance.Goods.Count
+                ? balance.Goods[index].Id
+                : "cargo";
 
         private static string Role(BalanceTables balance, int index) =>
             balance != null && index >= 0 && index < balance.CrewRoles.Count

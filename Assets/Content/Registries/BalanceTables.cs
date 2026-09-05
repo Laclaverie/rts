@@ -133,7 +133,13 @@ namespace RTS.Content.Registries
             heatPerUnit: row.Float("heat_per_unit", 0f, 1f),
             supply: row.Enum<GoodSupply>("supply"),
             keep: row.Float("keep", 0f, 100000f),
-            sellPrice: row.Int("sell_price", min: 0));
+            sellPrice: row.Int("sell_price", min: 0),
+            // Optional, and one when absent: a table that does not mention the merchant's
+            // appetite is describing a merchant who takes everything, which is what every
+            // fixture written before this column meant.
+            merchantShare: row.Has("merchant_share")
+                ? row.Float("merchant_share", 0f, 1f)
+                : 1f);
 
         private static CrewRole ReadCrewRole(RowReader row) => new CrewRole(
             id: row.Id(),
