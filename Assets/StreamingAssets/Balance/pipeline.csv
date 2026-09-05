@@ -42,6 +42,7 @@
 # this, which is a design decision and belongs in this file.
 
 phase,order,system,enabled
+DayBoundary,8,Convoy,true
 DayBoundary,10,Consumption,true
 DayBoundary,20,Wages,true
 DayBoundary,30,Upkeep,true

@@ -40,7 +40,6 @@ namespace RTS.Sim.Systems
         /// point of §5.5's buildings is that what the port makes is a decision.
         /// </remarks>
         public const string BuyableGood = "food";
-
         public void Run(World world, in Context ctx)
         {
             BalanceTables balance = ctx.Balance;
@@ -72,8 +71,15 @@ namespace RTS.Sim.Systems
                 float above = held - good.Keep;
                 if (above < 1f) continue;
 
-                // Whole units only. Coin is an integer, and half a barrel is not a sale.
-                int sellable = (int)above;
+                // Whole units only, and only as much of them as this merchant carries. A
+                // merchant who bought the entire surplus every day left no city with anything
+                // to spare, and inter-city trade was impossible: Ironhold sat at exactly its
+                // iron reserve for ever, so nobody could buy iron from it however badly they
+                // needed it. What the merchant leaves is the export a route carries, which
+                // makes it what §5.3 says it is — a floor beneath real trade, not a better
+                // version of it.
+                int sellable = (int)(above * good.MerchantShare);
+                if (sellable < 1) continue;
 
                 Port.Take(world, port, goodIndex, sellable);
                 earned += sellable * good.SellPrice;

@@ -54,11 +54,14 @@ namespace RTS.Sim.Tests
 
             Assert.That(pipeline.Systems(Phase.Tick), Is.Empty, "nothing runs per-tick yet");
 
-            // The order is design, not incidental: crew eat yesterday's stock before today's
-            // output lands, and wages are paid before buildings are maintained (§5.2.3).
+            // The order is design, not incidental: convoys land before anything eats, so bread
+            // that arrives this morning is edible this morning; crew eat yesterday's stock
+            // before today's output lands; wages are paid before buildings are maintained
+            // (§5.2.3).
             Assert.That(pipeline.Systems(Phase.DayBoundary).Select(s => s.Id),
                 Is.EqualTo(new[]
                 {
+                    ConvoySystem.SystemId,
                     ConsumptionSystem.SystemId,
                     WagesSystem.SystemId,
                     UpkeepSystem.SystemId,

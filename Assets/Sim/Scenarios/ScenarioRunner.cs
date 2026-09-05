@@ -55,11 +55,7 @@ namespace RTS.Sim.Scenarios
 
             ReplayRun run = ReplayRun.Start(
                 scenario.Seed,
-                new ICommandHandler[]
-                {
-                    new ShockHandler(), new SuppressRiotHandler(),
-                    new AssignCrewHandler(), new MothballBuildingHandler(),
-                },
+                Session.GameSession.PlayerCommands(),
                 dispatcher => BuildPipeline(pipelineCsv, dispatcher),
                 WorldScenario.FromContent(balance, scenario.StartingCoin),
                 balance);
@@ -99,7 +95,7 @@ namespace RTS.Sim.Scenarios
         /// </remarks>
         public static List<ISystem> AllSystems() => new List<ISystem>
         {
-            new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
+            new ConvoySystem(), new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
             new DesertionSystem(), new LabourSystem(), new ProductionSystem(),
             new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
         };

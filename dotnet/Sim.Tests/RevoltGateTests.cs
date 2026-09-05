@@ -10,6 +10,7 @@ using RTS.Sim.Engine.Entities;
 using RTS.Sim.Engine.Pipeline;
 using RTS.Sim.Engine.State;
 using RTS.Sim.Scenarios;
+using RTS.Sim.Session;
 using RTS.Sim.Systems;
 
 namespace RTS.Sim.Tests
@@ -71,11 +72,7 @@ namespace RTS.Sim.Tests
 
                 Replay = ReplayRun.Start(
                     seed: 1,
-                    new ICommandHandler[]
-                    {
-                        new ShockHandler(), new SuppressRiotHandler(),
-                        new AssignCrewHandler(), new MothballBuildingHandler(),
-                    },
+                    GameSession.PlayerCommands(),
                     dispatcher => ScenarioRunner.BuildPipeline(
                         File.ReadAllText(BalancePath("pipeline.csv")), dispatcher),
                     scenario.Build(Tables),

@@ -114,6 +114,8 @@ namespace RTS.Sim.Session
             new SuppressRiotHandler(),
             new AssignCrewHandler(),
             new MothballBuildingHandler(),
+            new BuyFromHandler(),
+            new SellToHandler(),
         };
 
         /// <summary>
@@ -204,12 +206,20 @@ namespace RTS.Sim.Session
         /// Rebuilt into the same buffer each call, like the readouts.
         /// </para>
         /// </remarks>
+        /// <summary>How much one shipment carries.</summary>
+        /// <remarks>
+        /// Five, which is a workshop's iron for five days and small enough that a run to
+        /// Ironhold is a decision the player makes more than once.
+        /// </remarks>
+        public const float TradeParcel = 5f;
+
         public IReadOnlyList<PlayerAction> Actions()
         {
             _actions.Clear();
 
             AddRepression();
             AddBuildings();
+            AddTrade();
 
             return _actions;
         }
@@ -281,6 +291,62 @@ namespace RTS.Sim.Session
                     detail: detail,
                     command: recall,
                     rejection: Validate(recall)));
+            }
+        }
+
+        /// <summary>
+        /// Buying from and selling to the other cities (GDD §5.1, §5.3).
+        /// </summary>
+        /// <remarks>
+        /// A fixed parcel rather than a quantity the player types, because the decision §5.1
+        /// wants is <em>which city, and is it worth the wait</em> — not how many barrels. The
+        /// days are on the button for the same reason the repression price is: a commitment
+        /// measured in days is only a commitment if you can see how many.
+        /// <para>
+        /// Only goods the neighbour can actually spare are offered. Listing a buy that will be
+        /// refused teaches the player nothing except to distrust the list.
+        /// </para>
+        /// </remarks>
+        private void AddTrade()
+        {
+            EntityId player = Port.Player(World);
+            ComponentStore<PortState> ports = World.Store<PortState>();
+
+            for (int i = 0; i < ports.Count; i++)
+            {
+                EntityId city = ports.Ids[i];
+                if (city == player) continue;
+
+                string name = Balance.Ports[ports.Values[i].DefinitionIndex].Name;
+                int days = ConvoySystem.DaysBetween(World, Balance, player, city);
+
+                for (int g = 0; g < Balance.Goods.Count; g++)
+                {
+                    Good good = Balance.Goods[g];
+
+                    var buy = new BuyFrom(city, g, TradeParcel);
+                    if (Validate(buy) == CommandRejection.None)
+                    {
+                        _actions.Add(new PlayerAction(
+                            group: "Trade",
+                            label: $"Buy {TradeParcel:0.#} {good.Id} from {name}",
+                            detail: $"{BuyFromHandler.Cost(good, TradeParcel)} coin now, " +
+                                    $"{days} days out",
+                            command: buy,
+                            rejection: CommandRejection.None));
+                    }
+
+                    var sell = new SellTo(city, g, TradeParcel);
+                    if (Validate(sell) == CommandRejection.None)
+                    {
+                        _actions.Add(new PlayerAction(
+                            group: "Trade",
+                            label: $"Sell {TradeParcel:0.#} {good.Id} to {name}",
+                            detail: $"{(int)(good.SellPrice * TradeParcel)} coin in {days} days",
+                            command: sell,
+                            rejection: CommandRejection.None));
+                    }
+                }
             }
         }
 

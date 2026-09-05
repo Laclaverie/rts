@@ -52,15 +52,35 @@
 # the shape column: three-correlated used to end at Deposition and now ends Collapsed but Calm —
 # the port is a ruin with no crew left, and with nobody to be angry the ladder walks back down.
 # That is a known gap in the population model, recorded in RevoltGateTests and §A.
+#
+# All ten digests moved again with routes, and once again NOTHING ELSE MOVED: every state, rung
+# and coin value is identical to the run before it, to the unit. Two things changed the hash and
+# neither changed the player's economy. The world gained a Convoy store, which the digest covers
+# whether or not a convoy exists. And iron gained a merchant_share of a half, so Ironhold now
+# holds a growing stock of it instead of selling every bar the day it is mined.
+#
+# That second one is the change that made routes possible at all. The passing merchant bought
+# every surplus unit every day, so every city sat at exactly its keep for ever and had nothing
+# left to sell anyone — BuyFrom offers only what a city can spare above its reserve, and no city
+# could ever spare anything. Ironhold mines iron and Saltmarsh's workshop eats it, and no route
+# between them could carry a single unit.
+#
+# It is deliberately a per-good column rather than a global rate. A global one was tried first
+# and cost the player about fifty coin over forty days — undisturbed ended at 85 rather than 138,
+# one-storm and one-theft dropped from Healthy to Struggling, and late-storm finished on 4 coin
+# and Grumbling. That is a tax on the player's own income to solve another city's supply problem,
+# and it ate most of the margin the reserve band is measured against. On iron alone it costs
+# nothing at all: Saltmarsh has no mine.
+#
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,6d8e79df7b05d047
-one-storm,1,150,40,10:Storm:0.30,ad9768ac09f73262
-one-theft,1,150,40,10:Theft:100,fda4c9cc7b2016dc
-one-harvest-failure,1,150,40,10:HarvestFailure:8,62e22569f92b1748
-one-desertion,1,150,40,10:Desertion:2,0037e3b87c05568f
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,9c1031dcff67ece3
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c9e6c34de0f805f7
-lean-start,1,90,30,,af9a5fe4bcb66e4f
-long-quiet-run,7,150,120,,00654a1c08f85c2d
-late-storm,3,150,60,50:Storm:0.40,d1eccf6dc86bbe81
+undisturbed,1,150,40,,a858ad74a990f1eb
+one-storm,1,150,40,10:Storm:0.30,0649acef0420fa0e
+one-theft,1,150,40,10:Theft:100,2783d99c76981d50
+one-harvest-failure,1,150,40,10:HarvestFailure:8,3f73f52323bf4fd4
+one-desertion,1,150,40,10:Desertion:2,bbafed4cc1790ac3
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,6c29a2e946375973
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c0285089dc4849f3
+lean-start,1,90,30,,c4e228f370994712
+long-quiet-run,7,150,120,,17bfccd066d3a0a9
+late-storm,3,150,60,50:Storm:0.40,5264499fb4b785e1

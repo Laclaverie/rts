@@ -16,6 +16,18 @@
 #                 harvest, timber and iron against a repair you have not needed yet.
 # sell_price      what a passing merchant pays per unit, which is less than base_price
 #                 because they have to carry it somewhere and sell it again.
+# merchant_share  how much of a day's surplus that merchant will actually take, 0..1.
+#                 Optional; one when the column is absent.
+#
+# merchant_share is why routes are possible at all. The merchant used to buy every surplus
+# unit every day, so every city sat at exactly its keep for ever and had nothing left to sell
+# anyone — Ironhold mines iron, Saltmarsh's workshop eats it, and no route between them could
+# carry a single unit. At a half, a mining city settles at its reserve plus roughly twice its
+# daily output, and that stock is the export.
+#
+# It is a half on iron alone, and one on everything else, because a global rate would be a tax
+# on the player's own income to solve another city's supply problem. Saltmarsh has no mine, so
+# this costs it nothing: every recorded scenario's coin is unchanged to the unit.
 #
 # The sell prices are the whole balance of Phase 1. A port at full health earns about 31
 # coin a day against 29 of wages and upkeep — marginally profitable, so reserves grow
@@ -23,9 +35,9 @@
 # shock is survivable, correlated shocks cascade" (§5.2.3) a question with an answer rather
 # than a foregone conclusion in either direction.
 
-id,base_price,volatility,heat_per_unit,supply,keep,sell_price
-food,4,0.25,0.00,Local,20,1
-timber,6,0.20,0.00,Local,20,2
-iron,12,0.30,0.05,Local,10,4
-rum,15,0.35,0.10,ImportOnly,0,8
-spice,40,0.50,0.30,ImportOnly,0,20
+id,base_price,volatility,heat_per_unit,supply,keep,sell_price,merchant_share
+food,4,0.25,0.00,Local,20,1,1.0
+timber,6,0.20,0.00,Local,20,2,1.0
+iron,12,0.30,0.05,Local,10,4,0.5
+rum,15,0.35,0.10,ImportOnly,0,8,1.0
+spice,40,0.50,0.30,ImportOnly,0,20,1.0

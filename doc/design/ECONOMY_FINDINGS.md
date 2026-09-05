@@ -542,3 +542,64 @@ unrest tally had been filtered by port when events gained one; the feed had not.
 Whether another city's troubles should be visible at all is a real design question — §5.2.2 wants
 their crises to be the player's opportunities — but it belongs with stances and intelligence
 (§5.6) rather than leaking by accident.
+
+## Phase 4 — routes
+
+### The passing merchant made trade impossible
+
+The finding of the phase, and it was invisible until the first route was run. `BuyFrom` offers
+only what a city can spare above its `keep` — a city that starved to fill an order is a bug, not
+a trading partner. But `MarketSystem` sold *every* surplus unit *every* day, so a city's stock
+converged on exactly its keep and stayed there for ever.
+
+Spare was therefore always zero. Every city in the world had nothing to sell anybody, however
+badly it was wanted. Ironhold mines eight iron a day, Saltmarsh's workshop eats one a day and has
+no mine, and no route between them could carry a single bar. The four convoy tests that failed
+first were all this, wearing different clothes.
+
+The fix is a `merchant_share` column on `goods.csv`: how much of a day's surplus the merchant
+will actually take. What it leaves is the export a route carries. A mining city settles at its
+reserve plus roughly twice its daily output — about sixteen spare bars at Ironhold — and its
+income is unchanged in the long run, because at equilibrium it still sells what it mines.
+
+**It is per good, and the first attempt was not.** A global half cost the player about fifty coin
+over forty days: `undisturbed` ended on 85 rather than 138, `one-storm` and `one-theft` dropped
+from Healthy to Struggling, and `late-storm` finished on 4 coin at Grumbling. That is a tax on
+the player's own income to solve another city's supply problem, and it ate most of the margin the
+reserve band is measured against. On iron alone it costs nothing at all — Saltmarsh has no mine —
+and every recorded scenario's coin, state and rung is identical to the unit.
+
+### A route is access, not profit
+
+A city pays the same `sell_price` a passing merchant pays, so shipping grain to Ironhold earns
+exactly what selling it at home would have earned, seven days later. `Selling_sends_the_goods_now_and_is_paid_on_arrival`
+asserts precisely that — level on arrival, not ahead — because asserting a profit would have been
+asserting something the game does not do.
+
+What a route buys today is **access**: iron, which no merchant carries to Saltmarsh and no
+Saltmarsh building can dig. That is enough to make the workshop worth having, and it is the
+sentence Phase 4 was for. §5.3's real trade, where ports differ in price and finding the
+differential is the game, needs local supply to move prices and is its own piece of work.
+
+### Testing through a port that will not hold still
+
+Four of the first convoy tests failed for the same authoring reason, twice over: they read an
+absolute stock before and after a journey. But the workshop eats an iron every day, the farms add
+eighteen food, and the merchant pins food at its keep — so iron fell while the cargo was at sea,
+food *rose* after five barrels were sold, and Ironhold's larder read the same whether five
+barrels landed or none.
+
+They now measure against a control session running the same days with no orders given. Where even
+that will not work — rum has `keep,0` and is sold the day it is distilled, so the stock is always
+zero — the test asserts what the economy cannot erase: the workshop's shortfall line stopping.
+
+Conservation moved out of the session entirely. A world total cannot balance while a market is
+carrying goods away, so `Nothing_is_lost_or_made_on_the_crossing` builds a bare world with two
+real cities and no economy around them, and checks the total every day of the crossing.
+
+### The digests moved and nothing else did
+
+All ten, for the second time in two phases, with every state, rung and coin value identical to the
+run before it. The world gained a `Convoy` store the digest covers whether or not a convoy exists,
+and Ironhold now holds iron it used to sell. That pattern — hash changes, simulation does not — is
+what the corpus is for.
