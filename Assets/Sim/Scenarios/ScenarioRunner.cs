@@ -98,6 +98,7 @@ namespace RTS.Sim.Scenarios
             new ConvoySystem(), new ConsumptionSystem(), new WagesSystem(), new UpkeepSystem(),
             new DesertionSystem(), new LabourSystem(), new ProductionSystem(),
             new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
+            new MobSystem(),
         };
 
         public static Pipeline BuildPipeline(string shippedCsv, CommandDispatcher dispatcher)

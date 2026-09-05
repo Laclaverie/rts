@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RTS.Sim.Components;
 using RTS.Sim.Presentation;
 using RTS.Sim.Session;
 using UnityEngine;
@@ -59,6 +60,8 @@ namespace RTS.Game.Presentation
 
         private const float PortRadius = 9f;
         private const float ConvoyRadius = 4f;
+        private const float BodyRadius = 3f;
+        private const float FaceRadius = 4.5f;
 
         private static readonly Color Sea = new Color(0.07f, 0.10f, 0.16f);
         private static readonly Color Lane = new Color(1f, 1f, 1f, 0.14f);
@@ -68,6 +71,9 @@ namespace RTS.Game.Presentation
         private static readonly Color Highlight = Color.white;
         private static readonly Color Mine = new Color(0.55f, 0.85f, 1f);
         private static readonly Color Theirs = new Color(0.85f, 0.70f, 0.45f);
+        private static readonly Color Rioter = new Color(0.90f, 0.35f, 0.30f);
+        private static readonly Color Loyalist = new Color(0.55f, 0.80f, 0.95f);
+        private static readonly Color Face = new Color(1f, 0.92f, 0.55f);
 
         private readonly GameSession _session;
         private readonly Dictionary<EntityId, VisualElement> _portMarkers =
@@ -77,10 +83,12 @@ namespace RTS.Game.Presentation
         private readonly List<EntityId> _gone = new List<EntityId>();
 
         private VisualElement _lanes;
+        private VisualElement _crowd;
         private VisualElement _cities;
         private VisualElement _ships;
         private MapModel _map = MapModel.Empty;
         private EntityId _drawnSelection;
+        private int _drawnRisen;
 
         public MapPanel(GameSession session) => _session = session;
 
@@ -117,6 +125,12 @@ namespace RTS.Game.Presentation
             _cities.pickingMode = PickingMode.Ignore;
             Root.Add(_cities);
 
+            // Under the ships and the cities, so a marker is never lost inside its own mob.
+            _crowd = new VisualElement();
+            Fill(_crowd);
+            _crowd.pickingMode = PickingMode.Ignore;
+            Root.Add(_crowd);
+
             _ships = new VisualElement();
             Fill(_ships);
             _ships.pickingMode = PickingMode.Ignore;
@@ -134,6 +148,7 @@ namespace RTS.Game.Presentation
         {
             _map = MapModel.Of(_session.World, _session.Balance, _session.Clock.DayProgress);
             _drawnSelection = _session.Selected;
+            _drawnRisen = Risen();
 
             _cities.Clear();
             _portMarkers.Clear();
@@ -187,8 +202,84 @@ namespace RTS.Game.Presentation
                                  $"{convoy.DaysRemaining}d out";
             }
 
+            DrawCrowd();
             Prune();
             _lanes.MarkDirtyRepaint();
+
+            // A city that has just risen, or just gone quiet, changes colour. Checked here
+            // rather than on the day boundary because the crowd is what says so, and the crowd
+            // is read every frame anyway.
+            if (Risen() != _drawnRisen) Refresh();
+        }
+
+        /// <summary>
+        /// The bodies in every square that has one.
+        /// </summary>
+        /// <remarks>
+        /// Rebuilt outright rather than tracked per body, unlike the convoys. A crowd exists for
+        /// a handful of days, is bounded at dozens by content, and every one of them moves every
+        /// frame — the bookkeeping to reuse the elements would cost more than the elements do,
+        /// and it is the kind of cleverness that outlives the reason for it.
+        /// <para>
+        /// The named faces are drawn larger and last, so the handful of them are not lost in the
+        /// crowd. §5.2.2 is specific that a mob is anonymous bodies <em>with a handful of named
+        /// faces inside it</em>, and a picture where you cannot pick them out is only the first
+        /// half of that.
+        /// </para>
+        /// </remarks>
+        private void DrawCrowd()
+        {
+            _crowd.Clear();
+            if (_map.Crowd.Count == 0) return;
+
+            for (int i = 0; i < _map.Crowd.Count; i++)
+            {
+                MapBody body = _map.Crowd[i];
+                if (body.IsNamed) continue;
+
+                _crowd.Add(Body(in body));
+            }
+
+            for (int i = 0; i < _map.Crowd.Count; i++)
+            {
+                MapBody body = _map.Crowd[i];
+                if (!body.IsNamed) continue;
+
+                _crowd.Add(Body(in body));
+            }
+        }
+
+        private VisualElement Body(in MapBody body)
+        {
+            float radius = body.IsNamed ? FaceRadius : BodyRadius;
+
+            var dot = new VisualElement();
+            dot.style.position = Position.Absolute;
+            dot.style.width = radius * 2f;
+            dot.style.height = radius * 2f;
+            dot.style.backgroundColor = body.IsNamed
+                ? Face
+                : body.Side == MobSide.Loyalist ? Loyalist : Rioter;
+            Round(dot, radius);
+            dot.pickingMode = PickingMode.Ignore;
+
+            // A named face keeps its side as an outline, so which way the carpenter went is
+            // readable without a tooltip.
+            if (body.IsNamed)
+            {
+                Color edge = body.Side == MobSide.Loyalist ? Loyalist : Rioter;
+                dot.style.borderTopWidth = 2;
+                dot.style.borderRightWidth = 2;
+                dot.style.borderBottomWidth = 2;
+                dot.style.borderLeftWidth = 2;
+                dot.style.borderTopColor = edge;
+                dot.style.borderRightColor = edge;
+                dot.style.borderBottomColor = edge;
+                dot.style.borderLeftColor = edge;
+            }
+
+            Place(dot, body.At, radius);
+            return dot;
         }
 
         /// <summary>Drops the markers of convoys that have landed.</summary>
@@ -212,15 +303,49 @@ namespace RTS.Game.Presentation
             }
         }
 
+        /// <summary>
+        /// Which cities have somebody in the square, as a bitmask over the map's own order.
+        /// </summary>
+        /// <remarks>
+        /// Cheap enough to ask every frame, and it is what decides whether the city markers need
+        /// rebuilding. Beyond sixty-four cities it stops distinguishing them, which is a long way
+        /// past the five §8.1 asks for and would be a wrong answer rather than a crash.
+        /// </remarks>
+        private int Risen()
+        {
+            int mask = 0;
+
+            for (int i = 0; i < _map.Crowd.Count; i++)
+            {
+                for (int p = 0; p < _map.Ports.Count && p < 31; p++)
+                    if (_map.Ports[p].Id == _map.Crowd[i].Port) mask |= 1 << p;
+            }
+
+            return mask;
+        }
+
+        private bool HasCrowd(EntityId port)
+        {
+            for (int i = 0; i < _map.Crowd.Count; i++)
+                if (_map.Crowd[i].Port == port) return true;
+
+            return false;
+        }
+
         private VisualElement PortMarker(in MapPort port)
         {
             bool selected = port.Id == _session.Selected;
+
+            // Not read from the rung. §5.6 makes a neighbour's unrest something you buy with a
+            // stance or a scout, and this is the one thing about it anybody can see from the
+            // water: there are people in their square. The crowd says so, so the marker may.
+            bool risen = HasCrowd(port.Id);
 
             var dot = new VisualElement();
             dot.style.position = Position.Absolute;
             dot.style.width = PortRadius * 2f;
             dot.style.height = PortRadius * 2f;
-            dot.style.backgroundColor = port.IsPlayer ? Home : Neighbour;
+            dot.style.backgroundColor = risen ? Rioter : port.IsPlayer ? Home : Neighbour;
             Round(dot, PortRadius);
 
             dot.style.borderTopWidth = 2;

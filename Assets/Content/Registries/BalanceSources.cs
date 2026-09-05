@@ -36,5 +36,12 @@ namespace RTS.Content.Registries
         /// The cities. Optional: a test exercising one port's economy needs no world around it.
         /// </summary>
         public CsvTable Ports { get; set; }
+
+        /// <summary>
+        /// The revolt crowd's settings. Optional: a world without one uses
+        /// <see cref="MobRules.Default"/>, which is what every fixture written before rung 5
+        /// had a crowd meant.
+        /// </summary>
+        public CsvTable Mob { get; set; }
     }
 }

@@ -1,0 +1,37 @@
+# The revolt crowd (GDD 5.2.2 rung 5, 6.4).
+#
+# Rung 5 is the only place the crowd tech is spent, and that bound is what keeps the budget
+# honest. These are its numbers.
+#
+# bodies_per_commoner  bodies on the street per commoner in the port. The crowd is the
+#                      commoners: 5.2.2 says they are the anonymous bodies and the named crew
+#                      are the faces inside them.
+# max_bodies           the ceiling whatever the population. 8.1 says dozens first and hundreds
+#                      only once the small version is proven fun, so this is deliberately a
+#                      number in a file: raising it is an edit and a measurement, not a rewrite.
+# steps_per_day        movement sub-steps run at each day boundary. The mob moves in whole days
+#                      like every other system, and the renderer interpolates between yesterday
+#                      and today; stepping on frames would put frame time into the world and a
+#                      revolt would come out differently depending on how long it was watched.
+# speed                distance covered per step, in the units ports.csv is written in.
+#                      Set so the crowd takes about three days to cross from muster_radius to
+#                      press_radius. At the first value it tried, 0.18, a day's twelve steps
+#                      covered the whole distance and the crowd was already at the longhouse
+#                      the morning it turned out — the gathering happened between two frames
+#                      and there was nothing to watch. Three days is an approach the player can
+#                      see coming, which is also three days in which 5.2.2's exits are still
+#                      open.
+# muster_radius        how far out the crowd first gathers.
+# press_radius         how close it presses before the line stops it. Loyalists form here.
+# loyalty_to_stand     the loyalty at which a named crew member stands with you. Loyalty is
+#                      kept separate from morale (5.4) so a hungry crew member who trusts you
+#                      can stand while a comfortable one who does not, does not.
+
+key,value
+bodies_per_commoner,1.0
+max_bodies,60
+steps_per_day,12
+speed,0.07
+muster_radius,2.6
+press_radius,0.55
+loyalty_to_stand,0.5

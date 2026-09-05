@@ -182,6 +182,37 @@ namespace RTS.Game.Tests
         }
 
         [Test]
+        public void A_risen_port_puts_bodies_on_the_map()
+        {
+            // BUILD_ORDER's gate for this phase is that the revolt reads as an event rather than
+            // a number. Whether it reads is for a person watching; what can be asserted here is
+            // that there is something to watch at all.
+            GameSession session = Session();
+            var map = new MapPanel(session);
+            map.Build();
+
+            Assert.That(map.Map.Crowd, Is.Empty, "a calm port has an empty square");
+
+            EntityId home = session.PlayerPort;
+            for (int day = 0; day < 90; day++)
+            {
+                session.Submit(new Shock(ShockKind.Theft, 100000f));
+                session.Step();
+
+                if (MobSystem.Bodies(session.World, home) > 0) break;
+            }
+
+            map.Refresh();
+
+            Assert.That(map.Map.Crowd, Is.Not.Empty, "the port rose and nobody was drawn");
+            Assert.That(map.Map.Crowd.All(b => b.Port == home), Is.True);
+
+            // Drawn under the cities, so a marker is never lost inside its own mob.
+            Assert.That(map.Root.Query<VisualElement>().ToList().Count,
+                Is.GreaterThan(map.Map.Crowd.Count));
+        }
+
+        [Test]
         public void The_map_can_be_built_before_a_day_has_run()
         {
             // Boot builds the panel inside Awake, before anything has advanced.

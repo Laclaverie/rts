@@ -200,8 +200,28 @@ one nobody checks. `MapPanel` decides colours and which way up the screen counts
 else.
 
 Selection went into `GameSession` for the same reason: clicking a neighbour offers the routes
-to that one city, and what a selection *means* is game behaviour. The mob is the rest of the
-phase.
+to that one city, and what a selection *means* is game behaviour.
+
+**The mob is in too.** Uprising was a string in a state machine, distinguishable from Riot only
+by a production multiplier; it is now a crowd that gathers at the edge of the city, closes on the
+longhouse over about three days, and goes home when the port comes back down the ladder. Named
+crew choose sides individually by loyalty and are drawn as faces inside it, which is the third
+bullet of this phase.
+
+It steps in whole days like every other system, sub-stepped at the day boundary with the renderer
+interpolating — §4.2's sketch of a real-time `Tick` system was not followed, because a crowd's
+positions are world state and frame time in the world breaks replay. The `Tick` phase is still
+empty and `pipeline.csv` says why.
+
+**No flow field, and the measurement is why.** Sixty bodies cost 4.9 ms a day at first. Almost
+none of it was the steering: it was a component lookup per pair asking whose city they were in,
+and a span rebuilt per comparison. Fixing those took it to 1.1 ms. A flow field would have
+replaced the cheap half. Dozens are enough, exactly as this phase predicted.
+
+**What is left of the gate.** Whether the revolt *reads* as an event is a question for someone
+watching it, and the honest answer today is: better than a number, not yet a scene. It reads at
+map scale — a city turns red and a crowd presses in around it. A port you can look inside is its
+own piece of work.
 
 ---
 

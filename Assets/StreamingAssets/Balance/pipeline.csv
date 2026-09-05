@@ -37,6 +37,16 @@
 #                                    one irreversible step in the day: everything else recovers
 #                                    on its own, so without it shocks add instead of compound.
 #
+#   Mob after RevolutionLadder    — the crowd is a reading of the rung the port is on, so it
+#                                    must be told after the ladder has decided. Running it
+#                                    first would put yesterday's rung on today's street.
+#
+# The Tick phase is still empty, and 4.2's sketch of Mob as a real-time Tick system was not
+# followed. A crowd's positions are world state and go into the digest, so steering them on
+# frames would mean a revolt came out differently depending on how long the player watched it
+# — the one thing 7.1 and the scenario corpus exist to prevent. The mob runs here instead and
+# divides its day into sub-steps; the renderer interpolates.
+#
 # CommandDrain is not here yet: nothing constructs a dispatcher until there is something to
 # command. When it lands, its position decides when input takes effect relative to all of
 # this, which is a design decision and belongs in this file.
@@ -52,3 +62,4 @@ DayBoundary,40,Production,true
 DayBoundary,50,Market,true
 DayBoundary,70,Unrest,true
 DayBoundary,80,RevolutionLadder,true
+DayBoundary,90,Mob,true

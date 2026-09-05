@@ -1,4 +1,5 @@
 using RTS.Content.Registries;
+using RTS.Sim.Components;
 using RTS.Sim.Engine.Commands;
 using RTS.Sim.Engine.Entities;
 using RTS.Sim.Engine.Events;
@@ -166,6 +167,38 @@ namespace RTS.Sim.Session
                 return true;
             }
 
+            if (envelope.TryGet(out MobMustered mob))
+            {
+                importance = FeedImportance.Alarming;
+                text = mob.CrewTurned > 0
+                    ? $"the port is in the square — {mob.Bodies} out, {mob.CrewTurned} of your " +
+                      $"own crew among them, {mob.Loyalists} still standing with you"
+                    : $"the port is in the square — {mob.Bodies} out, {mob.Loyalists} standing " +
+                      "with you";
+                return true;
+            }
+
+            if (envelope.TryGet(out MobDispersed dispersed))
+            {
+                importance = FeedImportance.Notable;
+                text = $"the square is empty again — {dispersed.Bodies} went home";
+                return true;
+            }
+
+            if (envelope.TryGet(out CrewChoseSide chose))
+            {
+                // Named, because that is the whole point of naming them. §5.2.2 wants the crowd
+                // anonymous and the faces in it not, and a line saying which way the carpenter
+                // you have been paying for forty days went is worth more than the count.
+                importance = FeedImportance.Alarming;
+
+                string who = Role(balance, chose.RoleIndex);
+                text = chose.Side == MobSide.Loyalist
+                    ? $"your {who} stood with you"
+                    : $"your {who} went over to them";
+                return true;
+            }
+
             if (envelope.TryGet(out WorkshopShort short_))
             {
                 importance = FeedImportance.Alarming;
@@ -234,6 +267,9 @@ namespace RTS.Sim.Session
             if (envelope.TryGet(out CrewAssigned s)) return s.Port;
             if (envelope.TryGet(out ConvoyDispatched t)) return t.Port;
             if (envelope.TryGet(out ConvoyArrived u)) return u.Port;
+            if (envelope.TryGet(out MobMustered v)) return v.Port;
+            if (envelope.TryGet(out MobDispersed w)) return w.Port;
+            if (envelope.TryGet(out CrewChoseSide x)) return x.Port;
 
             return EntityId.None;
         }

@@ -51,6 +51,35 @@ namespace RTS.Sim.Systems
         }
 
         /// <summary>
+        /// The entity carrying one city's ladder, or None.
+        /// </summary>
+        /// <remarks>
+        /// The ladder hangs off the port rather than sitting on it, like the treasury and the
+        /// population, so finding it means asking who owns what. Exposed because the mob needs
+        /// the same answer (§5.2.2 rung 5) and a second copy of this loop would be a second
+        /// place that has to be right about where the rung lives.
+        /// </remarks>
+        public static EntityId LadderOf(World world, EntityId port)
+        {
+            ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
+
+            for (int i = 0; i < ladders.Count; i++)
+                if (Port.BelongsTo(world, ladders.Ids[i], port)) return ladders.Ids[i];
+
+            return EntityId.None;
+        }
+
+        /// <summary>Which rung a city stands on, or <see cref="LadderRung.Calm"/>.</summary>
+        public static LadderRung RungOf(World world, EntityId port)
+        {
+            EntityId entity = LadderOf(world, port);
+
+            return entity.IsNone
+                ? LadderRung.Calm
+                : world.Store<RevolutionLadder>().GetRef(entity).Rung;
+        }
+
+        /// <summary>
         /// One city's rung. Every port has its own, and §5.2.2 says so explicitly: neighbours
         /// revolt too, and their crises are the player's opportunities.
         /// </summary>
@@ -59,10 +88,7 @@ namespace RTS.Sim.Systems
         {
             ComponentStore<RevolutionLadder> ladders = world.Store<RevolutionLadder>();
 
-            EntityId entity = EntityId.None;
-            for (int i = 0; i < ladders.Count; i++)
-                if (Port.BelongsTo(world, ladders.Ids[i], port)) entity = ladders.Ids[i];
-
+            EntityId entity = LadderOf(world, port);
             if (entity.IsNone) return;
 
             float worst = 0f;
