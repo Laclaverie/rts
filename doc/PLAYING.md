@@ -66,6 +66,7 @@ city offers everything, a neighbour offers only the routes to that one city.
 |---|---|
 | **Unrest** | put down a riot, at each price §5.2.2 offers. Disabled until there is one |
 | **Defence** | stand escorts up or down |
+| **Storage** | how much of each good to hold back from the passing merchant |
 | **Buildings** | shut and reopen your buildings, post and recall specialists |
 | **Trade** | buy from and sell to the other four cities |
 
@@ -97,6 +98,16 @@ starts saying *"the workshop ran short"* every morning. Buy iron from Ironhold a
 
 That is the sentence Phase 4 was built to make true: a good you cannot make, a use for it, and no
 way to get more without a route.
+
+### Keep something back
+
+Everything above a good's reserve is sold to the passing merchant each day. Raise the reserve
+under **Storage** and the port keeps it instead — bread against a bad harvest, iron for the
+workshop, rum for a route.
+
+It costs twice. The coin you would have earned, and the attention a fuller warehouse draws
+(§5.2.1). Room comes from your buildings, so shutting the warehouse to save two coin a day costs
+two hundred units of room, and anything that no longer fits is sold whether you like it or not.
 
 ### See Heat and a raid
 
@@ -136,7 +147,8 @@ dotnet run --project dotnet/Harness -- --days 60 --coin 90 --events
 | **Upkeep** | what the port costs per day |
 | **Crew**, **Town**, **Unemployed** | named specialists, commoners, and commoners with no work |
 | **Morale**, **Condition** | how the crew feel, and the state of the buildings |
-| **food / timber / iron** | what is in the warehouse |
+| **Storage** | what you are holding, against what your buildings can hold |
+| **food / timber / iron** | what is in the warehouse, and what you are keeping back |
 | **Unrest** | which rung of the ladder the port stands on |
 | **Heat** | what your wealth is drawing |
 | **Escorts** | standing or stood down, and what they cost today |
@@ -175,7 +187,7 @@ is. They are the design documentation for the balance, and they are meant to be 
   often than not.
 - **Nobody trades with you.** Neighbours ship only to each other. An approach you could accept or
   refuse needs stances (§5.6), which do not exist yet.
-- **Rum and spice can never be held**, so Heat only ever measures iron. That wants a warehouse
-  with a real storage cap.
+- **Spice never appears.** Nothing produces it and no route brings it, so the highest-value good
+  in the file is unreachable. Rum can be held now — raise its reserve under **Storage**.
 - **Nobody outside this project has played it.** Every judgement about how it *reads* is one
   person's, which is what Phase 6's kill test is for.

@@ -53,6 +53,71 @@ namespace RTS.Sim.Systems
             for (int i = 0; i < ports.Length; i++) Trade(world, ports[i], balance, ctx);
         }
 
+        /// <summary>
+        /// Sells whatever the port has no room for (GDD §5.5).
+        /// </summary>
+        /// <remarks>
+        /// The storage cap made real. A reserve says what a port would <em>like</em> to keep;
+        /// this says what it can. Sold rather than spoiled because a merchant is standing right
+        /// there and burning it would be a punishment rather than a constraint — but sold
+        /// regardless of the reserve and regardless of what share the merchant would normally
+        /// take, because it does not fit and wanting it to is not an argument.
+        /// <para>
+        /// From the largest pile first: a port drowning in timber dumps timber. Deterministic on
+        /// ties by good order, so the same world always sheds the same thing.
+        /// </para>
+        /// <para>
+        /// It bites hardest when a warehouse is shut. Mothballing one saves two coin a day and
+        /// costs two hundred units of room, which is the kind of decision §5.5 wants a building
+        /// to be rather than a line of upkeep.
+        /// </para>
+        /// </remarks>
+        private static void Overflow(World world, EntityId port, BalanceTables balance,
+            ref int earned, ref int unitsSold, in Context ctx)
+        {
+            float capacity = Port.Capacity(world, port, balance);
+
+            for (int guard = 0; guard < balance.Goods.Count; guard++)
+            {
+                float held = 0f;
+                for (int i = 0; i < balance.Goods.Count; i++)
+                    held += Port.UnitsOf(world, port, i);
+
+                float over = held - capacity;
+                if (over < 1f) return;
+
+                int fullest = -1;
+                float most = 0f;
+
+                for (int i = 0; i < balance.Goods.Count; i++)
+                {
+                    float units = Port.UnitsOf(world, port, i);
+                    if (units <= most) continue;
+
+                    most = units;
+                    fullest = i;
+                }
+
+                if (fullest < 0) return;
+
+                int shed = (int)Math.Ceiling(over);
+                if (shed > (int)most) shed = (int)most;
+                if (shed < 1) return;
+
+                Port.Take(world, port, fullest, shed);
+
+                Good good = balance.Goods[fullest];
+                int coin = shed * good.SellPrice;
+                earned += coin;
+                unitsSold += shed;
+
+                ctx.Events.Emit(new StorageOverflowed
+                {
+                    Port = port, GoodIndex = fullest, Units = shed, Coin = coin,
+                });
+            }
+        }
+
         private static void Trade(World world, EntityId port, BalanceTables balance, in Context ctx)
         {
             if (!Port.HasTreasury(world, port)) return;
@@ -62,13 +127,15 @@ namespace RTS.Sim.Systems
             int earned = 0;
             int unitsSold = 0;
 
+            Overflow(world, port, balance, ref earned, ref unitsSold, ctx);
+
             for (int goodIndex = 0; goodIndex < balance.Goods.Count; goodIndex++)
             {
                 Good good = balance.Goods[goodIndex];
                 if (good.SellPrice <= 0) continue;
 
                 float held = Port.UnitsOf(world, port, goodIndex);
-                float above = held - good.Keep;
+                float above = held - Port.ReserveOf(world, port, goodIndex);
                 if (above < 1f) continue;
 
                 // Whole units only, and only as much of them as this merchant carries. A

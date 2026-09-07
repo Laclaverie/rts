@@ -128,15 +128,30 @@
 # the other side - the merchant outcompetes inter-city trade for anything it will carry - and it
 # is why a warehouse with a real storage cap (5.5) keeps turning up as the next thing.
 #
+#
+# All ten moved for warehouses, and once again every state, rung and coin value is identical to
+# the unit. Three things changed the hash and none of them changed the arithmetic: every stock
+# pile gained a Reserve, every port gained a pile for every good rather than only the ones it
+# started with, and Coldwater gained a warehouse.
+#
+# What a port holds back used to be a constant in goods.csv, the same for every city. It is now
+# state, seeded from that same constant - so a port that is never told otherwise behaves exactly
+# as it did, which is what these ten runs are demonstrating.
+#
+# Coldwater's warehouse is a content fix rather than a balance one. It was the only city without
+# one, which cost it nothing while the capacity column counted for nothing; the day storage
+# became real it could hold eight units against a need for seventeen and starved its whole crew
+# inside forty days. Content had drifted into a state that was only wrong once something read it.
+#
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,f06a1e63b7cf96b7
-one-storm,1,150,40,10:Storm:0.30,ce3e0787be94f117
-one-theft,1,150,40,10:Theft:100,23dbe301f2f7b6c9
-one-harvest-failure,1,150,40,10:HarvestFailure:8,8d5c6a5174353755
-one-desertion,1,150,40,10:Desertion:2,16a431bae23254ad
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,5b30219d38fd4148
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,7866817109850163
-lean-start,1,90,30,,4d1b3513ef2a8a35
-long-quiet-run,7,150,120,,2be05d34bc8766f1
-late-storm,3,150,60,50:Storm:0.40,4b57a7cd6335be07
+undisturbed,1,150,40,,205e715c98a2d53b
+one-storm,1,150,40,10:Storm:0.30,e5aa9ee12299c673
+one-theft,1,150,40,10:Theft:100,a9f9246a58044cdd
+one-harvest-failure,1,150,40,10:HarvestFailure:8,24c5e847c28c6019
+one-desertion,1,150,40,10:Desertion:2,4eb5dceaefbcf44d
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,cb6a2819a7d54647
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c034d2b09856dd2b
+lean-start,1,90,30,,aa16759de65f1e64
+long-quiet-run,7,150,120,,ffba3a611ac538eb
+late-storm,3,150,60,50:Storm:0.40,7e3dddc5719321b9

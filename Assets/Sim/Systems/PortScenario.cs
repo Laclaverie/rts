@@ -160,6 +160,13 @@ namespace RTS.Sim.Systems
                 world.Add(built, new Owner { Port = port });
             }
 
+            // A pile for every good, reserving what goods.csv says to. Created up front rather
+            // than on demand because a pile that appeared later would start with a reserve of
+            // nothing and quietly sell the port's own bread — and because the reserve is now
+            // state the player edits, so it has to exist before they can edit it.
+            for (int i = 0; i < balance.Goods.Count; i++)
+                Port.SetReserve(world, port, i, balance.Goods[i].Keep);
+
             foreach (KeyValuePair<string, float> pile in Stock)
             {
                 int goodIndex = IndexOf(balance.Goods, pile.Key, "good");

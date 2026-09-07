@@ -85,4 +85,4 @@ saltmarsh,Saltmarsh,0,0,true,150,12,laborer:3;sailor:1;guard:1,longhouse;farm;fa
 ironhold,Ironhold,21,9,false,180,10,laborer:3;sailor:2;guard:2,longhouse;mine;mine;farm;farm;warehouse,food:12;timber:6;iron:20
 millrace,Millrace,7,-11,false,140,11,laborer:4;sailor:1;guard:1,longhouse;sawmill;sawmill;farm;farm;workshop;warehouse,food:14;timber:22;iron:4
 fairhaven,Fairhaven,-5,-4,false,120,14,laborer:3;guard:1,longhouse;farm;farm;farm;sawmill;warehouse,food:26;timber:5;iron:3
-coldwater,Coldwater,-5,16,false,90,7,laborer:2;sailor:1;guard:1,longhouse;farm;farm;sawmill,food:9;timber:6;iron:2
+coldwater,Coldwater,-5,16,false,90,7,laborer:2;sailor:1;guard:1,longhouse;farm;farm;sawmill;warehouse,food:9;timber:6;iron:2

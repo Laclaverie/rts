@@ -129,6 +129,7 @@ namespace RTS.Sim.Session
         {
             new ShockHandler(),
             new SetEscortHandler(),
+            new SetReserveHandler(),
             new SuppressRiotHandler(),
             new AssignCrewHandler(),
             new MothballBuildingHandler(),
@@ -313,6 +314,7 @@ namespace RTS.Sim.Session
             {
                 AddRepression();
                 AddDefence();
+                AddStorage();
                 AddBuildings();
                 AddTrade(EntityId.None);
             }
@@ -429,6 +431,24 @@ namespace RTS.Sim.Session
         /// button, because this number is the price of one half of §5.2's dilemma and a price
         /// the player cannot see is not a decision they are making.
         /// </remarks>
+        /// <summary>Everything in the player's sheds, across all goods.</summary>
+        public float Stored()
+        {
+            float total = 0f;
+
+            for (int i = 0; i < Balance.Goods.Count; i++)
+                total += Port.UnitsOf(World, PlayerPort, i);
+
+            return total;
+        }
+
+        /// <summary>How much a single press of a reserve order moves it.</summary>
+        /// <remarks>
+        /// Five, matching the trade parcel. A reserve the player nudges one unit at a time would
+        /// be a slider pretending to be a decision.
+        /// </remarks>
+        public const float ReserveStep = 5f;
+
         public int EscortBill()
         {
             int convoys = 0;
@@ -480,6 +500,52 @@ namespace RTS.Sim.Session
         /// <param name="only">
         /// One city, or <see cref="EntityId.None"/> for every neighbour.
         /// </param>
+        /// <summary>
+        /// What to hold back, and what to let the merchant take (GDD §5.5).
+        /// </summary>
+        /// <remarks>
+        /// One pair of rows per good the port has any interest in. Raising a reserve is income
+        /// given up for stock — grain against a bad harvest, iron for the workshop, rum for a
+        /// route — and lowering one is the reverse. The room comes from warehouses, so the whole
+        /// group tightens when one is shut.
+        /// <para>
+        /// Goods the port neither holds nor reserves are left out. Offering to stockpile spice in
+        /// a city that has never seen any is a row that teaches nothing.
+        /// </para>
+        /// </remarks>
+        private void AddStorage()
+        {
+            float free = Port.Capacity(World, PlayerPort, Balance) - Port.Reserved(World, PlayerPort);
+
+            for (int i = 0; i < Balance.Goods.Count; i++)
+            {
+                float reserve = Port.ReserveOf(World, PlayerPort, i);
+                float held = Port.UnitsOf(World, PlayerPort, i);
+                if (reserve <= 0f && held <= 0f) continue;
+
+                string id = Balance.Goods[i].Id;
+
+                var more = new SetReserve(i, reserve + ReserveStep);
+                _actions.Add(new PlayerAction(
+                    group: "Storage",
+                    label: $"Keep more {id}",
+                    detail: $"{reserve:0.#} → {reserve + ReserveStep:0.#}, {free:0.#} spare room",
+                    command: more,
+                    rejection: Validate(more)));
+
+                if (reserve <= 0f) continue;
+
+                float less = reserve < ReserveStep ? 0f : reserve - ReserveStep;
+                var fewer = new SetReserve(i, less);
+                _actions.Add(new PlayerAction(
+                    group: "Storage",
+                    label: $"Keep less {id}",
+                    detail: $"{reserve:0.#} → {less:0.#}, sold at {Balance.Goods[i].SellPrice} a unit",
+                    command: fewer,
+                    rejection: Validate(fewer)));
+            }
+        }
+
         private void AddTrade(EntityId only)
         {
             EntityId player = Port.Player(World);
@@ -616,8 +682,18 @@ namespace RTS.Sim.Session
                 float units = report.Stock[i];
                 if (units <= 0f && Balance.Goods[i].Supply == GoodSupply.ImportOnly) continue;
 
-                _readouts.Add(new Readout(Balance.Goods[i].Id, units.ToString("0.0")));
+                // "12.0 (keep 20)" rather than "12.0". What a port holds back used to be the
+                // same number for everybody and lived in a file; now it is a choice, so it has
+                // to be visible next to the thing it applies to.
+                float reserve = Port.ReserveOf(World, PlayerPort, i);
+                _readouts.Add(new Readout(Balance.Goods[i].Id,
+                    reserve > 0f
+                        ? $"{units:0.0} (keep {reserve:0.#})"
+                        : units.ToString("0.0")));
             }
+
+            _readouts.Add(new Readout("Storage",
+                $"{Stored():0.#}/{Port.Capacity(World, PlayerPort, Balance):0.#}"));
 
             _readouts.Add(new Readout("Unrest", report.Rung.ToString()));
 
