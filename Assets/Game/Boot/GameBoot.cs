@@ -58,6 +58,22 @@ namespace RTS.Game.Boot
 
             // Loudly, and before anything runs. Content that does not load is a fixable mistake
             // in a file; content that half-loads is a port whose numbers are quietly wrong.
+            //
+            // Said here rather than left to the exception, because what reaches the console
+            // otherwise is a stack trace through the logging plumbing and one line of summary.
+            // Each problem already knows its file and line — that is the whole point of the
+            // validation report — so print them, numbered, before throwing.
+            if (!report.IsValid)
+            {
+                Log.Error(LogChannel.Boot,
+                    $"content will not load: {report.Problems.Count} problem(s). " +
+                    "Nothing will run until these are fixed.");
+
+                int n = 1;
+                foreach (string problem in report.Problems)
+                    Log.Error(LogChannel.Boot, $"  {n++}. {problem}");
+            }
+
             report.ThrowIfInvalid();
 
             // No world passed: the session builds the whole map from ports.csv.

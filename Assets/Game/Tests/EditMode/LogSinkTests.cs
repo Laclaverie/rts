@@ -15,6 +15,14 @@ namespace RTS.Game.Tests
     [Category("Functional")]
     public class LogSinkTests
     {
+        // Two of these tests must call Debug.LogError and Debug.LogWarning for real: the thing
+        // being proved is that our levels map onto Unity's, and there is no way to prove that
+        // without Unity seeing them. LogAssert.Expect stops them failing the run, but Unity
+        // still prints them, so they turn up in the console looking exactly like a fault.
+        //
+        // They therefore say what they are. A line that reads "EXPECTED test error" costs a
+        // reader nothing; one that read "error line" cost an afternoon.
+
         private string _directory = null!;
 
         [SetUp]
@@ -169,11 +177,13 @@ namespace RTS.Game.Tests
         {
             var sink = new UnityConsoleLogSink();
 
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new System.Text.RegularExpressions.Regex("warn line"));
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new System.Text.RegularExpressions.Regex("error line"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new System.Text.RegularExpressions.Regex("EXPECTED test warning"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new System.Text.RegularExpressions.Regex("EXPECTED test error"));
 
-            sink.Write(new LogRecord(LogLevel.Warn, LogChannel.Game, 1, "warn line"));
-            sink.Write(new LogRecord(LogLevel.Error, LogChannel.Game, 1, "error line"));
+            sink.Write(new LogRecord(LogLevel.Warn, LogChannel.Game, 1,
+                "EXPECTED test warning - LogSinkTests proving Warn maps to Debug.LogWarning"));
+            sink.Write(new LogRecord(LogLevel.Error, LogChannel.Game, 1,
+                "EXPECTED test error - LogSinkTests proving Error maps to Debug.LogError"));
         }
 
         [Test]
@@ -190,7 +200,8 @@ namespace RTS.Game.Tests
             Assert.That(sink.Minimum, Is.EqualTo(LogLevel.Warn));
 
             sink.Write(new LogRecord(LogLevel.Trace, LogChannel.Pipeline, 1, "trace line"));
-            sink.Write(new LogRecord(LogLevel.Debug, LogChannel.Pipeline, 1, "debug line"));
+            sink.Write(new LogRecord(LogLevel.Debug, LogChannel.Pipeline, 1,
+                "EXPECTED test debug - LogSinkTests proving a lowered floor lets Debug through"));
             sink.Write(new LogRecord(LogLevel.Info, LogChannel.Game, 1, "info line"));
         }
 
@@ -199,10 +210,11 @@ namespace RTS.Game.Tests
         {
             var sink = new UnityConsoleLogSink(LogLevel.Debug);
 
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new System.Text.RegularExpressions.Regex("debug line"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new System.Text.RegularExpressions.Regex("EXPECTED test debug"));
 
             sink.Write(new LogRecord(LogLevel.Trace, LogChannel.Pipeline, 1, "trace line"));
-            sink.Write(new LogRecord(LogLevel.Debug, LogChannel.Pipeline, 1, "debug line"));
+            sink.Write(new LogRecord(LogLevel.Debug, LogChannel.Pipeline, 1,
+                "EXPECTED test debug - LogSinkTests proving a lowered floor lets Debug through"));
         }
 
         [Test]

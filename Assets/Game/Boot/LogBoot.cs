@@ -33,6 +33,9 @@ namespace RTS.Game.Boot
         private static FileLogSink _file;
         private static bool _installed;
 
+        private static readonly System.Diagnostics.Stopwatch _session =
+            new System.Diagnostics.Stopwatch();
+
         public static string LogDirectory => Path.Combine(Application.persistentDataPath, LogFolderName);
 
         /// <summary>The file this run is writing to, or null if none could be opened.</summary>
@@ -45,7 +48,14 @@ namespace RTS.Game.Boot
 
             _installed = true;
 
-            Log.AddSink(new UnityConsoleLogSink());
+            // One clock for the whole session, so the console and the log file agree about
+            // what time it is. A reader comparing the two should not have to work out which
+            // zero is which — and the console's leading column used to be a hardcoded zero on
+            // every line, a fixed-width nothing in the one place somebody is skimming for a
+            // problem.
+            _session.Restart();
+
+            Log.AddSink(new UnityConsoleLogSink(elapsedSeconds: Elapsed));
 
             TryOpenFile();
             TryApplySettings();
@@ -75,11 +85,14 @@ namespace RTS.Game.Boot
             _installed = false;
         }
 
+        /// <summary>Seconds since logging started, shared by every sink.</summary>
+        public static double Elapsed() => _session.Elapsed.TotalSeconds;
+
         private static void TryOpenFile()
         {
             try
             {
-                _file = FileLogSink.Open(LogDirectory, KeepFiles);
+                _file = FileLogSink.Open(LogDirectory, KeepFiles, Elapsed);
                 Log.AddSink(_file);
             }
             catch (Exception e)
