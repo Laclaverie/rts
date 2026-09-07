@@ -143,15 +143,38 @@
 # became real it could hold eight units against a need for seventeen and starved its whole crew
 # inside forty days. Content had drifted into a state that was only wrong once something read it.
 #
+#
+# All ten moved when keeping a building standing started costing timber and iron, and this time
+# the numbers moved with them. Undisturbed ends on 126 rather than 138; one-storm on 10 rather
+# than 71. The band itself is intact and that was the thing being watched: every single shock is
+# still survived, three correlated ones are still fatal, and deep reserves still buy the
+# difference. What changed is the margin, which is what an upkeep you are meant to notice looks
+# like.
+#
+# It took three tries to get there, and the first two were measuring nothing. At a wear of 0.004
+# a day, long-quiet-run - a hundred and twenty days with no shock and no order given - ended
+# Collapsed and Deposed, which 5.2.3 does not allow. Lowering the rate appeared to change
+# nothing at all, twice, because the harness never loaded maintenance.csv and was reading the
+# built-in default whatever the file said. That is fixed here too.
+#
+# At the rate that shipped, a hundred and twenty idle days end Struggling on 7 coin: thin, alive,
+# and clearly heading somewhere if nobody does anything. The demand survives the softening, which
+# was the other thing being watched - Millrace still ships timber to Ironhold, and Ironhold's
+# planks hold at twenty instead of decaying to one.
+#
+# Coldwater's starting coin went from 90 to 130. It is the poorest city by design and it was
+# already finishing on 17; with an upkeep bill in materials it finished on nothing, starving.
+# Poor is a position to play from, not a sentence.
+#
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,205e715c98a2d53b
-one-storm,1,150,40,10:Storm:0.30,e5aa9ee12299c673
-one-theft,1,150,40,10:Theft:100,a9f9246a58044cdd
-one-harvest-failure,1,150,40,10:HarvestFailure:8,24c5e847c28c6019
-one-desertion,1,150,40,10:Desertion:2,4eb5dceaefbcf44d
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,cb6a2819a7d54647
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,c034d2b09856dd2b
-lean-start,1,90,30,,aa16759de65f1e64
-long-quiet-run,7,150,120,,ffba3a611ac538eb
-late-storm,3,150,60,50:Storm:0.40,7e3dddc5719321b9
+undisturbed,1,150,40,,bc880eb4196648a4
+one-storm,1,150,40,10:Storm:0.30,4009fb2c2d2a4eac
+one-theft,1,150,40,10:Theft:100,56d3b3efd040f984
+one-harvest-failure,1,150,40,10:HarvestFailure:8,ef3cda701db7ac78
+one-desertion,1,150,40,10:Desertion:2,c36ce5222f81975b
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,0dfd8815fa4ebf80
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,de991e398d161fc1
+lean-start,1,90,30,,7105ef38eb41fe25
+long-quiet-run,7,150,120,,765a36c13fea0f6c
+late-storm,3,150,60,50:Storm:0.40,f723c84f9ce17e59

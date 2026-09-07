@@ -156,8 +156,14 @@ namespace RTS.Sim.Systems
             float repair = rules.RepairPerDay < wanted ? rules.RepairPerDay : wanted;
             if (repair <= 0f) return;
 
-            float timberWanted = repair * rules.MaterialsPerPoint * definition.BuildTimber;
-            float ironWanted = repair * rules.MaterialsPerPoint * definition.BuildIron;
+            // More to keep up when there is more of it. §5.5 wants upkeep to be something a
+            // player is aware of rather than something they fight, and this is the shape that
+            // makes sprawl answer for itself: nothing forbids a hundred sheds, they simply cost
+            // more timber than a hundred sheds are worth.
+            float crowding = rules.Crowding(Standing(world, port));
+
+            float timberWanted = repair * rules.MaterialsPerPoint * definition.BuildTimber * crowding;
+            float ironWanted = repair * rules.MaterialsPerPoint * definition.BuildIron * crowding;
 
             // How much of the repair the sheds can actually pay for. A building made of nothing
             // is free to fix, which is right: a farm is fields and hands.
@@ -178,6 +184,21 @@ namespace RTS.Sim.Systems
             Take(world, port, balance, "iron", ironWanted * afforded);
 
             state.Condition = ConsumptionSystem.Clamp01(state.Condition + (repair * afforded));
+        }
+
+        /// <summary>How many buildings this port has standing and working.</summary>
+        private static int Standing(World world, EntityId port)
+        {
+            ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
+            int count = 0;
+
+            for (int i = 0; i < buildings.Count; i++)
+            {
+                if (buildings.Values[i].Mothballed) continue;
+                if (Port.BelongsTo(world, buildings.Ids[i], port)) count++;
+            }
+
+            return count;
         }
 
         private static float Affordable(World world, EntityId port, BalanceTables balance,

@@ -23,12 +23,17 @@ namespace RTS.Content.Registries
         public const string WearPerDayKey = "wear_per_day";
         public const string RepairPerDayKey = "repair_per_day";
         public const string MaterialsPerPointKey = "materials_per_point";
+        public const string CrowdedBeyondKey = "crowded_beyond";
+        public const string CrowdingStepKey = "crowding_step";
 
-        private MaintenanceRules(float wearPerDay, float repairPerDay, float materialsPerPoint)
+        private MaintenanceRules(float wearPerDay, float repairPerDay, float materialsPerPoint,
+            int crowdedBeyond, float crowdingStep)
         {
             WearPerDay = wearPerDay;
             RepairPerDay = repairPerDay;
             MaterialsPerPoint = materialsPerPoint;
+            CrowdedBeyond = crowdedBeyond;
+            CrowdingStep = crowdingStep;
         }
 
         /// <summary>Condition every working building loses each day.</summary>
@@ -51,7 +56,38 @@ namespace RTS.Content.Registries
         /// </remarks>
         public float MaterialsPerPoint { get; }
 
-        public static MaintenanceRules Default { get; } = new MaintenanceRules(0.004f, 0.03f, 0.10f);
+        /// <summary>How many buildings a port keeps before upkeep starts getting harder.</summary>
+        /// <remarks>
+        /// Warcraft III's upkeep, and for the same reason: a cost you notice rather than a cost
+        /// you fight. Under this many buildings a port pays the plain material cost; past it,
+        /// every repair costs more, so sprawl is self-limiting without any rule forbidding it.
+        /// <para>
+        /// Nothing can be built yet, so today this is a lever with nothing pulling it — the
+        /// shipped ports are all under the threshold and pay exactly the base cost. It is here
+        /// now because the shape of the cost is a design decision and the number is where a
+        /// playtest will want it, not because it does anything this week.
+        /// </para>
+        /// </remarks>
+        public int CrowdedBeyond { get; }
+
+        /// <summary>How much each building past the threshold adds to every repair.</summary>
+        /// <remarks>
+        /// The answer to "what stops me building a thousand sheds to soak an army". Nothing
+        /// forbids it; it simply costs more timber than a thousand sheds are worth.
+        /// </remarks>
+        public float CrowdingStep { get; }
+
+        /// <summary>
+        /// What a port's repairs are multiplied by, given how much it has standing.
+        /// </summary>
+        public float Crowding(int buildings)
+        {
+            int over = buildings - CrowdedBeyond;
+            return over <= 0 ? 1f : 1f + (over * CrowdingStep);
+        }
+
+        public static MaintenanceRules Default { get; } =
+            new MaintenanceRules(0.0004f, 0.03f, 0.10f, 10, 0.15f);
 
         public static MaintenanceRules Load(CsvTable table, ValidationReport report)
         {
@@ -61,6 +97,8 @@ namespace RTS.Content.Registries
             float wear = Default.WearPerDay;
             float repair = Default.RepairPerDay;
             float materials = Default.MaterialsPerPoint;
+            int crowdedBeyond = Default.CrowdedBeyond;
+            float crowdingStep = Default.CrowdingStep;
 
             if (!report.RequireColumns(table, KeyColumn, ValueColumn)) return Default;
 
@@ -95,10 +133,19 @@ namespace RTS.Content.Registries
                         materials = Number(value, table, row, report, materials);
                         break;
 
+                    case CrowdedBeyondKey:
+                        crowdedBeyond = Whole(value, table, row, report, crowdedBeyond);
+                        break;
+
+                    case CrowdingStepKey:
+                        crowdingStep = Number(value, table, row, report, crowdingStep);
+                        break;
+
                     default:
                         report.Add(table.SourceName, row.Line,
                             $"'{key}' is not a maintenance setting. Known keys: {WearPerDayKey}, " +
-                            $"{RepairPerDayKey}, {MaterialsPerPointKey}.");
+                            $"{RepairPerDayKey}, {MaterialsPerPointKey}, {CrowdedBeyondKey}, " +
+                            $"{CrowdingStepKey}.");
                         break;
                 }
             }
@@ -111,7 +158,21 @@ namespace RTS.Content.Registries
                     "the player does can stop it.");
             }
 
-            return new MaintenanceRules(wear, repair, materials);
+            return new MaintenanceRules(wear, repair, materials, crowdedBeyond, crowdingStep);
+        }
+
+        private static int Whole(string value, CsvTable table, CsvRow row,
+            ValidationReport report, int fallback)
+        {
+            if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                    out int parsed) || parsed < 0)
+            {
+                report.Add(table.SourceName, row.Line,
+                    $"'{value}' is not a whole number of zero or more.");
+                return fallback;
+            }
+
+            return parsed;
         }
 
         private static float Number(string value, CsvTable table, CsvRow row,

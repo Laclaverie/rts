@@ -24,11 +24,33 @@
 #                      to whole costs about one and a quarter timber, which is a repair rather
 #                      than a rebuild.
 #
+# crowded_beyond       how many buildings a port keeps before upkeep starts getting harder.
+# crowding_step        how much each building past that adds to every repair.
+#
+# The Warcraft III shape, and for the same reason: upkeep should be a cost you are aware of, not
+# a cost you fight. Under the threshold a port pays the plain material cost. Past it every repair
+# costs more, so sprawl answers for itself - nothing forbids a hundred sheds to soak an army,
+# they simply cost more timber than a hundred sheds are worth.
+#
+# Nothing can be built yet, so today this is a lever with nothing pulling it: every shipped port
+# is under the threshold and pays the base cost exactly. It is here because the SHAPE of the cost
+# is a design decision, and deciding it now is cheaper than discovering later that sprawl is free.
+#
 # A port with no materials does not lose condition faster - it simply stops recovering. Being
 # unable to repair is already the punishment, and stacking decay on top would make one bad week
 # a spiral, which 5.2.3 does not allow.
+#
+# WHAT IS MISSING, AND IT IS THE INTERESTING HALF. Neglect should do something, not merely stop
+# helping: rats, damp, sickness. A discrete bad thing that happens in a place, rather than a
+# number sliding down. That is what makes the cost worth being aware of, and it is where the
+# emergent play is - a city that keeps a clean corridor it controls and lets a buffer go foul has
+# built a defence out of sanitation, and an army crossing that buffer either clears a path first
+# or arrives sick. None of that is built. It is written here because the wear rate below was
+# chosen to leave room for it: light enough that the hazard, not the decay, is what bites.
 
 key,value
-wear_per_day,0.0015
+wear_per_day,0.0004
 repair_per_day,0.03
 materials_per_point,0.10
+crowded_beyond,10
+crowding_step,0.15
