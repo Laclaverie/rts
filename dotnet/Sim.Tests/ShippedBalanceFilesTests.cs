@@ -59,7 +59,8 @@ namespace RTS.Sim.Tests
             // crew are about to be paid from, which is the whole of §5.2's dilemma made
             // mechanical; convoys land before anything eats, so bread that arrives this morning
             // is edible this morning; crew eat yesterday's stock before today's output lands;
-            // wages are paid before buildings are maintained (§5.2.3); and Heat is read after
+            // wages are paid before buildings are maintained (§5.2.3); a neighbour decides what
+            // it can spare after the day's selling rather than before; and Heat is read after
             // the market, so what the merchant carried off is not still on show.
             Assert.That(pipeline.Systems(Phase.DayBoundary).Select(s => s.Id),
                 Is.EqualTo(new[]
@@ -74,6 +75,7 @@ namespace RTS.Sim.Tests
                     LabourSystem.SystemId,
                     ProductionSystem.SystemId,
                     MarketSystem.SystemId,
+                    AiTradeSystem.SystemId,
                     HeatSystem.SystemId,
                     UnrestSystem.SystemId,
                     RevolutionLadderSystem.SystemId,

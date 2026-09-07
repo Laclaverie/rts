@@ -1,0 +1,34 @@
+# How the other cities trade among themselves (GDD 5.3, 5.2.2).
+#
+# Until this existed, four of the five cities were scenery. They produced, ate, grew angry and
+# could be bought from, but they never did anything - so Ironhold piled up iron nobody would
+# ever want and Coldwater ran short of bread with a granary three days away. 5.3's premise is
+# that trade works because ports differ, and a world where only one of them trades is a world
+# where that difference does nothing.
+#
+# One rule: a city with more of something than it needs sends a parcel to whichever city has
+# least of it. That is the whole of the intelligence. It is enough because the specialisations
+# in ports.csv already point the traffic - Ironhold has iron and wants bread, Fairhaven the
+# reverse - so the routes that appear are the ones the content implies rather than ones a script
+# picked.
+#
+# Nobody ships to the player's city. A neighbour selling you grain would take coin out of your
+# treasury on arrival for a purchase you never agreed to, and being able to refuse is the
+# difference between a trade and a tax. What an approach from a neighbour should look like is a
+# 5.6 question - stances, offers, reputation - and it wants designing rather than falling out of
+# this.
+#
+# parcel            units in one shipment. The same five the player ships.
+# spare             how far above its own reserve a city must be before it will part with
+#                   anything. Above the keep, not at it: a city that shipped the moment it had
+#                   one unit spare would be trading away the buffer that exists so a bad harvest
+#                   is survivable.
+# convoys_per_city  how many convoys one city will have at sea at once, and the only rate limit
+#                   there is. A cooldown in days would be a second clock to reason about;
+#                   "finish what you started" is a rule a player can read off the map by
+#                   counting ships.
+
+key,value
+parcel,5
+spare,6
+convoys_per_city,1

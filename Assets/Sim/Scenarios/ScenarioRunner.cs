@@ -99,6 +99,7 @@ namespace RTS.Sim.Scenarios
             new DesertionSystem(), new LabourSystem(), new ProductionSystem(),
             new MarketSystem(), new UnrestSystem(), new RevolutionLadderSystem(),
             new MobSystem(), new HeatSystem(), new RaidSystem(), new EscortSystem(),
+            new AiTradeSystem(),
         };
 
         public static Pipeline BuildPipeline(string shippedCsv, CommandDispatcher dispatcher)

@@ -115,15 +115,28 @@
 # look at. Heat creeps by thousandths on a quiet day; now it speaks when the number a player
 # would read actually moves.
 #
+#
+# All ten moved when the neighbours started trading among themselves, and every state, rung and
+# coin value is identical to the unit. That is not a coincidence, it is the design: nobody ships
+# to the player's city, so four cities came alive without a single number in Saltmarsh changing.
+# Twelve convoys cross between them over sixty days where before there were none.
+#
+# What the traffic is made of is worth knowing: almost all of it is iron. Food and timber have a
+# merchant_share of one, so the passing merchant carries off every surplus unit the day it
+# appears and no city ever accumulates the six spare units it would take to ship any. Iron is at
+# a half and therefore the only staple that piles up. This is the Phase 4 finding arriving from
+# the other side - the merchant outcompetes inter-city trade for anything it will carry - and it
+# is why a warehouse with a real storage cap (5.5) keeps turning up as the next thing.
+#
 
 id,seed,coin,days,shocks,expected_digest
-undisturbed,1,150,40,,322de97d911cc731
-one-storm,1,150,40,10:Storm:0.30,d5aeeecc614644e6
-one-theft,1,150,40,10:Theft:100,6bacbb946fdd64ac
-one-harvest-failure,1,150,40,10:HarvestFailure:8,b90ce1243fdc21e0
-one-desertion,1,150,40,10:Desertion:2,f260f039de72f74a
-three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,a1bfb3721e531b43
-three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,d6db85d39e7c1bc1
-lean-start,1,90,30,,580aa89ce2b255cc
-long-quiet-run,7,150,120,,f37d55e58d71b0d0
-late-storm,3,150,60,50:Storm:0.40,20e115011ee7cdb5
+undisturbed,1,150,40,,f06a1e63b7cf96b7
+one-storm,1,150,40,10:Storm:0.30,ce3e0787be94f117
+one-theft,1,150,40,10:Theft:100,23dbe301f2f7b6c9
+one-harvest-failure,1,150,40,10:HarvestFailure:8,8d5c6a5174353755
+one-desertion,1,150,40,10:Desertion:2,16a431bae23254ad
+three-correlated,1,150,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,5b30219d38fd4148
+three-correlated-deep-reserves,1,450,40,10:Storm:0.30;12:HarvestFailure:8;14:Theft:100,7866817109850163
+lean-start,1,90,30,,4d1b3513ef2a8a35
+long-quiet-run,7,150,120,,2be05d34bc8766f1
+late-storm,3,150,60,50:Storm:0.40,4b57a7cd6335be07

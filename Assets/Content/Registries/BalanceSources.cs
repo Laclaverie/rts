@@ -49,5 +49,11 @@ namespace RTS.Content.Registries
         /// <see cref="HeatRules.Default"/>.
         /// </summary>
         public CsvTable Heat { get; set; }
+
+        /// <summary>
+        /// How the other cities trade. Optional: a world without it uses
+        /// <see cref="TradeAiRules.Default"/>.
+        /// </summary>
+        public CsvTable TradeAi { get; set; }
     }
 }

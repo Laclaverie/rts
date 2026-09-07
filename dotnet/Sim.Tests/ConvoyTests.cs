@@ -85,7 +85,13 @@ namespace RTS.Sim.Tests
 
             public int Coin(EntityId port) => Port.Treasury(World, port).Coin;
 
-            public int Convoys => World.Store<Convoy>().Count;
+            /// <summary>The player's convoys, not the world's.</summary>
+            /// <remarks>
+            /// It counted the whole store until the neighbours started trading, which was the
+            /// same number while only one city ever shipped anything and quietly stopped being
+            /// so the day four more did.
+            /// </remarks>
+            public int Convoys => AiTradeSystem.Convoys(World, Player);
 
             public void Days(int n) { for (int i = 0; i < n; i++) Session.Step(); }
         }

@@ -140,11 +140,16 @@ namespace RTS.Game.Tests
         [Test]
         public void A_convoy_is_drawn_while_it_sails_and_gone_once_it_lands()
         {
+            // Asserted as "every ship on the water has a marker" rather than as a count that
+            // returns to where it started. The neighbours run their own routes now, so the
+            // world's convoy count does not come back to zero just because yours landed — and a
+            // test that assumed it did was really asserting that nobody else ever traded.
             GameSession session = Session();
             var map = new MapPanel(session);
             map.Build();
 
-            int before = Markers(map).Length;
+            int ports = map.Map.Ports.Count;
+            Assert.That(Markers(map).Length, Is.EqualTo(ports + map.Map.Convoys.Count));
 
             session.Submit(new BuyFrom(
                 City(session, "fairhaven"),
@@ -153,12 +158,17 @@ namespace RTS.Game.Tests
             session.Step();
             map.Tick();
 
-            Assert.That(Markers(map).Length, Is.GreaterThan(before), "a ship is on the water");
+            Assert.That(map.Map.Convoys.Count(c => c.IsPlayers), Is.EqualTo(1),
+                "your ship is not on the water");
+            Assert.That(Markers(map).Length, Is.EqualTo(ports + map.Map.Convoys.Count),
+                "a ship without a marker, or a marker without a ship");
 
             for (int day = 0; day < 4; day++) session.Step();
             map.Tick();
 
-            Assert.That(Markers(map).Length, Is.EqualTo(before), "and its marker went with it");
+            Assert.That(map.Map.Convoys.Count(c => c.IsPlayers), Is.Zero, "it should have landed");
+            Assert.That(Markers(map).Length, Is.EqualTo(ports + map.Map.Convoys.Count),
+                "its marker went with it");
         }
 
         [Test]

@@ -181,8 +181,17 @@ is raided because of what it chose to carry. Raids take a share of a cargo at se
 "anything on the map can be intercepted" made true — convoys had been sailing for two phases with
 nothing able to touch them.
 
-**Still missing from this phase:** an AI port that trades, and stances including `Shadow`. Ironhold
-accumulates iron nobody buys unless the player does.
+**The neighbours trade now too.** One rule — a city with more of something than it needs sends a
+parcel to whichever city has least of it — and the specialisations in `ports.csv` do the rest.
+Twelve convoys cross between them over sixty days, on the same crossings, drawing the same Heat
+and exposed to the same raiders. Nobody ships to the player: a neighbour selling you grain would
+take coin from your treasury for a purchase you never agreed to, and being able to refuse is what
+makes it a trade. All ten corpus digests moved and the player's economy did not change by a coin.
+
+**Still missing from this phase:** stances, including `Shadow` (§5.6). And the traffic is thinner
+than it should be — nearly all of it is iron, because the passing merchant clears every other
+surplus the day it appears. That is the third finding pointing at a warehouse with a real storage
+cap (§5.5).
 
 **Revised: five cities, not one neighbour.** The original note said a second neighbour adds
 nothing the first has not proven, and that is right about neighbours as *threats* — one raider

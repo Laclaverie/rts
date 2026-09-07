@@ -46,6 +46,9 @@
 #                                    guard, which hides the choice being made. This ordering is
 #                                    the whole of 5.2's dilemma: coin spent on Heat is coin that
 #                                    is not available for Unrest.
+#   AiTrade after Market          - a neighbour decides what it can spare after the day's
+#                                    selling, not before, or it would ship goods the passing
+#                                    merchant was about to carry off anyway.
 #   Heat after Market             - what the passing merchant carried off this morning is not
 #                                    still drawing attention this evening.
 #   Mob after RevolutionLadder    — the crowd is a reading of the rung the port is on, so it
@@ -73,6 +76,7 @@ DayBoundary,35,Desertion,true
 DayBoundary,38,Labour,true
 DayBoundary,40,Production,true
 DayBoundary,50,Market,true
+DayBoundary,55,AiTrade,true
 DayBoundary,60,Heat,true
 DayBoundary,70,Unrest,true
 DayBoundary,80,RevolutionLadder,true

@@ -169,8 +169,12 @@ is. They are the design documentation for the balance, and they are meant to be 
 - **A route is access, not profit.** A city pays the same price the passing merchant does, so
   shipping grain somewhere earns what selling it at home would, several days later. What a route
   buys today is iron, which nothing else can get you.
-- **No AI port trades.** Ironhold accumulates iron nobody buys unless you do, so four of the five
-  cities are economically inert.
+- **The neighbours' traffic is thin.** They trade with each other now, but nearly all of it is
+  iron: the passing merchant clears every other surplus the day it appears, so no city ever has
+  enough spare food or timber to ship any. Expect one lane between Ironhold and Millrace more
+  often than not.
+- **Nobody trades with you.** Neighbours ship only to each other. An approach you could accept or
+  refuse needs stances (§5.6), which do not exist yet.
 - **Rum and spice can never be held**, so Heat only ever measures iron. That wants a warehouse
   with a real storage cap.
 - **Nobody outside this project has played it.** Every judgement about how it *reads* is one
