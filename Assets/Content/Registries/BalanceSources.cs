@@ -1,5 +1,9 @@
 using RTS.Content.Loading;
 
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+
 namespace RTS.Content.Registries
 {
     /// <summary>
@@ -55,5 +59,64 @@ namespace RTS.Content.Registries
         /// <see cref="TradeAiRules.Default"/>.
         /// </summary>
         public CsvTable TradeAi { get; set; }
+
+        /// <summary>
+        /// What repairs cost. Optional: a world without it uses
+        /// <see cref="MaintenanceRules.Default"/>.
+        /// </summary>
+        public CsvTable Maintenance { get; set; }
+
+        /// <summary>
+        /// Every shipped table, read through whatever knows where the files are.
+        /// </summary>
+        /// <remarks>
+        /// <strong>One place that knows the list.</strong> Both composition roots used to build
+        /// this by hand, and both drifted: the harness and the Unity boot each stopped at
+        /// <c>ports.csv</c> and silently used built-in defaults for mob, heat, trade and
+        /// maintenance. The harness was therefore tuning against numbers no file contained —
+        /// editing <c>maintenance.csv</c> and re-running the corpus measured nothing at all,
+        /// twice — and the game being played was not the game the content described.
+        /// <para>
+        /// Nothing about that failed loudly, because a missing table is legitimately optional:
+        /// a test that only needs goods and buildings passes null for the rest. The defaults are
+        /// right for a fixture and wrong for a shipped game, and only the caller knows which it
+        /// is. So the guard cannot live inside <see cref="BalanceTables.Load"/> — it is this
+        /// method, plus a test that fails by name when a new table is not added to it.
+        /// </para>
+        /// </remarks>
+        /// <param name="read">Turns a file name into a table. Unity and the harness differ here.</param>
+        public static BalanceSources From(Func<string, CsvTable> read)
+        {
+            if (read == null) throw new ArgumentNullException(nameof(read));
+
+            return new BalanceSources
+            {
+                Goods = read(BalanceTables.GoodsFile),
+                Buildings = read(BalanceTables.BuildingsFile),
+                CrewRoles = read(BalanceTables.CrewRolesFile),
+                Strata = read(BalanceTables.StrataFile),
+                Ladder = read(BalanceTables.LadderFile),
+                Repression = read(BalanceTables.RepressionFile),
+                Ports = read(BalanceTables.PortsFile),
+                Mob = read(BalanceTables.MobFile),
+                Heat = read(BalanceTables.HeatFile),
+                TradeAi = read(BalanceTables.TradeAiFile),
+                Maintenance = read(BalanceTables.MaintenanceFile),
+            };
+        }
+
+        /// <summary>Which tables this set is missing, by property name.</summary>
+        /// <remarks>
+        /// By reflection on purpose. A hand-written list would be one more thing to forget to
+        /// update, which is the exact mistake being guarded against.
+        /// </remarks>
+        public IEnumerable<string> Missing()
+        {
+            foreach (PropertyInfo property in typeof(BalanceSources).GetProperties())
+            {
+                if (property.PropertyType != typeof(CsvTable)) continue;
+                if (property.GetValue(this) == null) yield return property.Name;
+            }
+        }
     }
 }

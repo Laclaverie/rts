@@ -56,6 +56,15 @@ namespace RTS.Sim.Systems
         /// </remarks>
         public const float MaximumSpecialistBonus = 0.25f;
 
+        /// <summary>How far short a transformer must fall before the feed mentions it.</summary>
+        /// <remarks>
+        /// A tenth. Before maintenance wore buildings down every day this could be any shortfall
+        /// at all, because output only ever dropped when an input was missing; now condition
+        /// drifts and a perfectly supplied workshop is a few per cent under its rated output most
+        /// mornings.
+        /// </remarks>
+        public const float ShortfallWorthSaying = 0.1f;
+
         public string Id => SystemId;
 
         public void Run(World world, in Context ctx)
@@ -101,7 +110,10 @@ namespace RTS.Sim.Systems
                 // Reported before the early return, not after. A workshop with no iron at all
                 // produces nothing and is the case most worth hearing about — the first version
                 // of this reported every shortfall except the total one.
-                if (definition.IsTransformer && wanted - output > 0.01f)
+                // A tenth short, not a hair short. Buildings wear a little every day now, so a
+                // workshop at ninety-nine per cent condition makes 1.9 of 2 — which is not news,
+                // and reporting it every morning would bury the day the iron actually ran out.
+                if (definition.IsTransformer && wanted - output > wanted * ShortfallWorthSaying)
                 {
                     ctx.Events.Emit(new WorkshopShort
                     {

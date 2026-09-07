@@ -1,3 +1,4 @@
+using System;
 using RTS.Sim.Engine.Diagnostics;
 using UnityEngine;
 
@@ -23,9 +24,15 @@ namespace RTS.Game.Diagnostics
         /// Everything below this is dropped rather than written. The default is
         /// <see cref="LogLevel.Warn"/>: only what is wrong is worth a console entry.
         /// </param>
-        public UnityConsoleLogSink(LogLevel minimum = LogLevel.Warn)
+        /// <param name="elapsedSeconds">
+        /// How long the session has been running. Optional, and zero when absent — a test
+        /// asserting the format wants a fixed clock, not a real one.
+        /// </param>
+        public UnityConsoleLogSink(LogLevel minimum = LogLevel.Warn,
+            Func<double> elapsedSeconds = null)
         {
             _minimum = minimum;
+            _elapsedSeconds = elapsedSeconds ?? (() => 0d);
         }
 
         /// <summary>
@@ -41,11 +48,22 @@ namespace RTS.Game.Diagnostics
         /// </remarks>
         public LogLevel Minimum => _minimum;
 
+        /// <summary>How long the session has been running, for the leading column.</summary>
+        /// <remarks>
+        /// Supplied rather than measured here, so the console and the log file agree about what
+        /// time it is. A reader comparing the two should not have to wonder which zero is which.
+        /// </remarks>
+        private readonly Func<double> _elapsedSeconds;
+
         public void Write(in LogRecord record)
         {
             if (record.Level < _minimum) return;
 
-            string line = TextWriterLogSink.Format(record, 0d);
+            // The real clock, not a hardcoded zero. Every console line used to begin
+            // "[00000.0]" — a fixed-width column of nothing, in the one place a reader is
+            // skimming for something wrong. It now says how far into the session the line was
+            // written, which is the question you actually have when a warning appears.
+            string line = TextWriterLogSink.Format(record, _elapsedSeconds());
 
             // Unity's console colours and filters by these three, and its Error entries are
             // what break a CI build or catch an eye in the editor. Mapping anything below Warn

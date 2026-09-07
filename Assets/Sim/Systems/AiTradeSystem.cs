@@ -97,6 +97,12 @@ namespace RTS.Sim.Systems
                 EntityId candidate = ports[i];
                 if (candidate == seller || candidate == player) continue;
 
+                // Not to somebody already expecting one. The leanest city is often the one
+                // that consumes the good, so it is leanest again the moment it is supplied and
+                // wins every draw for ever — which is how twenty-two of twenty-four shipments
+                // ended up on one lane while two cities sat below their reserve untouched.
+                if (Expecting(world, candidate, bestGood)) continue;
+
                 float held = Port.UnitsOf(world, candidate, bestGood);
                 if (held >= leanest) continue;
 
@@ -120,6 +126,20 @@ namespace RTS.Sim.Systems
             // same convoys, the same crossing times, the same raiders.
             ConvoySystem.Dispatch(world, balance, seller, buyer, bestGood, rules.Parcel,
                 coinOnArrival: payment, owner: seller, ctx);
+        }
+
+        /// <summary>Whether a city already has a parcel of this good on its way.</summary>
+        private static bool Expecting(World world, EntityId port, int goodIndex)
+        {
+            ComponentStore<Convoy> convoys = world.Store<Convoy>();
+
+            for (int i = 0; i < convoys.Count; i++)
+            {
+                Convoy convoy = convoys.Values[i];
+                if (convoy.Destination == port && convoy.GoodIndex == goodIndex) return true;
+            }
+
+            return false;
         }
 
         /// <summary>How many convoys a city already has at sea.</summary>

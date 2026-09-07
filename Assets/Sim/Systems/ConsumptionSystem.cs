@@ -212,7 +212,8 @@ namespace RTS.Sim.Systems
             });
         }
 
-        private static StratumRules RulesFor(BalanceTables balance, Stratum stratum)
+        /// <summary>The rules for one stratum, or null. Public so a scenario can ask what a town eats.</summary>
+        public static StratumRules RulesFor(BalanceTables balance, Stratum stratum)
         {
             for (int i = 0; i < balance.Strata.Count; i++)
                 if (balance.Strata[i].Stratum == stratum) return balance.Strata[i];

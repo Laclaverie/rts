@@ -633,6 +633,28 @@ compromising the default. Decide before building the UI, not after.
 
 ## Appendix B — Open questions
 
+**Neglect should do something, not merely stop helping.**
+
+Upkeep now costs materials as well as coin, and it is deliberately light — a cost you are aware
+of rather than one you fight, in the Warcraft III sense, with a crowding multiplier so that
+sprawl answers for itself. But the consequence of *not* maintaining a building is currently that
+it stops recovering, which is a number sliding down: legible, and dull.
+
+It should be a discrete bad thing that happens in a place. Rats, damp, sickness. That is what
+makes the cost worth noticing, and it is where the emergence is:
+
+> A city keeps a clean corridor it controls and lets a buffer go foul. That is a defence built
+> out of sanitation rather than walls — and an army crossing the buffer either clears a path
+> first, slowly and visibly, or arrives sick.
+
+It composes with terrain that already has to exist for routes (§5.1): a mountain pass, a canal, a
+strait. The player is not given a "disease" button; they are given upkeep, geography, and the
+freedom to under-maintain on purpose, and the tactic falls out.
+
+Open: what a hazard actually is as an entity, whether it spreads along routes, and whether an
+attacker can see it before entering. Not built. The wear rate was chosen light specifically to
+leave room for it — so that the hazard, not the decay, is what bites.
+
 **Open:**
 
 1. **Crew ceiling.** Where exactly between 10 and 30 does legibility break?

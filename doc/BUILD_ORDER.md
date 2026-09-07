@@ -188,10 +188,15 @@ and exposed to the same raiders. Nobody ships to the player: a neighbour selling
 take coin from your treasury for a purchase you never agreed to, and being able to refuse is what
 makes it a trade. All ten corpus digests moved and the player's economy did not change by a coin.
 
-**Still missing from this phase:** stances, including `Shadow` (§5.6). And the traffic is thinner
-than it should be — nearly all of it is iron, because the passing merchant clears every other
-surplus the day it appears. That is the third finding pointing at a warehouse with a real storage
-cap (§5.5).
+**Warehouses are real now** (§5.5). What a port holds back was a constant in `goods.csv`, the
+same for every city; it is state, and for the player it is a decision. Capacity comes from
+buildings — the column that had sat unread since Phase 1 — so a shut warehouse costs two hundred
+units of room, and what will not fit is sold. Rum can be held at last, which makes it shippable
+and visible to Heat.
+
+**Still missing from this phase:** stances, including `Shadow` (§5.6). The neighbours' traffic is
+still almost all iron, because their reserves never change from the content default — giving them
+a reason to hold stock is its own piece of work.
 
 **Revised: five cities, not one neighbour.** The original note said a second neighbour adds
 nothing the first has not proven, and that is right about neighbours as *threats* — one raider

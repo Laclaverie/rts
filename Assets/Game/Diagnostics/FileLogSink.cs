@@ -26,17 +26,20 @@ namespace RTS.Game.Diagnostics
         public const string FilePrefix = "rts_";
         public const string FileExtension = ".log";
 
-        private readonly Stopwatch _clock = Stopwatch.StartNew();
         private readonly TextWriterLogSink _formatter;
         private readonly StreamWriter _writer;
 
         private bool _disposed;
 
-        private FileLogSink(StreamWriter writer, string path)
+        private FileLogSink(StreamWriter writer, string path, Func<double> elapsedSeconds)
         {
             _writer = writer;
             Path = path;
-            _formatter = new TextWriterLogSink(writer, () => _clock.Elapsed.TotalSeconds);
+
+            // The session's clock, handed in, rather than one started when this file opened.
+            // The two used to differ by however long it took to find the directory, so a line in
+            // the file and the same line in the console disagreed about the time.
+            _formatter = new TextWriterLogSink(writer, elapsedSeconds ?? (() => 0d));
         }
 
         /// <summary>The file being written.</summary>
@@ -46,7 +49,12 @@ namespace RTS.Game.Diagnostics
         /// Opens a new log file in <paramref name="directory"/>, pruning older ones.
         /// </summary>
         /// <param name="keep">How many files to leave behind, including this one.</param>
-        public static FileLogSink Open(string directory, int keep = 10)
+        /// <param name="elapsedSeconds">
+        /// The session clock, shared with the other sinks. Zero when absent, which is what a
+        /// test asserting the format wants.
+        /// </param>
+        public static FileLogSink Open(string directory, int keep = 10,
+            Func<double> elapsedSeconds = null)
         {
             if (string.IsNullOrWhiteSpace(directory))
                 throw new ArgumentException("A directory is required.", nameof(directory));
@@ -79,7 +87,7 @@ namespace RTS.Game.Diagnostics
                 new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite),
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-            var sink = new FileLogSink(writer, path);
+            var sink = new FileLogSink(writer, path, elapsedSeconds);
             Prune(directory, keep);
             return sink;
         }

@@ -729,3 +729,63 @@ working. It counted the size of the convoy store each day and summed the increas
 zero on any day where one ship landed and another left. Counting distinct entities gives twelve.
 
 The test does it the second way, and says why.
+
+
+## Phase 4 — warehouses, and deciding what to keep
+
+### The claim that sent me here was half wrong
+
+Three findings in a row had pointed at "a warehouse with a real storage cap", and I said one
+feature would unblock all three. Checking before building showed that was convenient rather than
+true: **a storage cap fixes none of them.** Rum and spice being unholdable, and staples never
+accumulating, are caused by the *market rule* — `keep` plus `merchant_share` — not by storage
+being infinite. A ceiling on its own only takes things away.
+
+What does fix them, and gives the warehouse its job, is making **how much a port holds back a
+decision rather than a constant**, bounded by capacity. That is what got built.
+
+### The reserve was a constant, and it made a good invisible
+
+`keep` in `goods.csv` was the same number for every city and could not be changed: twenty food,
+ten iron, and **zero rum and zero spice**. The consequence nobody chose was that the two goods
+the content calls most valuable were sold the day they appeared. Rum could never be held,
+therefore never shipped, therefore never seen — invisible to trade and to Heat alike, which is
+why Heat only ever measured iron.
+
+It is now state on each stock pile, seeded from that same constant, so a port nobody instructs
+behaves exactly as it did. All ten corpus digests moved and every state, rung and coin value is
+identical to the unit.
+
+Holding stock back is income given up now for something later, and a fuller warehouse is a more
+visible one — so it costs coin *and* it costs attention. That is §5.2's shape again: the counter
+to one pressure feeds another.
+
+### What the capacity column was doing for four phases
+
+Nothing. `capacity` has been in `buildings.csv` since Phase 1 — warehouse 200, longhouse 8, dock
+4 — and no code read it.
+
+It now bounds what a port can reserve and what it can physically hold, and a mothballed building
+contributes none of it. Shutting the warehouse saves two coin a day and costs two hundred units
+of room, which is the kind of decision §5.5 wants a building to be rather than a line of upkeep.
+Goods that will not fit are sold rather than spoiled — a merchant is standing right there, and
+burning them would be a punishment rather than a constraint.
+
+### Content had drifted somewhere only a reader would find
+
+Coldwater was the only city without a warehouse. That cost it nothing while capacity counted for
+nothing. The day storage became real it could hold eight units against a need for seventeen, shed
+the difference every morning, and starved its entire crew inside forty days — caught by
+`Every_city_runs_the_same_systems`, which exists for exactly this.
+
+The fix is a warehouse in `ports.csv` and a note saying why. The general lesson is worth more
+than the fix: **an unread column is not neutral, it is a place where content can drift without
+resistance.** The same is true of `dock`, whose capacity of four has never mattered either.
+
+### What this did not fix
+
+The neighbours' traffic is still almost entirely iron. Their reserves are seeded from the content
+default and nothing ever changes them, so a neighbour still sells every spare unit of food and
+timber to the passing merchant and still has nothing but iron to ship. Giving them a reason to
+hold stock is a separate piece of work, and it would move their behaviour rather than only their
+digest — which is why it is not bundled in here.
