@@ -172,6 +172,15 @@ internal static class Program
             Ladder = Read(directory, BalanceTables.LadderFile),
             Repression = Read(directory, BalanceTables.RepressionFile),
             Ports = Read(directory, BalanceTables.PortsFile),
+
+            // Every table, not the ones that existed when this was written. The harness is the
+            // tuning instrument: for four files it was quietly using the built-in defaults, so
+            // editing heat.csv or maintenance.csv and re-running the corpus measured nothing at
+            // all — the numbers came back identical and looked like the change had no effect.
+            Mob = Read(directory, BalanceTables.MobFile),
+            Heat = Read(directory, BalanceTables.HeatFile),
+            TradeAi = Read(directory, BalanceTables.TradeAiFile),
+            Maintenance = Read(directory, BalanceTables.MaintenanceFile),
         }, report);
 
         // Loud, and before anything runs. A sim started on invalid content produces numbers

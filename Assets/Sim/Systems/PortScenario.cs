@@ -167,6 +167,8 @@ namespace RTS.Sim.Systems
             for (int i = 0; i < balance.Goods.Count; i++)
                 Port.SetReserve(world, port, i, balance.Goods[i].Keep);
 
+            if (!isPlayer) HoldTradingStock(world, port, balance);
+
             foreach (KeyValuePair<string, float> pile in Stock)
             {
                 int goodIndex = IndexOf(balance.Goods, pile.Key, "good");
@@ -204,6 +206,106 @@ namespace RTS.Sim.Systems
             }
 
             return port;
+        }
+
+        /// <summary>
+        /// A neighbour keeps back a shippable stock of its main export (GDD §5.3).
+        /// </summary>
+        /// <remarks>
+        /// Demand alone was not enough. Once repairs started costing materials every city wanted
+        /// timber, and none of them could get any — because the passing merchant buys everything
+        /// above a port's reserve, so every city sat at exactly its keep with nothing spare to
+        /// ship. Ironhold, which has two mines and no sawmill, decayed to nothing over a hundred
+        /// and twenty days with fourteen hundred coin in the treasury and nobody able to sell it
+        /// a plank.
+        /// <para>
+        /// One export, not everything it makes. Holding back three goods at once cost Coldwater —
+        /// the poorest city, with the least margin — enough income while it filled its sheds to
+        /// miss a payday, lose its crew and starve with two idle farms. One export is also what
+        /// §5.3 describes: a port leans towards something rather than hoarding a bit of
+        /// everything.
+        /// </para>
+        /// <para>
+        /// It costs a producer nothing in the long run. The merchant still takes everything above
+        /// the reserve, so raising it moves a few units into the warehouse once and leaves the
+        /// daily income where it was.
+        /// </para>
+        /// <para>
+        /// Only neighbours: the player's reserves are the player's decision (§5.5), and a
+        /// scenario that quietly set them would be making it for them.
+        /// </para>
+        /// </remarks>
+        private void HoldTradingStock(World world, EntityId port, BalanceTables balance)
+        {
+            // What it has left over, not what it makes most of. Millrace runs two sawmills and
+            // two farms, so its largest output is food — but it eats nearly all of that and uses
+            // none of the timber, and timber is what Ironhold is desperate for. Picking by raw
+            // output had it hoarding grain while the city three days away decayed for want of
+            // planks.
+            var surplus = new Dictionary<int, float>();
+
+            ComponentStore<BuildingState> buildings = world.Store<BuildingState>();
+            for (int i = 0; i < buildings.Count; i++)
+            {
+                if (!Port.BelongsTo(world, buildings.Ids[i], port)) continue;
+
+                Building definition = balance.Buildings[buildings.Values[i].DefinitionIndex];
+
+                if (!string.IsNullOrEmpty(definition.Produces))
+                {
+                    int made = ConsumptionSystem.IndexOf(balance, definition.Produces);
+                    if (made >= 0) Add(surplus, made, definition.OutputPerDay);
+                }
+
+                foreach (KeyValuePair<string, float> input in definition.Consumes)
+                {
+                    int eaten = ConsumptionSystem.IndexOf(balance, input.Key);
+                    if (eaten >= 0) Add(surplus, eaten, -input.Value);
+                }
+            }
+
+            // The people eat too, and they eat the thing most cities produce most of.
+            int food = ConsumptionSystem.IndexOf(balance, MarketSystem.BuyableGood);
+            if (food >= 0)
+            {
+                float eaten = 0f;
+
+                StratumRules townsfolk = ConsumptionSystem.RulesFor(balance, Stratum.Commoners);
+                if (townsfolk != null) eaten += StartingCommoners * townsfolk.FoodPerDay;
+
+                foreach (KeyValuePair<string, int> hired in Crew)
+                {
+                    int role = IndexOf(balance.CrewRoles, hired.Key, "crew role");
+                    eaten += balance.CrewRoles[role].FoodPerDay * hired.Value;
+                }
+
+                Add(surplus, food, -eaten);
+            }
+
+            int best = -1;
+            float most = 0f;
+
+            for (int good = 0; good < balance.Goods.Count; good++)
+            {
+                if (!surplus.TryGetValue(good, out float spare)) continue;
+
+                // Ties by good order, so the same content always picks the same export.
+                if (spare <= most) continue;
+
+                most = spare;
+                best = good;
+            }
+
+            if (best < 0) return;
+
+            Port.SetReserve(world, port, best,
+                balance.Goods[best].Keep + balance.TradeAi.Spare + balance.TradeAi.Parcel);
+        }
+
+        private static void Add(Dictionary<int, float> into, int good, float amount)
+        {
+            into.TryGetValue(good, out float running);
+            into[good] = running + amount;
         }
 
         /// <summary>

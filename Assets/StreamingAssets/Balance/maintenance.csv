@@ -1,0 +1,34 @@
+# Keeping buildings standing (GDD 5.5).
+#
+# Upkeep used to be coin alone: pay two a day and a building repaired itself out of nothing.
+# A city with money therefore needed nothing else, which is why Ironhold could sit on fourteen
+# hundred coin with its timber stuck at six and never once want a shipment. Coin accumulated with
+# no sink, buildings recovered with no materials, and inter-city trade had no demand to answer -
+# so the only lane that ever ran was the one good that happened to pile up.
+#
+# Now a repair costs the things a building is made of. Everything wears a little every day, and
+# putting that right draws timber and iron in proportion to what the building cost to build. A
+# port that cannot get materials watches its condition fall however much coin it has.
+#
+# That is the demand the trade system was missing. It is also a coin sink, an answer to "what do
+# I spend a surplus on", and the reason a sawmill matters to somebody who does not own one.
+#
+# wear_per_day         condition every unmothballed building loses each day. Small: a building
+#                      should drift, not crumble. Mothballed buildings do not wear, which is
+#                      what shutting one is for.
+# repair_per_day       condition a building regains when its upkeep is paid AND the materials
+#                      are there. Larger than the wear, so a maintained building still climbs
+#                      back from a storm - just not for free.
+# materials_per_point  fraction of the building's build_timber and build_iron consumed per full
+#                      point of condition repaired. At a tenth, restoring a warehouse from half
+#                      to whole costs about one and a quarter timber, which is a repair rather
+#                      than a rebuild.
+#
+# A port with no materials does not lose condition faster - it simply stops recovering. Being
+# unable to repair is already the punishment, and stacking decay on top would make one bad week
+# a spiral, which 5.2.3 does not allow.
+
+key,value
+wear_per_day,0.0015
+repair_per_day,0.03
+materials_per_point,0.10

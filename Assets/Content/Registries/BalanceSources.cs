@@ -55,5 +55,11 @@ namespace RTS.Content.Registries
         /// <see cref="TradeAiRules.Default"/>.
         /// </summary>
         public CsvTable TradeAi { get; set; }
+
+        /// <summary>
+        /// What repairs cost. Optional: a world without it uses
+        /// <see cref="MaintenanceRules.Default"/>.
+        /// </summary>
+        public CsvTable Maintenance { get; set; }
     }
 }

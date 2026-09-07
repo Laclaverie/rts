@@ -268,8 +268,12 @@ namespace RTS.Sim.Tests
 
             port.Run(new UpkeepSystem());
 
+            // The day's wear as well as the neglect. Everything wears now, paid for or not —
+            // that is what gives a city a standing reason to want timber, and it applies to a
+            // building whose upkeep went unpaid just the same.
             Assert.That(port.Building(farm).Condition,
-                Is.EqualTo(1f - UpkeepSystem.NeglectDecay).Within(1e-4f));
+                Is.EqualTo(1f - UpkeepSystem.NeglectDecay - port.Tables.Maintenance.WearPerDay)
+                    .Within(1e-4f));
             Assert.That(port.Emitted<UpkeepUnpaid>(), Is.True);
         }
 
