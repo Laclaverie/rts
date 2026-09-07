@@ -674,3 +674,58 @@ shipping, and the comparison quietly became one between two ports with nothing o
 The long-run test funds both ports every morning so it measures what it claims to. The
 underlying fact — that a route is barely worth running at current prices — is the same one Phase
 4 recorded as "a route is access, not profit", now with a number on it.
+
+
+## Phase 4 — the neighbours trade
+
+### The world was scenery, and now it is not
+
+Four of the five cities produced, ate, grew angry and could be bought from, and never did
+anything. §5.3's premise is that trade works because ports differ; a world where only one of
+them trades is a world where that difference does nothing. Ironhold accumulated iron against a
+demand only the player could ever answer, and Millrace ran its workshop dry with a mine five days
+away.
+
+One rule fixed it: **a city with more of something than it needs sends a parcel to whichever city
+has least of it.** That is the whole intelligence. The specialisations already in `ports.csv`
+point the traffic, so the routes that appear are the ones the content implies rather than ones a
+script picked. Twelve convoys cross between the neighbours over sixty days.
+
+### The player's economy did not move by a single coin
+
+All ten corpus digests changed and **every state, rung and coin value is identical to the unit**.
+That is the design rather than luck: nobody ships to the player's city, so four cities came alive
+without one number in Saltmarsh changing.
+
+Nobody ships to the player because a neighbour selling you grain would take coin out of your
+treasury on arrival for a purchase you never agreed to. Being able to refuse is the difference
+between a trade and a tax, and what an approach from a neighbour should look like — an offer you
+can decline, a reputation, a stance — is a §5.6 question that wants designing rather than falling
+out of this.
+
+### Nearly all the traffic is iron, and that is the merchant again
+
+Worth naming, because the map looks quieter than "the world trades" suggests.
+
+Food and timber have a `merchant_share` of one, so the passing merchant carries off every surplus
+unit the day it appears and no city ever accumulates the six spare units it would take to ship
+any. Iron is at a half and is therefore the only staple that piles up at all.
+
+This is Phase 4's finding arriving from the other side. It was written up then as *the passing
+merchant made trade impossible* and fixed for the player by giving iron a share below one; the
+neighbours have just run into the same wall for everything else. The steady state is one lane:
+Ironhold to Millrace, because Millrace is the only other city with a workshop and therefore the
+only one that consumes iron. Fairhaven and Coldwater top up to the reserve once and are never
+short again.
+
+That is coherent and it is content-driven, but it is thin. The fix is not a number in
+`trade_ai.csv` — it is a warehouse with a real storage cap (§5.5), which is now the third finding
+in a row to point at the same missing feature.
+
+### Counting ships is harder than it looks
+
+The first measurement said one convoy in sixty days and nearly sent me tuning a system that was
+working. It counted the size of the convoy store each day and summed the increases, which reads
+zero on any day where one ship landed and another left. Counting distinct entities gives twelve.
+
+The test does it the second way, and says why.

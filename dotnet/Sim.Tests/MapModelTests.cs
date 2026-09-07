@@ -65,6 +65,16 @@ namespace RTS.Sim.Tests
         private MapModel Map(float dayProgress = 0f) =>
             MapModel.Of(_session.World, _balance, dayProgress);
 
+        /// <summary>
+        /// The player's convoy, of which these tests dispatch exactly one.
+        /// </summary>
+        /// <remarks>
+        /// The neighbours now run their own routes, so the map carries their ships too. These
+        /// tests are about the one the player sent.
+        /// </remarks>
+        private MapConvoy Mine(float dayProgress = 0f) =>
+            Map(dayProgress).Convoys.Single(c => c.IsPlayers);
+
         private EntityId City(string id)
         {
             ComponentStore<PortState> ports = _session.World.Store<PortState>();
@@ -188,7 +198,7 @@ namespace RTS.Sim.Tests
             _session.Submit(new BuyFrom(ironhold, Good("iron"), 4f));
             Days(2);
 
-            MapConvoy convoy = Map().Convoys.Single();
+            MapConvoy convoy = Mine();
 
             Assert.That(convoy.Progress, Is.InRange(0f, 1f));
             Assert.That(convoy.At.X, Is.InRange(
@@ -209,7 +219,7 @@ namespace RTS.Sim.Tests
             for (int day = 0; day < 4; day++)
             {
                 Days(1);
-                float progress = Map().Convoys.Single().Progress;
+                float progress = Mine().Progress;
 
                 Assert.That(progress, Is.GreaterThan(last), "day " + day);
                 last = progress;
@@ -225,8 +235,7 @@ namespace RTS.Sim.Tests
             _session.Submit(new BuyFrom(City("ironhold"), Good("iron"), 4f));
             Days(1);
 
-            Assert.That(Map(0.75f).Convoys.Single().Progress,
-                Is.GreaterThan(Map(0.25f).Convoys.Single().Progress));
+            Assert.That(Mine(0.75f).Progress, Is.GreaterThan(Mine(0.25f).Progress));
         }
 
         [Test]
@@ -237,7 +246,7 @@ namespace RTS.Sim.Tests
             Days(1);
 
             MapModel map = Map();
-            MapConvoy convoy = map.Convoys.Single();
+            MapConvoy convoy = map.Convoys.Single(c => c.IsPlayers);
             MapPoint seller = map.Ports.Single(p => p.Id == ironhold).At;
             MapPoint home = map.Ports.Single(p => p.Id == _session.PlayerPort).At;
 
@@ -251,11 +260,11 @@ namespace RTS.Sim.Tests
         {
             _session.Submit(new BuyFrom(City("fairhaven"), Good("food"), 3f));
             Days(1);
-            Assert.That(Map().Convoys, Is.Not.Empty);
+            Assert.That(Map().Convoys.Any(c => c.IsPlayers), Is.True);
 
             Days(4);
 
-            Assert.That(Map().Convoys, Is.Empty);
+            Assert.That(Map().Convoys.Any(c => c.IsPlayers), Is.False);
         }
 
         [Test]

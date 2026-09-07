@@ -24,6 +24,7 @@ namespace RTS.Content.Registries
         public const string PortsFile = "ports.csv";
         public const string MobFile = "mob.csv";
         public const string HeatFile = "heat.csv";
+        public const string TradeAiFile = "trade_ai.csv";
 
         /// <summary>The strata columns, used to stand in an empty table when none is supplied.</summary>
         public const string StrataHeader =
@@ -41,10 +42,12 @@ namespace RTS.Content.Registries
         private BalanceTables(ConfigRegistry<Good> goods, ConfigRegistry<Building> buildings,
             ConfigRegistry<CrewRole> crewRoles, ConfigRegistry<StratumRules> strata,
             ConfigRegistry<LadderStep> ladder, ConfigRegistry<RepressionRules> repression,
-            ConfigRegistry<PortDefinition> ports, MobRules mob, HeatRules heat)
+            ConfigRegistry<PortDefinition> ports, MobRules mob, HeatRules heat,
+            TradeAiRules tradeAi)
         {
             Mob = mob;
             Heat = heat;
+            TradeAi = tradeAi;
             Ladder = ladder;
             Repression = repression;
             Ports = ports;
@@ -66,6 +69,9 @@ namespace RTS.Content.Registries
 
         /// <summary>What draws attention, and what attention costs (GDD §5.2.1).</summary>
         public HeatRules Heat { get; }
+
+        /// <summary>How the other cities trade among themselves (GDD §5.3).</summary>
+        public TradeAiRules TradeAi { get; }
 
         /// <summary>The cities. Trade only works because they differ (GDD §5.3).</summary>
         public ConfigRegistry<PortDefinition> Ports { get; }
@@ -133,7 +139,8 @@ namespace RTS.Content.Registries
             var tables = new BalanceTables(goodRegistry, buildingRegistry, crewRegistry,
                 strataRegistry, ladderRegistry, repressionRegistry, portRegistry,
                 MobRules.Load(sources.Mob, report),
-                HeatRules.Load(sources.Heat, report));
+                HeatRules.Load(sources.Heat, report),
+                TradeAiRules.Load(sources.TradeAi, report));
             tables.CrossCheck(report);
             return tables;
         }

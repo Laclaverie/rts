@@ -125,6 +125,13 @@ InitTestScene*.unity*
 # The 2021 GDD export. Replaced by doc/GDD.md, doc/ARCHITECTURE.md, doc/BUILD_ORDER.md.
 doc/GDD_RTS.odt
 
+# Screenshots kept locally while playing.
+# Not ignored because images do not belong in the repo — a captured revolt or a busy map is
+# exactly the kind of evidence a gate wants — but because these are working notes for now, and
+# what gets committed should be a deliberate choice rather than whatever happened to be in the
+# folder. Force-add one when it is worth keeping: git add -f doc/images/<name>.png
+doc/images/
+
 # Headless shadow projects (dotnet/) — build output
 dotnet/**/[Bb]in/
 dotnet/**/[Oo]bj/
