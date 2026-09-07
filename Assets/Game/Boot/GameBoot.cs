@@ -36,6 +36,9 @@ namespace RTS.Game.Boot
         /// <summary>The day the screen was last drawn for.</summary>
         private int _drawnDay;
 
+        /// <summary>So a failed boot says so once rather than sixty times a second.</summary>
+        private bool _reportedDead;
+
         /// <summary>The running game, for anything else in the scene that needs to read it.</summary>
         public GameSession Session => _session;
 
@@ -44,16 +47,12 @@ namespace RTS.Game.Boot
             // Logging installs itself before the scene loads, so it is already running here.
             var report = new ValidationReport();
 
-            BalanceTables balance = BalanceTables.Load(new BalanceSources
-            {
-                Goods = BalanceFiles.ReadCsv(BalanceTables.GoodsFile),
-                Buildings = BalanceFiles.ReadCsv(BalanceTables.BuildingsFile),
-                CrewRoles = BalanceFiles.ReadCsv(BalanceTables.CrewRolesFile),
-                Strata = BalanceFiles.ReadCsv(BalanceTables.StrataFile),
-                Ladder = BalanceFiles.ReadCsv(BalanceTables.LadderFile),
-                Repression = BalanceFiles.ReadCsv(BalanceTables.RepressionFile),
-                Ports = BalanceFiles.ReadCsv(BalanceTables.PortsFile),
-            }, report);
+            // Through BalanceSources.From, which is the one place that knows the full list.
+            // Both this and the harness used to build it by hand and both drifted, stopping at
+            // ports.csv and silently using built-in defaults for four files — so the game being
+            // played was not the game the content described.
+            BalanceTables balance = BalanceTables.Load(
+                BalanceSources.From(BalanceFiles.ReadCsv), report);
 
             Clock clock = Clock.Load(ConfigFiles.ReadCsv(ConfigFiles.ClockFile), report);
 
@@ -76,6 +75,25 @@ namespace RTS.Game.Boot
 
         private void Update()
         {
+            // Awake throws on content that will not load, by design — a port whose numbers are
+            // quietly wrong is worse than one that refuses to start. But Unity carries on calling
+            // Update afterwards, so the real message scrolled away behind a NullReferenceException
+            // sixty times a second, which is what the player actually saw and what wedged the
+            // editor. Say it once and stop.
+            if (_session == null)
+            {
+                if (!_reportedDead)
+                {
+                    _reportedDead = true;
+                    Log.Error(LogChannel.Boot,
+                        "the session never started: the content failed to load, and the reason " +
+                        "is the first error above this one. Nothing will run until it is fixed.");
+                }
+
+                enabled = false;
+                return;
+            }
+
             // The only line in the project where a frame rate meets the game, and it meets it
             // as an integer number of days. What the machine was doing between days cannot
             // reach the world, which is what makes a played session replay (§6.1, §7.1).
